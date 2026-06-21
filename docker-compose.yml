@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cloudsight-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: cloudsight_user
+      POSTGRES_PASSWORD: cloudsight_password
+      POSTGRES_DB: cloudsight
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - cloudsight_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudsight_user -d cloudsight"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    container_name: cloudsight-server
+    restart: unless-stopped
+
+    environment:
+      DATABASE_URL: postgresql://cloudsight_user:cloudsight_password@postgres:5432/cloudsight?schema=public
+      JWT_SECRET: supersecret
+      PORT: 5001
+      NODE_ENV: development
+
+    ports:
+      - "5001:5001"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+    command: sh -c "npx prisma migrate deploy && npm run dev"
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+
+    container_name: cloudsight-client
+    restart: unless-stopped
+
+    environment:
+      VITE_API_URL: http://localhost:5001
+
+    ports:
+      - "3000:5173"
+
+    depends_on:
+      - server
+
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  cloudsight_postgres_data:

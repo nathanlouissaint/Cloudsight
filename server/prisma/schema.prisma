@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  budgets      Budget[]
+  reports      Report[]
+}
+
+model CloudService {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+
+  costRecords CostRecord[]
+
+  createdAt   DateTime @default(now())
+}
+
+model CostRecord {
+  id        String   @id @default(uuid())
+
+  serviceId String
+  service   CloudService @relation(fields: [serviceId], references: [id])
+
+  usageDate DateTime
+  cost      Float
+
+  createdAt DateTime @default(now())
+}
+
+model Budget {
+  id        String   @id @default(uuid())
+
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+
+  name      String
+  amount    Float
+
+  month     Int
+  year      Int
+
+  createdAt DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  severity    String
+
+  createdAt   DateTime @default(now())
+}
+
+model Forecast {
+  id            String   @id @default(uuid())
+  forecastDate  DateTime
+  projectedCost Float
+
+  createdAt     DateTime @default(now())
+}
+
+model Report {
+  id        String   @id @default(uuid())
+
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+
+  title     String
+  summary   String
+
+  createdAt DateTime @default(now())
+}
