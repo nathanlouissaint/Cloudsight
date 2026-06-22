@@ -1144,6 +1144,35 @@ kbd {
   gap:24px;
   margin-bottom:24px;
 }
+.executive-intelligence-grid {
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:24px;
+  margin-bottom:24px;
+}
+
+.executive-side-column {
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+}
+
+.executive-overview {
+  margin-top: 32px;
+}
+
+.executive-overview {
+  margin-top: 48px;
+}
+
+
+.confidence-value {
+  font-size:42px;
+  font-weight:700;
+  margin:16px 0;
+}
+
+
 
 .driver-row,
 .optimization-row {
@@ -1160,4 +1189,28 @@ kbd {
   border-top:1px solid rgba(255,255,255,.08);
   display:flex;
   justify-content:space-between;
+}
+
+.forecast-health-grid {
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:24px;
+  margin-bottom:24px;
+}
+
+.optimization-grid {
+  margin-bottom:24px;
+}
+
+.optimization-table {
+  margin-top:24px;
+}
+
+.optimization-row {
+  display:grid;
+  grid-template-columns:2fr 1fr auto;
+  gap:24px;
+  align-items:center;
+  padding:16px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
