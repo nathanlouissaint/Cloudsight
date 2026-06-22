@@ -129,6 +129,10 @@ button {
   padding: 24px 0 80px;
 }
 
+.dashboard-content {
+  padding-top: 32px;
+}
+
 /* ========================================
    TOP NAVIGATION
 ======================================== */
@@ -1090,4 +1094,70 @@ kbd {
   .intelligence-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.executive-overview {
+  margin-bottom: 24px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.executive-overview {
+  margin-top: 24px;
+}
+
+
+.overview-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:24px;
+}
+
+.overview-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+
+.overview-metric {
+  padding:16px;
+  border-radius:16px;
+  background:rgba(255,255,255,.03);
+}
+
+.overview-metric span {
+  display:block;
+  opacity:.7;
+  margin-bottom:8px;
+}
+
+.overview-metric strong {
+  font-size:28px;
+}
+
+.executive-intelligence-grid {
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:24px;
+  margin-bottom:24px;
+}
+
+.driver-row,
+.optimization-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.optimization-total {
+  margin-top:20px;
+  padding-top:20px;
+  border-top:1px solid rgba(255,255,255,.08);
+  display:flex;
+  justify-content:space-between;
 }
