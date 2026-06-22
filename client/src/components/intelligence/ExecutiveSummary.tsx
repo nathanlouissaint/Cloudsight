@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { useDashboard } from "../../hooks/useDashboard";
 
 export default function ExecutiveSummary() {
+  const { data, loading } = useDashboard();
+
+  if (loading || !data) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -16,21 +23,11 @@ export default function ExecutiveSummary() {
         </h3>
       </div>
 
-      <p>
-        Cloud spend is forecasted to finish
-        12% under budget this month.
-      </p>
-
-      <p>
-        EKS spending increased 14.2%
-        week-over-week due to cluster growth.
-      </p>
-
-      <p>
-        Three optimization opportunities
-        could reduce spend by approximately
-        $1,240 monthly.
-      </p>
+      {data.summary.content.map((item) => (
+        <p key={item}>
+          {item}
+        </p>
+      ))}
     </motion.div>
   );
 }

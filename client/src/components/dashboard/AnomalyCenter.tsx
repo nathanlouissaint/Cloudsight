@@ -1,24 +1,13 @@
 import { motion } from "framer-motion";
-
-const anomalies = [
-  {
-    service: "Lambda",
-    change: "+42%",
-    severity: "critical",
-  },
-  {
-    service: "EKS",
-    change: "+18.4%",
-    severity: "warning",
-  },
-  {
-    service: "RDS",
-    change: "+12.1%",
-    severity: "healthy",
-  },
-];
+import { useDashboard } from "../../hooks/useDashboard";
 
 export default function AnomalyCenter() {
+  const { data, loading } = useDashboard();
+
+  if (loading || !data) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -38,7 +27,7 @@ export default function AnomalyCenter() {
       </div>
 
       <div className="anomaly-list">
-        {anomalies.map((item) => (
+        {data.anomalies.map((item) => (
           <div
             key={item.service}
             className="anomaly-row"
@@ -56,7 +45,7 @@ export default function AnomalyCenter() {
             <div
               className={`status-chip ${item.severity}`}
             >
-              {item.change}
+              {item.impact}
             </div>
           </div>
         ))}

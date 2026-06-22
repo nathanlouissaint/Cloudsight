@@ -1,15 +1,10 @@
-/*
-|--------------------------------------------------------------------------
-| Forecast Domain Types
-|--------------------------------------------------------------------------
-|
-| Forecasting engine responses.
-|
-*/
-
 export interface ForecastResponse {
+  currentSpend: number;
+  averageDailySpend: number;
+  elapsedDays: number;
+  remainingDays: number;
   projectedSpend: number;
-  variance: number;
-  confidence: number;
-  daysRemaining: number;
+  budget: number;
+  projectedVariance: number;
+  onTrack: boolean;
 }

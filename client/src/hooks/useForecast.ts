@@ -1,18 +1,8 @@
-/*
-|--------------------------------------------------------------------------
-| useForecast
-|--------------------------------------------------------------------------
-|
-| Forecast engine data.
-|
-| Endpoint:
-| GET /forecast
-|
-*/
-
 import { useEffect, useState } from "react";
 import { apiRequest } from "../api/client";
-import { ForecastResponse } from "../types/forecast";
+import { USE_MOCK_DATA } from "../config/features";
+import { forecastMock } from "../mocks/forecast.mock";
+import type { ForecastResponse } from "../types/forecast";
 
 export function useForecast() {
   const [data, setData] =
@@ -25,8 +15,13 @@ export function useForecast() {
     useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchForecast() {
+    async function load() {
       try {
+        if (USE_MOCK_DATA) {
+          setData(forecastMock);
+          return;
+        }
+
         const response =
           await apiRequest<ForecastResponse>(
             "/forecast"
@@ -44,7 +39,7 @@ export function useForecast() {
       }
     }
 
-    fetchForecast();
+    load();
   }, []);
 
   return {

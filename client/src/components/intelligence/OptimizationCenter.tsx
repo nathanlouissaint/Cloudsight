@@ -1,21 +1,19 @@
 import { motion } from "framer-motion";
-
-const recommendations = [
-  {
-    item: "Idle EC2",
-    savings: "$420/mo"
-  },
-  {
-    item: "Unused EBS",
-    savings: "$190/mo"
-  },
-  {
-    item: "Reserved Instances",
-    savings: "$630/mo"
-  }
-];
+import { useDashboard } from "../../hooks/useDashboard";
 
 export default function OptimizationCenter() {
+  const { data, loading } = useDashboard();
+
+  if (loading || !data) {
+    return null;
+  }
+
+  const totalSavings =
+    data.optimization.reduce(
+      (acc, item) => acc + item.savings,
+      0
+    );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -31,21 +29,26 @@ export default function OptimizationCenter() {
       </div>
 
       <div className="optimization-list">
-        {recommendations.map(item => (
+        {data.optimization.map(item => (
           <div
-            key={item.item}
+            key={item.resource}
             className="optimization-row"
           >
-            <span>{item.item}</span>
+            <span>{item.resource}</span>
 
-            <strong>{item.savings}</strong>
+            <strong>
+              ${item.savings}/mo
+            </strong>
           </div>
         ))}
       </div>
 
       <div className="optimization-total">
         <span>Total Opportunity</span>
-        <strong>$1,240/mo</strong>
+
+        <strong>
+          ${totalSavings}/mo
+        </strong>
       </div>
     </motion.div>
   );

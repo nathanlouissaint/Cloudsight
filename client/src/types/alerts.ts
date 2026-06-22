@@ -1,17 +1,10 @@
-/*
-|--------------------------------------------------------------------------
-| Alerts Domain Types
-|--------------------------------------------------------------------------
-|
-| Cost anomalies and budget alerts.
-|
-*/
-
 export interface Alert {
   id: string;
-  service: string;
-  severity: string;
-  message: string;
+  type: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  description: string;
+  date: string;
 }
 
 export interface AlertsResponse {

@@ -8,6 +8,7 @@ import budgetRoutes from "./routes/budget.routes";
 import forecastRoutes from "./routes/forecast.routes";
 import alertsRoutes from "./routes/alerts.routes";
 import reportsRoutes from "./routes/reports.routes";
+import awsRoutes from "./routes/aws.routes";
 
 const app = express();
 
@@ -29,5 +30,6 @@ app.use("/budget", budgetRoutes);
 app.use("/forecast", forecastRoutes);
 app.use("/alerts", alertsRoutes);
 app.use("/reports", reportsRoutes);
+app.use("/aws", awsRoutes);
 
 export default app;

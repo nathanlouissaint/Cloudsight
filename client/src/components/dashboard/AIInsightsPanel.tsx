@@ -5,7 +5,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { useDashboard } from "../../hooks/useDashboard";
+
 export default function AIInsightsPanel() {
+  const { data, loading } = useDashboard();
+
+  if (loading || !data) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -27,38 +35,41 @@ export default function AIInsightsPanel() {
       </div>
 
       <div className="insight-list">
-        <div className="insight-item">
-          <ShieldCheck size={18} />
 
-          <div>
-            <h4>Budget Status</h4>
+        {data.insights.map(
+          (insight, index) => (
+            <div
+              key={insight.title}
+              className="insight-item"
+            >
+              {index === 0 ? (
+                <ShieldCheck size={18} />
+              ) : (
+                <TrendingUp size={18} />
+              )}
 
-            <p>
-              Current spend remains within
-              projected budget thresholds and is
-              forecasted to finish under target.
-            </p>
-          </div>
-        </div>
+              <div>
+                <h4>{insight.title}</h4>
 
-        <div className="insight-item">
-          <TrendingUp size={18} />
-
-          <div>
-            <h4>EKS Growth Detected</h4>
-
-            <p>
-              Kubernetes infrastructure costs
-              increased 14.2% week-over-week.
-            </p>
-          </div>
-        </div>
+                <p>
+                  {insight.description}
+                </p>
+              </div>
+            </div>
+          )
+        )}
 
         <div className="insight-highlight">
-          <span>Potential Monthly Savings</span>
+          <span>
+            Potential Monthly Savings
+          </span>
 
-          <strong>$1,240</strong>
+          <strong>
+            $
+            {data.overview.savings.toLocaleString()}
+          </strong>
         </div>
+
       </div>
     </motion.div>
   );

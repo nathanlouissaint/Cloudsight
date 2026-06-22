@@ -1,0 +1,2 @@
+export {};
+//# sourceMappingURL=health.routes.d.ts.map

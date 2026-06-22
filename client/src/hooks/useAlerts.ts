@@ -1,18 +1,8 @@
-/*
-|--------------------------------------------------------------------------
-| useAlerts
-|--------------------------------------------------------------------------
-|
-| Cost anomalies and alerts.
-|
-| Endpoint:
-| GET /alerts
-|
-*/
-
 import { useEffect, useState } from "react";
 import { apiRequest } from "../api/client";
-import { AlertsResponse } from "../types/alerts";
+import { USE_MOCK_DATA } from "../config/features";
+import { alertsMock } from "../mocks/alerts.mock";
+import type { AlertsResponse } from "../types/alerts";
 
 export function useAlerts() {
   const [data, setData] =
@@ -27,6 +17,11 @@ export function useAlerts() {
   useEffect(() => {
     async function fetchAlerts() {
       try {
+        if (USE_MOCK_DATA) {
+          setData(alertsMock);
+          return;
+        }
+
         const response =
           await apiRequest<AlertsResponse>(
             "/alerts"

@@ -11,24 +11,21 @@ import OptimizationRow from "../components/intelligence/OptimizationRow";
 export default function DashboardPage() {
   return (
     <DashboardLayout>
+  <TopNavigation />
 
-      <TopNavigation />
+  <ExecutiveOverview />
 
-    <ExecutiveOverview />
+  <ForecastAndHealthRow />
 
- <ExecutiveIntelligenceRow />
+  <ExecutiveIntelligenceRow />
 
-<ForecastAndHealthRow />
+  <OptimizationRow />
 
-<OptimizationRow />
-    
+  <AnalyticsRow />
 
-      <AnalyticsRow />
+  <OperationsRow />
 
-      <OperationsRow />
-
-      <IntelligenceRow />
-
-    </DashboardLayout>
+  <IntelligenceRow />
+</DashboardLayout>
   );
 }

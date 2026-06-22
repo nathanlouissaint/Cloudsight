@@ -1,5 +1,17 @@
+import { useReport } from "../../hooks/useReport";
+
 export default function BudgetHealthCard() {
-  const percent = 61.37;
+  const { data, loading } = useReport();
+
+  if (loading || !data) {
+    return null;
+  }
+
+  const percent =
+    (data.totalSpend / data.budget) * 100;
+
+  const remaining =
+    data.budget - data.totalSpend;
 
   return (
     <div className="analytics-card budget-health-card">
@@ -26,7 +38,9 @@ export default function BudgetHealthCard() {
           }}
         >
           <div className="budget-circle-inner">
-            <span>{percent}%</span>
+            <span>
+              {percent.toFixed(1)}%
+            </span>
           </div>
         </div>
       </div>
@@ -34,22 +48,30 @@ export default function BudgetHealthCard() {
       <div className="budget-stats">
         <div>
           <span>Budget</span>
-          <strong>$5,000</strong>
+          <strong>
+            ${data.budget.toLocaleString()}
+          </strong>
         </div>
 
         <div>
           <span>Spent</span>
-          <strong>$3,068</strong>
+          <strong>
+            ${data.totalSpend.toLocaleString()}
+          </strong>
         </div>
 
         <div>
           <span>Remaining</span>
-          <strong>$1,932</strong>
+          <strong>
+            ${remaining.toLocaleString()}
+          </strong>
         </div>
       </div>
 
-      <div className="status-chip healthy">
-        Healthy
+      <div
+        className={`status-chip ${data.budgetStatus}`}
+      >
+        {data.budgetStatus}
       </div>
     </div>
   );

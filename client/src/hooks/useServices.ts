@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 import { apiRequest } from "../api/client";
-import { ServicesResponse } from "../types/services";
+import type { ServicesResponse } from "../types/services";
 
 export function useServices() {
   const [data, setData] =

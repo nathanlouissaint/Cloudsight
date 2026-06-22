@@ -1,24 +1,13 @@
 import { motion } from "framer-motion";
-
-const drivers = [
-  {
-    service: "EKS",
-    increase: "+14.2%",
-    reason: "Cluster expansion"
-  },
-  {
-    service: "EC2",
-    increase: "+8.1%",
-    reason: "Compute growth"
-  },
-  {
-    service: "Data Transfer",
-    increase: "+22.7%",
-    reason: "Traffic increase"
-  }
-];
+import { useDashboard } from "../../hooks/useDashboard";
 
 export default function CostDriversCard() {
+  const { data, loading } = useDashboard();
+
+  if (loading || !data) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -34,7 +23,7 @@ export default function CostDriversCard() {
       </div>
 
       <div className="driver-list">
-        {drivers.map(driver => (
+        {data.costDrivers.map(driver => (
           <div
             key={driver.service}
             className="driver-row"
@@ -45,7 +34,7 @@ export default function CostDriversCard() {
             </div>
 
             <div className="status-chip warning">
-              {driver.increase}
+              +{driver.increase}%
             </div>
           </div>
         ))}

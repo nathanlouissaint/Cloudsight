@@ -14,7 +14,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         <Route
           path="/"
           element={<DashboardPage />}
@@ -39,7 +38,6 @@ export default function App() {
           path="/reports"
           element={<ReportsPage />}
         />
-
       </Routes>
     </BrowserRouter>
   );

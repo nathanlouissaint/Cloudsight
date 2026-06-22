@@ -1,22 +1,8 @@
-/*
-|--------------------------------------------------------------------------
-| useDashboard
-|--------------------------------------------------------------------------
-|
-| Fetches:
-| - Executive Overview
-| - Executive Summary
-| - Cost Drivers
-| - Optimization Opportunities
-|
-| Endpoint:
-| GET /dashboard
-|
-*/
-
 import { useEffect, useState } from "react";
 import { apiRequest } from "../api/client";
-import { DashboardResponse } from "../types/dashboard";
+import { USE_MOCK_DATA } from "../config/features";
+import { dashboardMock } from "../mocks/dashboard.mock";
+import type { DashboardResponse } from "../types/dashboard";
 
 export function useDashboard() {
   const [data, setData] =
@@ -31,6 +17,11 @@ export function useDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
+        if (USE_MOCK_DATA) {
+          setData(dashboardMock);
+          return;
+        }
+
         const response =
           await apiRequest<DashboardResponse>(
             "/dashboard"

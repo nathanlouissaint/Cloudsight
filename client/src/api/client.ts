@@ -1,21 +1,6 @@
-/*
-|--------------------------------------------------------------------------
-| CloudSight API Client
-|--------------------------------------------------------------------------
-|
-| Responsible for:
-| - HTTP requests
-| - Base URL management
-| - Error handling
-| - Authentication headers
-|
-| Every hook communicates through this client.
-|
-*/
-
 const API_BASE =
   import.meta.env.VITE_API_URL ??
-  "http://localhost:3000/api"\;
+  "http://localhost:5001";
 
 export async function apiRequest<T>(
   endpoint: string
