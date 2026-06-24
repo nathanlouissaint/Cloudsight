@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
-interface Props {
+interface CardProps {
   children: ReactNode;
   className?: string;
 }
@@ -8,9 +8,9 @@ interface Props {
 export default function Card({
   children,
   className = "",
-}: Props) {
+}: CardProps) {
   return (
-    <div className={`cloud-card ${className}`}>
+    <div className={className}>
       {children}
     </div>
   );

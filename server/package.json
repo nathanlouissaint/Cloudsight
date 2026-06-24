@@ -8,6 +8,9 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-budgets": "^3.1075.0",
+    "@aws-sdk/client-cost-explorer": "^3.1075.0",
+    "@aws-sdk/client-organizations": "^3.1075.0",
     "@faker-js/faker": "^10.5.0",
     "@prisma/client": "^6.10.1",
     "bcrypt": "^6.0.0",
@@ -28,7 +31,6 @@
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   },
-  "type": "module",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   }

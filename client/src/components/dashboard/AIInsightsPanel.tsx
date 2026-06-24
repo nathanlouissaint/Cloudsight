@@ -8,9 +8,9 @@ import {
 import { useDashboard } from "../../hooks/useDashboard";
 
 export default function AIInsightsPanel() {
-  const { data, loading } = useDashboard();
+  const { data, isLoading } = useDashboard();
 
-  if (loading || !data) {
+  if (isLoading || !data) {
     return null;
   }
 

@@ -1,43 +1,15 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
+import { queryKeys } from "../lib/queryKeys";
 import type { ReportResponse } from "../types/report";
 
 export function useReport() {
-  const [data, setData] =
-    useState<ReportResponse | null>(null);
+  return useQuery({
+    queryKey: queryKeys.reports,
 
-  const [loading, setLoading] =
-    useState(true);
+    queryFn: async (): Promise<ReportResponse> =>
+      apiRequest<ReportResponse>("/reports"),
 
-  const [error, setError] =
-    useState<string | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const response =
-          await apiRequest<ReportResponse>(
-            "/reports"
-          );
-
-        setData(response);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unknown error"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, []);
-
-  return {
-    data,
-    loading,
-    error,
-  };
+    staleTime: 1000 * 60 * 5,
+  });
 }

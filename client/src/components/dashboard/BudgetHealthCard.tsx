@@ -1,9 +1,9 @@
 import { useReport } from "../../hooks/useReport";
 
 export default function BudgetHealthCard() {
-  const { data, loading } = useReport();
+  const { data, isLoading } = useReport();
 
-  if (loading || !data) {
+  if (isLoading || !data) {
     return null;
   }
 

@@ -1,9 +1,9 @@
-import { MockProvider }
-  from "../adapters/mock.provider";
-
-const provider =
-  new MockProvider();
+import { getAwsProvider }
+  from "../factory/provider.factory";
 
 export async function getCostSummary() {
+  const provider =
+    getAwsProvider();
+
   return provider.getCostSummary();
 }

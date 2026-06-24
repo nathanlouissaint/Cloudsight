@@ -1,27 +1,64 @@
-import { Bell, ChevronDown, Search } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  Search,
+} from "lucide-react";
+
 import { motion } from "framer-motion";
 
+import {
+  NavLink,
+} from "react-router-dom";
+
 const navItems = [
-  "Dashboard",
-  "Costs",
-  "Forecasting",
-  "Alerts",
-  "Reports",
+  {
+    label: "Dashboard",
+    path: "/",
+  },
+  {
+    label: "Costs",
+    path: "/costs",
+  },
+  {
+    label: "Forecasting",
+    path: "/forecasting",
+  },
+  {
+    label: "Alerts",
+    path: "/alerts",
+  },
+  {
+    label: "Reports",
+    path: "/reports",
+  },
 ];
 
 export default function TopNavigation() {
   return (
     <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4 }}
+      initial={{
+        y: -20,
+        opacity: 0,
+      }}
+      animate={{
+        y: 0,
+        opacity: 1,
+      }}
+      transition={{
+        duration: 0.4,
+      }}
       className="top-navigation"
     >
       <div className="nav-left">
-        <div className="logo-mark">C</div>
+        <div className="logo-mark">
+          C
+        </div>
 
         <div>
-          <div className="logo-title">CloudSight</div>
+          <div className="logo-title">
+            CloudSight
+          </div>
+
           <div className="logo-subtitle">
             Cloud Cost Intelligence
           </div>
@@ -29,9 +66,23 @@ export default function TopNavigation() {
       </div>
 
       <nav className="nav-center">
-        {navItems.map((item) => (
-          <button key={item}>{item}</button>
-        ))}
+        {navItems.map(
+          (item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({
+                isActive,
+              }) =>
+                isActive
+                  ? "nav-link active"
+                  : "nav-link"
+              }
+            >
+              {item.label}
+            </NavLink>
+          )
+        )}
       </nav>
 
       <div className="nav-right">

@@ -3,11 +3,11 @@ import { useForecast } from "../../hooks/useForecast";
 export default function ForecastCard() {
   const {
     data,
-    loading,
+    isLoading,
     error,
   } = useForecast();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section className="glass-card forecast-panel">
         Loading forecast...

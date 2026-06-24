@@ -1,14 +1,14 @@
 import { useReport } from "../hooks/useReport";
 
 export default function ReportsPage() {
-  const { data, loading, error } = useReport();
+  const { data, isLoading, error } = useReport();
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading report...</div>;
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return <div>{error?.message}</div>;
   }
 
   if (!data) {

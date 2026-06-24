@@ -1,43 +1,15 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
+import { queryKeys } from "../lib/queryKeys";
 import type { CostsResponse } from "../types/costs";
 
 export function useCosts() {
-  const [data, setData] =
-    useState<CostsResponse>([]);
+  return useQuery({
+    queryKey: queryKeys.costs,
 
-  const [loading, setLoading] =
-    useState(true);
+    queryFn: async (): Promise<CostsResponse> =>
+      apiRequest<CostsResponse>("/costs"),
 
-  const [error, setError] =
-    useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchCosts() {
-      try {
-        const response =
-          await apiRequest<CostsResponse>(
-            "/costs"
-          );
-
-        setData(response);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unknown error"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchCosts();
-  }, []);
-
-  return {
-    data,
-    loading,
-    error,
-  };
+    staleTime: 1000 * 60 * 5,
+  });
 }

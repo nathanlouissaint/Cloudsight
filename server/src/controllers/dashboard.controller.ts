@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { DashboardContract } from "../contracts/dashboard.contract";
 
 export async function getDashboardSummary(
   _req: Request,
@@ -160,7 +161,7 @@ export async function getDashboardSummary(
       serviceBreakdown[0]?.name ??
       "No service data";
 
-    return res.status(200).json({
+    const response = DashboardContract.parse({
       overview: {
         forecast: Number(
           forecastedSpend.toFixed(2)
@@ -281,6 +282,8 @@ export async function getDashboardSummary(
 
       services: serviceBreakdown,
     });
+
+    return res.status(200).json(response);
   } catch (error) {
     console.error(
       "Dashboard summary error:",

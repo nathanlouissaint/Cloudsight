@@ -1384,3 +1384,35 @@ kbd {
     gap: 12px;
   }
 }
+/* ========================================
+   ROUTER NAVIGATION
+======================================== */
+
+.nav-link {
+  text-decoration: none;
+
+  color: var(--text-secondary);
+
+  padding: 8px 14px;
+
+  border-radius: 10px;
+
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,0.05);
+
+  color: var(--text-primary);
+}
+
+.nav-link.active {
+  color: white;
+
+  background: rgba(59,130,246,0.15);
+
+  border: 1px solid rgba(59,130,246,0.3);
+
+  box-shadow:
+    0 0 20px rgba(59,130,246,0.15);
+}

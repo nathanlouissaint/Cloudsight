@@ -4,11 +4,11 @@ import { useReport } from "../../hooks/useReport";
 export default function ExecutiveOverview() {
   const {
     data,
-    loading,
+    isLoading,
     error,
   } = useReport();
 
-  if (loading) {
+  if (isLoading) {
     return null;
   }
 
@@ -61,7 +61,6 @@ export default function ExecutiveOverview() {
       </div>
 
       <div className="overview-grid">
-
         <div className="overview-metric">
           <span>Forecast</span>
 
@@ -95,7 +94,6 @@ export default function ExecutiveOverview() {
             {data.totalSpend.toLocaleString()}
           </strong>
         </div>
-
       </div>
     </motion.section>
   );

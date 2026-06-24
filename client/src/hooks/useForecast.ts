@@ -1,50 +1,24 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
 import { USE_MOCK_DATA } from "../config/features";
 import { forecastMock } from "../mocks/forecast.mock";
+import { queryKeys } from "../lib/queryKeys";
 import type { ForecastResponse } from "../types/forecast";
 
 export function useForecast() {
-  const [data, setData] =
-    useState<ForecastResponse | null>(null);
+  return useQuery({
+    queryKey: queryKeys.forecast,
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        if (USE_MOCK_DATA) {
-          setData(forecastMock);
-          return;
-        }
-
-        const response =
-          await apiRequest<ForecastResponse>(
-            "/forecast"
-          );
-
-        setData(response);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unknown error"
-        );
-      } finally {
-        setLoading(false);
+    queryFn: async (): Promise<ForecastResponse> => {
+      if (USE_MOCK_DATA) {
+        return forecastMock;
       }
-    }
 
-    load();
-  }, []);
+      return apiRequest<ForecastResponse>(
+        "/forecast"
+      );
+    },
 
-  return {
-    data,
-    loading,
-    error,
-  };
+    staleTime: 1000 * 60 * 5,
+  });
 }

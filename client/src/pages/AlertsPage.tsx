@@ -1,14 +1,14 @@
 import { useAlerts } from "../hooks/useAlerts";
 
 export default function AlertsPage() {
-  const { data, loading, error } = useAlerts();
+  const { data, isLoading, error } = useAlerts();
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading alerts...</div>;
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return <div>{error?.message}</div>;
   }
 
   return (

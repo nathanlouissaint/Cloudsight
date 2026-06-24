@@ -4,41 +4,70 @@ import {
   Route,
 } from "react-router-dom";
 
-import DashboardPage from "./pages/DashboardPage";
-import CostsPage from "./pages/CostsPage";
-import ForecastingPage from "./pages/ForecastingPage";
-import AlertsPage from "./pages/AlertsPage";
-import ReportsPage from "./pages/ReportsPage";
+import {
+  Suspense,
+  lazy,
+} from "react";
+
+const DashboardPage = lazy(
+  () => import("./pages/DashboardPage")
+);
+
+const CostsPage = lazy(
+  () => import("./pages/CostsPage")
+);
+
+const ForecastingPage = lazy(
+  () => import("./pages/ForecastingPage")
+);
+
+const AlertsPage = lazy(
+  () => import("./pages/AlertsPage")
+);
+
+const ReportsPage = lazy(
+  () => import("./pages/ReportsPage")
+);
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={<DashboardPage />}
-        />
+      <Suspense
+        fallback={
+          <div>
+            Loading...
+          </div>
+        }
+      >
+        <Routes>
 
-        <Route
-          path="/costs"
-          element={<CostsPage />}
-        />
+          <Route
+            path="/"
+            element={<DashboardPage />}
+          />
 
-        <Route
-          path="/forecasting"
-          element={<ForecastingPage />}
-        />
+          <Route
+            path="/costs"
+            element={<CostsPage />}
+          />
 
-        <Route
-          path="/alerts"
-          element={<AlertsPage />}
-        />
+          <Route
+            path="/forecasting"
+            element={<ForecastingPage />}
+          />
 
-        <Route
-          path="/reports"
-          element={<ReportsPage />}
-        />
-      </Routes>
+          <Route
+            path="/alerts"
+            element={<AlertsPage />}
+          />
+
+          <Route
+            path="/reports"
+            element={<ReportsPage />}
+          />
+
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

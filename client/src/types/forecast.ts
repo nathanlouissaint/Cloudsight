@@ -7,4 +7,6 @@ export interface ForecastResponse {
   budget: number;
   projectedVariance: number;
   onTrack: boolean;
+
+  forecastConfidence?: number;
 }

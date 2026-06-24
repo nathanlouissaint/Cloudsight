@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { ForecastContract } from "../contracts/forecast.contract";
 
 export async function getForecast(
   _req: Request,
@@ -67,7 +68,7 @@ export async function getForecast(
     const onTrack =
       projectedSpend <= budgetAmount;
 
-    return res.status(200).json({
+    const response = ForecastContract.parse({
       currentSpend: Number(
         currentSpend.toFixed(2)
       ),
@@ -87,6 +88,8 @@ export async function getForecast(
       ),
       onTrack,
     });
+
+    return res.status(200).json(response);
   } catch (error) {
     console.error(
       "Forecast error:",

@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import { useDashboard } from "../../hooks/useDashboard";
 
 export default function OptimizationCenter() {
-  const { data, loading } = useDashboard();
+  const { data, isLoading } = useDashboard();
 
-  if (loading || !data) {
+  if (isLoading || !data) {
     return null;
   }
 

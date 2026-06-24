@@ -41,6 +41,67 @@ model CostRecord {
   createdAt DateTime @default(now())
 }
 
+model CloudAccount {
+  id           String   @id @default(uuid())
+
+  awsAccountId String   @unique
+  accountName  String
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  snapshots        CostSnapshot[]
+  serviceSnapshots ServiceCostSnapshot[]
+}
+
+model CostSnapshot {
+  id           String   @id @default(uuid())
+
+  accountId    String
+  account      CloudAccount @relation(fields: [accountId], references: [id])
+
+  snapshotDate DateTime
+
+  totalCost    Float
+
+  createdAt    DateTime @default(now())
+
+  @@index([snapshotDate])
+}
+
+model ServiceCostSnapshot {
+  id           String   @id @default(uuid())
+
+  accountId    String
+  account      CloudAccount @relation(fields: [accountId], references: [id])
+
+  serviceName  String
+
+  snapshotDate DateTime
+
+  cost         Float
+
+  createdAt    DateTime @default(now())
+
+  @@index([accountId])
+  @@index([snapshotDate])
+  @@index([serviceName])
+}
+
+model BudgetSnapshot {
+  id           String   @id @default(uuid())
+
+  budgetName   String
+  budgetAmount Float
+  actualSpend  Float
+
+  snapshotDate DateTime
+
+  createdAt    DateTime @default(now())
+
+  @@index([snapshotDate])
+}
+
 model Budget {
   id        String   @id @default(uuid())
 

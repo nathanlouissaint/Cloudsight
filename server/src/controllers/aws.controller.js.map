@@ -1,1 +1,0 @@
-{"version":3,"file":"aws.controller.js","sourceRoot":"","sources":["aws.controller.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MACvB,SAAS,CAAC;AAEf,OAAO,EACL,cAAc,GACf,MACI,uCAAuC,CAAC;AAE7C,MAAM,CAAC,KAAK,UAAU,WAAW,CAC/B,GAAY,EACZ,GAAa;IAEb,MAAM,IAAI,GACR,MAAM,cAAc,EAAE,CAAC;IAEzB,GAAG,CAAC,IAAI,CAAC,IAAI,CAAC,CAAC;AACjB,CAAC"}

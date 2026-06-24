@@ -9,6 +9,9 @@ import forecastRoutes from "./routes/forecast.routes";
 import alertsRoutes from "./routes/alerts.routes";
 import reportsRoutes from "./routes/reports.routes";
 import awsRoutes from "./routes/aws.routes";
+import analyticsRoutes from "./routes/analytics.routes";
+import accountRoutes from "./routes/account.routes";
+import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
 
 const app = express();
 
@@ -31,5 +34,8 @@ app.use("/forecast", forecastRoutes);
 app.use("/alerts", alertsRoutes);
 app.use("/reports", reportsRoutes);
 app.use("/aws", awsRoutes);
+app.use("/analytics", analyticsRoutes);
+app.use("/analytics/accounts", accountRoutes);
+app.use("/analytics/services", serviceAnalyticsRoutes);
 
 export default app;

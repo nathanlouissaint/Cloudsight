@@ -1,50 +1,24 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
 import { USE_MOCK_DATA } from "../config/features";
 import { alertsMock } from "../mocks/alerts.mock";
+import { queryKeys } from "../lib/queryKeys";
 import type { AlertsResponse } from "../types/alerts";
 
 export function useAlerts() {
-  const [data, setData] =
-    useState<AlertsResponse | null>(null);
+  return useQuery({
+    queryKey: queryKeys.alerts,
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchAlerts() {
-      try {
-        if (USE_MOCK_DATA) {
-          setData(alertsMock);
-          return;
-        }
-
-        const response =
-          await apiRequest<AlertsResponse>(
-            "/alerts"
-          );
-
-        setData(response);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unknown error"
-        );
-      } finally {
-        setLoading(false);
+    queryFn: async (): Promise<AlertsResponse> => {
+      if (USE_MOCK_DATA) {
+        return alertsMock;
       }
-    }
 
-    fetchAlerts();
-  }, []);
+      return apiRequest<AlertsResponse>(
+        "/alerts"
+      );
+    },
 
-  return {
-    data,
-    loading,
-    error,
-  };
+    staleTime: 1000 * 60 * 5,
+  });
 }

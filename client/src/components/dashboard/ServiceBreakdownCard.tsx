@@ -1,12 +1,20 @@
 import { motion } from "framer-motion";
-import { useDashboard } from "../../hooks/useDashboard";
+import { useServiceAnalytics } from "../../hooks/useServiceAnalytics";
 
 export default function ServiceBreakdownCard() {
-  const { data, loading } = useDashboard();
+  const { data, isLoading } =
+    useServiceAnalytics();
 
-  if (loading || !data) {
+  if (isLoading || !data) {
     return null;
   }
+
+  const totalSpend =
+    data.reduce(
+      (sum, item) =>
+        sum + item.totalCost,
+      0
+    );
 
   return (
     <motion.div
@@ -27,33 +35,45 @@ export default function ServiceBreakdownCard() {
       </div>
 
       <div className="service-list">
-        {data.services.map((service) => (
-          <div
-            key={service.name}
-            className="service-row"
-          >
-            <div className="service-name">
-              {service.name}
-            </div>
+        {data.map((service) => {
+          const percentage =
+            (
+              (service.totalCost /
+                totalSpend) *
+              100
+            ).toFixed(1);
 
-            <div className="service-bar-wrapper">
-              <div
-                className="service-bar"
-                style={{
-                  width: `${service.percentage}%`,
-                }}
-              />
-            </div>
+          return (
+            <div
+              key={
+                service.serviceName
+              }
+              className="service-row"
+            >
+              <div className="service-name">
+                {service.serviceName}
+              </div>
 
-            <div className="service-value">
-              ${service.spend.toLocaleString()}
-            </div>
+              <div className="service-bar-wrapper">
+                <div
+                  className="service-bar"
+                  style={{
+                    width: `${percentage}%`,
+                  }}
+                />
+              </div>
 
-            <div className="service-percent">
-              {service.percentage}%
+              <div className="service-value">
+                $
+                {service.totalCost.toLocaleString()}
+              </div>
+
+              <div className="service-percent">
+                {percentage}%
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </motion.div>
   );

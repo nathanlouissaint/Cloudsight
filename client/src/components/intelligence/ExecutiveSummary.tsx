@@ -3,9 +3,9 @@ import { Sparkles } from "lucide-react";
 import { useDashboard } from "../../hooks/useDashboard";
 
 export default function ExecutiveSummary() {
-  const { data, loading } = useDashboard();
+  const { data, isLoading } = useDashboard();
 
-  if (loading || !data) {
+  if (isLoading || !data) {
     return null;
   }
 

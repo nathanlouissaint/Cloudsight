@@ -1,50 +1,24 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
 import { USE_MOCK_DATA } from "../config/features";
 import { dashboardMock } from "../mocks/dashboard.mock";
+import { queryKeys } from "../lib/queryKeys";
 import type { DashboardResponse } from "../types/dashboard";
 
 export function useDashboard() {
-  const [data, setData] =
-    useState<DashboardResponse | null>(null);
+  return useQuery({
+    queryKey: queryKeys.dashboard,
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        if (USE_MOCK_DATA) {
-          setData(dashboardMock);
-          return;
-        }
-
-        const response =
-          await apiRequest<DashboardResponse>(
-            "/dashboard"
-          );
-
-        setData(response);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unknown error"
-        );
-      } finally {
-        setLoading(false);
+    queryFn: async (): Promise<DashboardResponse> => {
+      if (USE_MOCK_DATA) {
+        return dashboardMock;
       }
-    }
 
-    fetchData();
-  }, []);
+      return apiRequest<DashboardResponse>(
+        "/dashboard"
+      );
+    },
 
-  return {
-    data,
-    loading,
-    error,
-  };
+    staleTime: 1000 * 60 * 5,
+  });
 }

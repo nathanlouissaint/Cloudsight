@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { useDashboard } from "../../hooks/useDashboard";
+import { useTopDrivers } from "../../hooks/useTopDrivers";
 
 export default function CostDriversCard() {
-  const { data, loading } = useDashboard();
+  const { data, isLoading } =
+    useTopDrivers();
 
-  if (loading || !data) {
+  if (isLoading || !data) {
     return null;
   }
 
@@ -19,25 +20,40 @@ export default function CostDriversCard() {
       </div>
 
       <div className="analytics-subtitle">
-        Largest spend increases this month
+        Largest spend contributors
       </div>
 
       <div className="driver-list">
-        {data.costDrivers.map(driver => (
-          <div
-            key={driver.service}
-            className="driver-row"
-          >
-            <div>
-              <strong>{driver.service}</strong>
-              <p>{driver.reason}</p>
-            </div>
+        {data.slice(0, 5).map(
+          (driver) => (
+            <div
+              key={
+                driver.serviceName
+              }
+              className="driver-row"
+            >
+              <div>
+                <strong>
+                  {
+                    driver.serviceName
+                  }
+                </strong>
 
-            <div className="status-chip warning">
-              +{driver.increase}%
+                <p>
+                  $
+                  {driver.totalCost.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="status-chip warning">
+                {
+                  driver.percentOfSpend
+                }
+                %
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </motion.div>
   );
