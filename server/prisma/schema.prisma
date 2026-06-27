@@ -8,29 +8,29 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String @id @default(uuid())
+  email        String @unique
   passwordHash String
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  budgets      Budget[]
-  reports      Report[]
+  budgets Budget[]
+  reports Report[]
 }
 
 model CloudService {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   description String?
 
   costRecords CostRecord[]
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model CostRecord {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
   serviceId String
   service   CloudService @relation(fields: [serviceId], references: [id])
@@ -42,46 +42,46 @@ model CostRecord {
 }
 
 model CloudAccount {
-  id           String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  awsAccountId String   @unique
+  awsAccountId String @unique
   accountName  String
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   snapshots        CostSnapshot[]
   serviceSnapshots ServiceCostSnapshot[]
 }
 
 model CostSnapshot {
-  id           String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  accountId    String
-  account      CloudAccount @relation(fields: [accountId], references: [id])
+  accountId String
+  account   CloudAccount @relation(fields: [accountId], references: [id])
 
   snapshotDate DateTime
 
-  totalCost    Float
+  totalCost Float
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([snapshotDate])
 }
 
 model ServiceCostSnapshot {
-  id           String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  accountId    String
-  account      CloudAccount @relation(fields: [accountId], references: [id])
+  accountId String
+  account   CloudAccount @relation(fields: [accountId], references: [id])
 
-  serviceName  String
+  serviceName String
 
   snapshotDate DateTime
 
-  cost         Float
+  cost Float
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([accountId])
   @@index([snapshotDate])
@@ -89,7 +89,7 @@ model ServiceCostSnapshot {
 }
 
 model BudgetSnapshot {
-  id           String   @id @default(uuid())
+  id String @id @default(uuid())
 
   budgetName   String
   budgetAmount Float
@@ -97,33 +97,60 @@ model BudgetSnapshot {
 
   snapshotDate DateTime
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([snapshotDate])
 }
 
 model Budget {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  userId    String
-  user      User @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  name      String
-  amount    Float
+  name   String
+  amount Float
 
-  month     Int
-  year      Int
+  month Int
+  year  Int
 
   createdAt DateTime @default(now())
 }
 
 model Alert {
-  id          String   @id @default(uuid())
+  id          String @id @default(uuid())
   title       String
   description String
   severity    String
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model AlertHistory {
+  id String @id @default(uuid())
+
+  alertId  String
+  type     String
+  severity String
+  status   String
+
+  title          String
+  description    String
+  recommendation String
+
+  metric       String
+  currentValue Float
+  threshold    Float
+
+  occurredAt DateTime
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([alertId])
+  @@index([severity])
+  @@index([status])
+  @@index([occurredAt])
 }
 
 model Forecast {
@@ -131,17 +158,17 @@ model Forecast {
   forecastDate  DateTime
   projectedCost Float
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Report {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  userId    String
-  user      User @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  title     String
-  summary   String
+  title   String
+  summary String
 
   createdAt DateTime @default(now())
 }
