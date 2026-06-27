@@ -27,4 +27,21 @@ export interface Alert {
   date: string;
 }
 
-export type AlertsResponse = Alert[];
+export interface AlertSummary {
+  total: number;
+  critical: number;
+  warning: number;
+  monitoring: number;
+}
+
+export interface AlertMetrics {
+  active: number;
+  resolved: number;
+  highestSeverity: AlertSeverity | null;
+}
+
+export interface AlertsResponse {
+  summary: AlertSummary;
+  metrics: AlertMetrics;
+  alerts: Alert[];
+}

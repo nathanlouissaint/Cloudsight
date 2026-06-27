@@ -1,324 +1,208 @@
 # CloudSight Current State
 
-Version: **0.9.2-alpha**
+Version: **1.0.0-alpha**
 
 ---
 
-# Session Summary Latest
+# Project Status
 
-**Date:** Current Development Session
+**Status:** Active Development
+
+Current Focus:
+
+* Phase 9 — Enterprise Alerts Platform
+* Shared UI Architecture
+* Backend-Owned Alert Intelligence
+* Contract-Driven Frontend
+* Production Readiness
+
+---
+
+# Session Summary
 
 ## Forecast Module
 
-**Status:** Phase 8 Complete
+**Status:** Complete
+
+### Backend
+
+Completed
+
+* Modular Forecast Engine
+* HistoricalTrendService
+* ForecastTrendService
+* ForecastProjectionService
+* ForecastConfidenceService
+* ForecastGrowthDriverService
+* ForecastInsightService
+* ForecastExplanationService
+* ForecastService
+* ForecastController
+* ForecastContract (Zod)
+
+### Frontend
+
+Completed
+
+* Forecast Projection Chart
+* Forecast Confidence
+* Budget Risk
+* Growth Drivers
+* Forecast Insights
+* Forecast Explanation
+* Service Forecasts
+* Account Forecasts
+* Run Rate Metrics
+* Executive Forecast Layout
+
+Forecast visualization polished.
+
+Production build passing.
 
 ---
 
-# Forecast Engine v1
+# Alerts Module
 
 ## Backend Status
 
-**Complete**
+Completed
 
-Completed:
-
-* Refactored Forecasting into a modular service architecture
-* Introduced HistoricalTrendService
-* Centralized daily trend aggregation
-* Removed duplicate historical aggregation logic
-* Refactored ForecastProjectionService
-* Added 7-day moving average forecasting
-* Added ForecastTrendService
-* Added trend slope analysis
-* Replaced linear projection model
-* Replaced frontend confidence calculation
-* Added ForecastConfidenceService
-* Added ForecastInsightService
-* Added ForecastExplanationService
-* Added ForecastGrowthDriverService
-* Extended Forecast API Contract
-* Forecast endpoint now returns:
-
-  * Summary
-  * Confidence
-  * Projection
-  * Growth Drivers
-  * Insights
-  * Explanation
-  * Service Forecasts
-  * Account Forecasts
-
----
-
-# Forecast UI v2
-
-## Status
-
-**Complete**
-
-Completed:
-
-* Forecast Insights section connected
-* Growth Drivers section connected
-* Service Forecast cards connected
-* Account Forecast cards connected
-* Forecast Explanation surfaced
-* Budget Risk card connected
-* Forecast Confidence card connected
-* Forecast Projection chart connected
-* Run Rate metrics connected
-* Historical spend and forecast spend separated visually
-* Forecast divider added
-* Today marker added
-* Budget reference line retained
-* Tooltip improved
-* Debug logging removed
-* Production build verified
-
-Build Status:
-
-* `npm run build` passing in client
-
----
-
-# Major Bugs Resolved
-
-## Forecast Mock Contract
-
-Resolved.
-
-Updated `forecast.mock.ts` to match the active ForecastResponse contract.
-
----
-
-## Historical Trend Contract Drift
-
-Resolved.
-
-Root cause:
-
-The backend HistoricalTrendService returned:
-
-* date
-* spend
-
-The frontend previously expected:
-
-* snapshotDate
-* totalCost
-
-Fix:
-
-* `useHistoricalTrends.ts` now consumes the correct API contract.
-
----
-
-## Backend Route Verification
-
-Verified routes:
-
-* `/forecast`
-* `/analytics/trends`
-
-Verified:
-
-* ForecastContract validation
-* ForecastController
-* AnalyticsController
-
-No backend routing issues remain.
-
----
-
-## Forecast Projection Visualization
-
-Resolved.
-
-Current visualization now contains:
-
-* Historical spend line
-* Forecast spend line
-* Budget reference line
-* Forecast boundary marker
-* Today marker
-* Improved Recharts tooltip
-
----
-
-# Architecture Findings
-
-## Forecast Backend Pipeline
-
-Repository
-
-↓
-
-HistoricalTrendService
-
-↓
-
-ForecastTrendService
-
-↓
-
-ForecastProjectionService
-
-↓
-
-ForecastConfidenceService
-
-↓
-
-ForecastGrowthDriverService
-
-↓
-
-ForecastInsightService
-
-↓
-
-ForecastExplanationService
-
-↓
-
-ForecastService
-
-↓
-
-ForecastController
-
-Validated:
-
-* Controller contains no forecast business logic
-* Historical aggregation reused across services
-* ForecastContract enforced with Zod
-* Single Forecast endpoint provides normalized data model
-* Forecast engine is modular
-* Projection algorithm uses 7-day moving average plus trend slope
-
----
-
-## Analytics Pipeline
-
-AnalyticsController
-
-↓
-
-AnalyticsService
-
-↓
-
-HistoricalTrendService
-
-↓
+### Architecture
 
 Repositories
 
-Validated:
+↓
 
-* HistoricalTrendService is the shared source of truth for daily aggregation
-* No duplicated historical aggregation logic remains
+AnomalyDetectionService
+
+↓
+
+ForecastRiskDetectionService
+
+↓
+
+BudgetBreachDetectionService
+
+↓
+
+AlertService
+
+↓
+
+AlertsController
+
+↓
+
+AlertsContract
+
+### Detection Engines
+
+Completed
+
+* Cost Spike Detection
+* Forecast Risk Detection
+* Budget Breach Detection
+
+### Contract
+
+Enterprise Alert Contract
+
+Fields
+
+* id
+* type
+* severity
+* status
+* title
+* description
+* recommendation
+* metric
+* currentValue
+* threshold
+* date
+
+Business logic now resides entirely in backend services.
+
+Controllers contain no business logic.
 
 ---
 
-## Frontend
+## Frontend Status
 
-Validated:
+Completed
 
-* React Query operational
-* Forecast hook operational
-* Historical Trends hook operational
-* Forecast Projection chart operational
-* Forecast Intelligence operational
-* Growth Drivers operational
-* Service Forecast cards operational
-* Account Forecast cards operational
-* Budget Risk operational
-* Forecast Confidence operational
-* Forecast page consumes backend Forecast v2 contract successfully
+* Alerts API integration
+* React Query hook
+* Contract migration
+* Enterprise Alert Center layout
+* Alert Summary
+* Alert Summary Cards
+* Alert Card
+* Recommendation Panel
+* Shared UI primitives
 
----
+Shared Components
 
-# Remaining Forecast Technical Debt
+* StatusChip
+* MetricGrid
+* InfoRow
+* RecommendationCard
 
-## Deferred to Later Phase
-
-The Forecast chart still performs light presentation shaping in React.
-
-Current flow:
-
-Historical API
-
-↓
-
-Historical Hook
-
-↓
-
-ForecastProjectionChart
-
-↓
-
-Chart Dataset
-
-Long-term objective:
-
-Forecast API
-
-↓
-
-Forecast Chart DTO
-
-↓
-
-ForecastProjectionChart
-
-↓
-
-Render Only
-
-Reason deferred:
-
-* Current transformation is presentation-level only
-* Backend forecast logic is already owned by services
-* Introducing a visualization DTO now would create unnecessary contract churn
-* Forecast accuracy and confidence bands need actual prediction history before becoming meaningful
+Alerts page now follows the same architectural composition as Dashboard and Forecast.
 
 ---
 
-# Deferred Forecast v2 Work
+# Shared Frontend Architecture
 
-## Intelligence
+Current Component Strategy
 
-* Recommendation Engine
-* Scenario Modeling
-* Forecast Accuracy Metrics
-* Statistically derived confidence bands
+DashboardLayout
 
-## Service Forecasts
+↓
 
-Current:
+TopNavigation
 
-* Cards
+↓
 
-Future:
+SectionHeader
 
-* Sortable table
-* Percentage of total spend
-* Trend indicators
-* Filtering
+↓
 
-## Account Forecasts
+Summary Components
 
-Current:
+↓
 
-* Cards
+Feature Components
 
-Future:
+↓
 
-* Sortable table
-* Percentage allocation
-* Trend indicators
+Shared Components
+
+Shared UI layer established.
+
+Future pages should reuse these primitives.
+
+---
+
+# Architecture Achievements
+
+Backend
+
+* Service-oriented architecture
+* Repository pattern
+* Controller-free business logic
+* Zod contracts
+* React Query integration
+* Contract-driven frontend
+* Modular detection engines
+
+Frontend
+
+* Reusable layouts
+* Shared presentation components
+* Feature isolation
+* Thin page composition
+* Consistent design language
 
 ---
 
@@ -328,201 +212,146 @@ Future:
 
 **Complete**
 
-Completed:
+Completed
 
-* Historical Analytics
 * Dashboard Analytics
-* Service Analytics
-* Account Analytics
+* Historical Analytics
+* Forecast Engine
+* Forecast Intelligence
+* Forecast Visualization
+* Forecast UI
+* Forecast Contract
 * Multi-Account Analytics
-* React Query Integration
-* Forecast Engine v1
-* Forecast Projection Engine
-* Forecast Confidence Engine
-* Forecast Trend Engine
-* Forecast Insight Engine
-* Forecast Growth Driver Engine
-* Forecast Explanation Engine
-* Forecast Projection Visualization
-* Forecast UI v2
-* Backend Forecast Contract v2
-* Forecast visualization polish
-* Production frontend build passing
 
-Completion Estimate:
+Completion
 
-* Forecast Module: **98%**
-* Overall Phase 8: **100%**
+**100%**
 
 ---
-
-# Current Focus
 
 ## Phase 9
 
-**Alerts Architecture**
+Current Progress
 
-The next module should answer:
+Approximately **65% Complete**
 
-* What is abnormal?
-* What requires investigation?
-* What is breaching budget or forecast expectations?
-* What has been resolved?
-* What action should the user take?
+Completed
 
-This follows the CloudSight Page Responsibility Blueprint, where Alerts owns anomalies, severity, breach status, resolution workflow, and alert history.
+* Alert Detection Engine
+* Alert Contract
+* Alert Service Layer
+* Alert Controller Refactor
+* Frontend Contract Migration
+* Alert Center
+* Summary Cards
+* Recommendation Panel
+* Shared UI Components
 
----
+Remaining
 
-# Phase 9 Build Plan
-
-## Phase 9.1 Backend
-
-Target architecture:
-
-Repositories
-
-↓
-
-HistoricalTrendService
-
-↓
-
-SpendSpikeDetectionService
-
-↓
-
-BudgetBreachDetectionService
-
-↓
-
-ForecastRiskDetectionService
-
-↓
-
-AlertService
-
-↓
-
-AlertController
-
-Planned endpoint:
-
-* `GET /alerts`
-
-Initial alert types:
-
-* Spend spike
-* Budget breach risk
-* Forecast overrun risk
-
-Initial alert fields:
-
-* id
-* type
-* severity
-* title
-* message
-* status
-* detectedAt
-* metric
-* currentValue
-* threshold
-* recommendation
+* Alert Summary API
+* Alert History
+* Resolution Workflow
+* Incident Timeline
+* Alert Metrics API
+* Alert Filtering
+* Alert Sorting
+* Alert Acknowledgement
+* Incident Detail View
 
 ---
 
-## Phase 9.2 Frontend
+# Next Development Phase
 
-Planned UI:
+## Phase 9.6
 
-* Alert Summary
-* Severity cards
-* Active Alerts table
-* Alert detail cards
-* Empty healthy state
-* Error state
-* Loading state
+Backend-Owned Alert Intelligence
 
----
+Objective
 
-## Phase 9.3 Future Alerts Work
+Move all alert aggregation and summary calculations from React into the backend.
 
-Deferred:
+New Services
 
-* Alert history persistence
-* Resolution workflow persistence
-* Anomaly model tuning
-* Alert assignment
-* Notification routing
-* AWS Budgets integration
-* SNS / email alerts
-* CloudWatch alarm integration
+* AlertSummaryService
+* AlertMetricsService
+* AlertHistoryService
+* ResolutionService
+
+New API Contracts
+
+* GET /alerts
+* GET /alerts/summary
+
+Future Expansion
+
+* Alert Timeline
+* Incident Management
+* Resolution Workflow
+* Alert History
+* AWS Health Integration
+* CloudWatch Integration
+* AWS Budgets
+* SNS Notifications
 
 ---
 
 # Current Recommendation
 
-Do **not** begin AWS integration yet.
+Continue strengthening backend-owned business logic.
 
-Next priority:
+Frontend should become increasingly presentation-only.
 
-**Build the local Alerts engine using existing historical, budget, and forecast data.**
-
-AWS integration should wait until:
-
-* Alerts page is stable
-* Reports page is stable
-* Local contracts are proven
-* UI ownership boundaries remain clean
-
-Future analytics pages should continue following these principles:
-
-* Backend-owned business logic
-* Thin React Query hooks
-* Normalized contracts
-* Reusable visualization components
-* Controller-free business logic
-* Shared domain services
-* Minimal frontend data transformation
+Future pages should follow the same architecture established by Forecast and Alerts.
 
 ---
 
-# Next Session Priorities
+# Long-Term Architecture
 
-Priority 1:
+Repositories
 
-Inspect existing Alerts implementation.
+↓
 
-Priority 2:
+Domain Services
 
-Design Alerts contract and backend service layer.
+↓
 
-Priority 3:
+Orchestrator Services
 
-Build local alert detection engine.
+↓
 
-Priority 4:
+Controllers
 
-Connect frontend Alerts page to backend `/alerts`.
+↓
 
-Priority 5:
+Contracts
 
-Add alert states:
+↓
 
-* active
-* resolved
-* monitoring
+React Query
+
+↓
+
+Thin Feature Pages
+
+↓
+
+Reusable UI Components
+
+This architecture is now the standard for CloudSight.
 
 ---
 
-# Target Outcome
+# Overall Project Progress
 
-The Alerts page should fully satisfy the CloudSight Page Responsibility Blueprint by answering:
+Foundation: **100%**
 
-* What is abnormal?
-* How severe is it?
-* Why did it happen?
-* What should the user do?
-* Has it been resolved?
+Frontend Architecture: **95%**
 
+Backend Architecture: **95%**
+
+Forecast Module: **100%**
+
+Alerts Module: **65%**
+
+Overall CloudSight MVP: **~88%**

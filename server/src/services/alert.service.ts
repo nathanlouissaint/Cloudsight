@@ -14,13 +14,31 @@ import {
   alertSummaryService,
 } from "./alert-summary.service";
 
+import {
+  alertMetricsService,
+} from "./alert-metrics.service";
+
 import type {
   AlertModel,
 } from "../types/alert.types";
 
+import type {
+  AlertSummary,
+} from "./alert-summary.service";
+
+import type {
+  AlertMetrics,
+} from "./alert-metrics.service";
+
+export interface AlertsResponseModel {
+  summary: AlertSummary;
+  metrics: AlertMetrics;
+  alerts: AlertModel[];
+}
+
 export class AlertService {
 
-  async getAlerts(): Promise<AlertModel[]> {
+  async getAlerts(): Promise<AlertsResponseModel> {
 
     const alerts: AlertModel[] = [];
 
@@ -48,13 +66,22 @@ export class AlertService {
         severityOrder[a.severity]
     );
 
-    // Build backend-owned summary.
-    // This prepares Phase 9.6 without changing the API contract.
-    alertSummaryService.build(
-      sortedAlerts
-    );
+    return {
 
-    return sortedAlerts;
+      summary:
+        alertSummaryService.build(
+          sortedAlerts
+        ),
+
+      metrics:
+        alertMetricsService.build(
+          sortedAlerts
+        ),
+
+      alerts:
+        sortedAlerts,
+
+    };
 
   }
 

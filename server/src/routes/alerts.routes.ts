@@ -1,8 +1,20 @@
 import { Router } from "express";
-import { getAlerts } from "../controllers/alerts.controller";
+
+import {
+  getAlerts,
+  getAlertHistory,
+} from "../controllers/alerts.controller";
 
 const router = Router();
 
-router.get("/", getAlerts);
+router.get(
+  "/",
+  getAlerts
+);
+
+router.get(
+  "/history",
+  getAlertHistory
+);
 
 export default router;

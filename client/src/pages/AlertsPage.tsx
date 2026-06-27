@@ -1,142 +1,142 @@
+import DashboardLayout from "../components/layout/DashboardLayout";
+import TopNavigation from "../components/navigation/TopNavigation";
+import SectionHeader from "../components/layout/SectionHeader";
+
+import AlertSummary from "../components/alerts/AlertSummary";
+import AlertCard from "../components/alerts/AlertCard";
+import AlertRecommendationPanel from "../components/alerts/AlertRecommendationPanel";
+import AlertHistoryTimeline from "../components/alerts/AlertHistoryTimeline";
+
 import { useAlerts } from "../hooks/useAlerts";
+import { useAlertHistory } from "../hooks/useAlertHistory";
 
 export default function AlertsPage() {
+
   const {
     data,
     isLoading,
     error,
   } = useAlerts();
 
+  const {
+    data: history = [],
+    isLoading: historyLoading,
+  } = useAlertHistory();
+
   if (isLoading) {
-    return <div>Loading alerts...</div>;
-  }
-
-  if (error) {
-    return <div>{error.message}</div>;
-  }
-
-  if (!data || data.length === 0) {
     return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-8">
-          Alert Center
-        </h1>
-
-        <div className="analytics-card">
-          <h3>System Healthy</h3>
-
-          <p>
-            No active alerts detected.
-          </p>
-        </div>
-      </div>
+      <DashboardLayout>
+        <TopNavigation />
+        <div>Loading alerts...</div>
+      </DashboardLayout>
     );
   }
 
+  if (error) {
+    return (
+      <DashboardLayout>
+        <TopNavigation />
+        <div>{error.message}</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!data) {
+    return (
+      <DashboardLayout>
+        <TopNavigation />
+        <div>No alert data available.</div>
+      </DashboardLayout>
+    );
+  }
+
+  const {
+    summary,
+    metrics,
+    alerts,
+  } = data;
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">
-        Alert Center
-      </h1>
+    <DashboardLayout>
 
-      <div className="space-y-4">
-        {data.map((alert) => (
-          <div
-            key={alert.id}
-            className="analytics-card"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3>{alert.title}</h3>
+      <TopNavigation />
 
-                <p>{alert.description}</p>
-              </div>
+      <SectionHeader
+        title="Alert Center"
+        subtitle="Operational visibility into cloud cost anomalies, forecast risks, and budget health."
+      />
 
-              <span
-                className={`status-chip ${
-                  alert.severity
-                }`}
-              >
-                {alert.severity}
-              </span>
-            </div>
+      <AlertSummary
+        summary={summary}
+        metrics={metrics}
+      />
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(2,minmax(0,1fr))",
-                gap: "16px",
-                marginTop: "20px",
-              }}
-            >
-              <div>
-                <small>STATUS</small>
+      <SectionHeader
+        title="Active Alerts"
+        subtitle="Alerts currently requiring investigation."
+      />
 
-                <p>{alert.status}</p>
-              </div>
+      <div className="analytics-grid">
 
-              <div>
-                <small>METRIC</small>
+        <div className="analytics-card">
 
-                <p>{alert.metric}</p>
-              </div>
+          {alerts.length === 0 ? (
 
-              <div>
-                <small>CURRENT VALUE</small>
-
-                <p>
-                  $
-                  {alert.currentValue.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <small>THRESHOLD</small>
-
-                <p>
-                  $
-                  {alert.threshold.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: "24px",
-                padding: "16px",
-                borderRadius: "12px",
-                background:
-                  "rgba(59,130,246,.08)",
-                border:
-                  "1px solid rgba(59,130,246,.2)",
-              }}
-            >
-              <strong>
-                Recommendation
-              </strong>
-
-              <p
-                style={{
-                  marginTop: "8px",
-                }}
-              >
-                {alert.recommendation}
-              </p>
-            </div>
-
-            <p
-              style={{
-                marginTop: "20px",
-                opacity: 0.7,
-                fontSize: "13px",
-              }}
-            >
-              {alert.date}
+            <p>
+              No active alerts detected.
             </p>
-          </div>
-        ))}
+
+          ) : (
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+              }}
+            >
+
+              {alerts.map((alert) => (
+
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                />
+
+              ))}
+
+            </div>
+
+          )}
+
+        </div>
+
+        <AlertRecommendationPanel
+          alerts={alerts}
+        />
+
       </div>
-    </div>
+
+      <SectionHeader
+        title="Alert History"
+        subtitle="Previously detected alert events."
+      />
+
+      {historyLoading ? (
+
+        <div className="analytics-card">
+          Loading history...
+        </div>
+
+      ) : (
+
+        <AlertHistoryTimeline
+          history={history}
+        />
+
+      )}
+
+    </DashboardLayout>
   );
+
 }

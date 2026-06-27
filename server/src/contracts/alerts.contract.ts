@@ -50,8 +50,56 @@ export const AlertSchema =
 
   });
 
+export const AlertSummarySchema =
+  z.object({
+
+    total:
+      z.number(),
+
+    critical:
+      z.number(),
+
+    warning:
+      z.number(),
+
+    monitoring:
+      z.number(),
+
+  });
+
+export const AlertMetricsSchema =
+  z.object({
+
+    active:
+      z.number(),
+
+    resolved:
+      z.number(),
+
+    highestSeverity:
+      z.enum([
+        "info",
+        "warning",
+        "critical",
+      ]).nullable(),
+
+  });
+
 export const AlertsContract =
-  z.array(AlertSchema);
+  z.object({
+
+    summary:
+      AlertSummarySchema,
+
+    metrics:
+      AlertMetricsSchema,
+
+    alerts:
+      z.array(
+        AlertSchema
+      ),
+
+  });
 
 export type AlertsResponse =
   z.infer<
