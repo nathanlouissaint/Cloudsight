@@ -10,6 +10,10 @@ import {
   budgetBreachDetectionService,
 } from "./budget-breach-detection.service";
 
+import {
+  alertSummaryService,
+} from "./alert-summary.service";
+
 import type {
   AlertModel,
 } from "../types/alert.types";
@@ -38,11 +42,19 @@ export class AlertService {
       info: 1,
     };
 
-    return alerts.sort(
+    const sortedAlerts = alerts.sort(
       (a, b) =>
         severityOrder[b.severity] -
         severityOrder[a.severity]
     );
+
+    // Build backend-owned summary.
+    // This prepares Phase 9.6 without changing the API contract.
+    alertSummaryService.build(
+      sortedAlerts
+    );
+
+    return sortedAlerts;
 
   }
 
