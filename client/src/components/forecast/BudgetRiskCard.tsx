@@ -1,16 +1,29 @@
 interface Props {
   projectedVariance: number;
+  budget: number;
 }
 
 export default function BudgetRiskCard({
   projectedVariance,
+  budget,
 }: Props) {
-  const risk =
+  const amountOverBudget =
     projectedVariance < 0
-      ? "High"
-      : projectedVariance < 1000
-      ? "Medium"
-      : "Low";
+      ? Math.abs(projectedVariance)
+      : 0;
+
+  const percentOverBudget =
+    budget > 0
+      ? (amountOverBudget / budget) * 100
+      : 0;
+
+  let risk = "Low";
+
+  if (percentOverBudget >= 15) {
+    risk = "High";
+  } else if (percentOverBudget >= 5) {
+    risk = "Medium";
+  }
 
   return (
     <div className="summary-card">
@@ -20,6 +33,16 @@ export default function BudgetRiskCard({
 
       <div className="summary-value">
         {risk}
+      </div>
+
+      <div
+        style={{
+          marginTop: ".5rem",
+          opacity: 0.7,
+          fontSize: ".9rem",
+        }}
+      >
+        {percentOverBudget.toFixed(1)}% over budget
       </div>
     </div>
   );

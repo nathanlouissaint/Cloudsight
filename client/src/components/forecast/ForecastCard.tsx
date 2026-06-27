@@ -1,107 +1,45 @@
 import { useForecast } from "../../hooks/useForecast";
 
 export default function ForecastCard() {
-  const {
-    data,
-    isLoading,
-    error,
-  } = useForecast();
+  const { data, isLoading } = useForecast();
 
-  if (isLoading) {
-    return (
-      <section className="glass-card forecast-panel">
-        Loading forecast...
-      </section>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <section className="glass-card forecast-panel">
-        Forecast unavailable
-      </section>
-    );
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (!data) return null;
 
   return (
-    <section className="glass-card forecast-panel">
-      <div className="panel-header">
-        <div>
-          <h3>Forecast Overview</h3>
+    <div className="summary-card">
+      <h2>Forecast</h2>
 
-          <p className="analytics-subtitle">
-            Live forecast projection
-          </p>
-        </div>
+      <p>
+        Status:{" "}
+        <strong>
+          {data.summary.onTrack ? "On Track" : "Over Budget"}
+        </strong>
+      </p>
 
-        <span
-          className={
-            data.onTrack
-              ? "status-positive"
-              : "status-negative"
-          }
-        >
-          {data.onTrack
-            ? "On Track"
-            : "Over Budget"}
-        </span>
-      </div>
+      <p>
+        Projected Spend: $
+        {data.summary.projectedSpend.toLocaleString()}
+      </p>
 
-      <div className="forecast-metric">
-        <div className="metric-label">
-          Projected Spend
-        </div>
+      <p>
+        Current Spend: $
+        {data.summary.currentSpend.toLocaleString()}
+      </p>
 
-        <div className="metric-value">
-          $
-          {data.projectedSpend.toLocaleString()}
-        </div>
-      </div>
+      <p>
+        Budget: $
+        {data.summary.budget.toLocaleString()}
+      </p>
 
-      <div className="forecast-grid">
-        <div>
-          <div className="metric-label">
-            Current Spend
-          </div>
+      <p>
+        Variance: $
+        {data.summary.projectedVariance.toLocaleString()}
+      </p>
 
-          <div className="metric-small">
-            $
-            {data.currentSpend.toLocaleString()}
-          </div>
-        </div>
-
-        <div>
-          <div className="metric-label">
-            Budget
-          </div>
-
-          <div className="metric-small">
-            $
-            {data.budget.toLocaleString()}
-          </div>
-        </div>
-
-        <div>
-          <div className="metric-label">
-            Variance
-          </div>
-
-          <div className="metric-small">
-            $
-            {data.projectedVariance.toLocaleString()}
-          </div>
-        </div>
-
-        <div>
-          <div className="metric-label">
-            Days Remaining
-          </div>
-
-          <div className="metric-small">
-            {data.remainingDays}
-          </div>
-        </div>
-      </div>
-    </section>
+      <p>
+        Remaining Days: {data.summary.remainingDays}
+      </p>
+    </div>
   );
 }

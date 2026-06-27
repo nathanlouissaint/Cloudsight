@@ -1,9 +1,15 @@
-
 import { useForecast } from "../hooks/useForecast";
+import { useHistoricalTrends } from "../hooks/useHistoricalTrends";
 
 import ForecastConfidenceCard from "../components/forecast/ForecastConfidenceCard";
 import BudgetRiskCard from "../components/forecast/BudgetRiskCard";
 import ForecastProjectionChart from "../components/forecast/ForecastProjectionChart";
+import ForecastInsights from "../components/forecast/ForecastInsights";
+import ForecastSection from "../components/forecast/ForecastSection";
+import GrowthDriverCards from "../components/forecast/GrowthDriverCards";
+import ServiceForecastCards from "../components/forecast/ServiceForecastCards";
+import AccountForecastCards from "../components/forecast/AccountForecastCards";
+import RunRateMetrics from "../components/forecast/RunRateMetrics";
 
 export default function ForecastingPage() {
   const {
@@ -12,40 +18,36 @@ export default function ForecastingPage() {
     error,
   } = useForecast();
 
+  const {
+    data: historical = [],
+  } = useHistoricalTrends();
+
   if (isLoading) {
     return <div>Loading forecast...</div>;
   }
 
   if (error) {
-    return <div>{error?.message}</div>;
+    return <div>{error.message}</div>;
   }
 
   if (!data) {
-    return <div>No forecast available</div>;
+    return <div>No forecast available.</div>;
   }
-
-  const confidence = Math.min(
-    95,
-    Math.round(
-      (data.elapsedDays /
-        (data.elapsedDays +
-          data.remainingDays)) *
-        100
-    )
-  );
 
   return (
     <div className="dashboard-container">
+
       <h1>Forecasting</h1>
 
       <div className="summary-grid">
+
         <div className="summary-card">
           <div className="summary-title">
             Projected Spend
           </div>
 
           <div className="summary-value">
-            ${data.projectedSpend.toLocaleString()}
+            ${data.summary.projectedSpend.toLocaleString()}
           </div>
         </div>
 
@@ -55,7 +57,7 @@ export default function ForecastingPage() {
           </div>
 
           <div className="summary-value">
-            ${data.budget.toLocaleString()}
+            ${data.summary.budget.toLocaleString()}
           </div>
         </div>
 
@@ -65,7 +67,7 @@ export default function ForecastingPage() {
           </div>
 
           <div className="summary-value">
-            ${data.projectedVariance.toLocaleString()}
+            ${data.summary.projectedVariance.toLocaleString()}
           </div>
         </div>
 
@@ -75,50 +77,82 @@ export default function ForecastingPage() {
           </div>
 
           <div className="summary-value">
-            {data.onTrack
+            {data.summary.onTrack
               ? "On Track"
               : "Over Budget"}
           </div>
         </div>
 
         <ForecastConfidenceCard
-          confidence={confidence}
+          confidence={data.confidence.score}
         />
 
         <BudgetRiskCard
-          projectedVariance={
-            data.projectedVariance
-          }
+          projectedVariance={data.summary.projectedVariance}
+          budget={data.summary.budget}
         />
+
       </div>
 
-      <div
-        style={{
-          marginTop: "2rem",
-        }}
+      <ForecastSection
+        title="Run Rate Analytics"
       >
-        <h2>Run Rate Analytics</h2>
 
-        <p>
-          Current Spend: $
-          {data.currentSpend.toLocaleString()}
-        </p>
+        <RunRateMetrics
+          summary={data.summary}
+        />
 
-        <p>
-          Average Daily Spend: $
-          {data.averageDailySpend.toFixed(2)}
-        </p>
+      </ForecastSection>
 
-        <p>
-          Days Elapsed: {data.elapsedDays}
-        </p>
+      <ForecastProjectionChart
+        historical={historical}
+        projection={data.projection}
+        budget={data.summary.budget}
+      />
 
-        <p>
-          Days Remaining: {data.remainingDays}
-        </p>
-      </div>
+      <ForecastSection
+        title="Forecast Intelligence"
+      >
 
-      <ForecastProjectionChart />
+        <ForecastInsights
+          insights={data.insights}
+          confidence={data.confidence}
+          topDriver={data.growthDrivers[0]}
+          explanation={data.explanation}
+        />
+
+      </ForecastSection>
+
+      <ForecastSection
+        title="Growth Drivers"
+      >
+
+        <GrowthDriverCards
+          drivers={data.growthDrivers}
+        />
+
+      </ForecastSection>
+
+      <ForecastSection
+        title="Service Forecasts"
+      >
+
+        <ServiceForecastCards
+          forecasts={data.serviceForecasts}
+        />
+
+      </ForecastSection>
+
+      <ForecastSection
+        title="Account Forecasts"
+      >
+
+        <AccountForecastCards
+          forecasts={data.accountForecasts}
+        />
+
+      </ForecastSection>
+
     </div>
   );
 }

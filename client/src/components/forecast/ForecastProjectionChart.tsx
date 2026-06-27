@@ -1,100 +1,151 @@
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  ReferenceLine,
 } from "recharts";
 
-import { useHistoricalTrends } from "../../hooks/useHistoricalTrends";
-import { useForecast } from "../../hooks/useForecast";
+import type {
+  ForecastProjectionPoint,
+} from "../../types/forecast";
 
-export default function ForecastProjectionChart() {
-  const { data: trends = [] } =
-    useHistoricalTrends();
+import type {
+  HistoricalTrend,
+} from "../../hooks/useHistoricalTrends";
 
-  const { data: forecast } =
-    useForecast();
+interface Props {
+  historical: HistoricalTrend[];
+  projection: ForecastProjectionPoint[];
+  budget: number;
+}
 
-  if (!forecast) {
-    return null;
-  }
+export default function ForecastProjectionChart({
+  historical,
+  projection,
+  budget,
+}: Props) {
+  const historicalData = historical.map(
+    (point) => ({
+      date: point.date,
+      historicalSpend: point.spend,
+      forecastSpend: null,
+    })
+  );
+
+  const forecastData = projection.map(
+    (point) => ({
+      date: new Date(point.date).toLocaleDateString(
+        "en-US",
+        {
+          month: "short",
+          day: "numeric",
+        }
+      ),
+      historicalSpend: null,
+      forecastSpend: point.projectedSpend,
+    })
+  );
+
+  const divider =
+    historicalData.length > 0
+      ? historicalData[
+          historicalData.length - 1
+        ].date
+      : "";
 
   const chartData = [
-    ...trends,
-    {
-      date: "Forecast",
-      spend: forecast.projectedSpend,
-    },
+    ...historicalData,
+    ...forecastData,
   ];
 
   return (
     <div
       style={{
-        height: "400px",
-        marginTop: "32px",
+        marginTop: 32,
       }}
     >
-      <h2>
-        Forecast Projection
-      </h2>
+      <h2>Forecast Projection</h2>
 
       <ResponsiveContainer
         width="100%"
-        height="100%"
+        height={420}
       >
-        <AreaChart data={chartData}>
-          <defs>
-            <linearGradient
-              id="forecastGradient"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop
-                offset="5%"
-                stopColor="#3B82F6"
-                stopOpacity={0.4}
-              />
-
-              <stop
-                offset="95%"
-                stopColor="#3B82F6"
-                stopOpacity={0}
-              />
-            </linearGradient>
-          </defs>
-
+        <LineChart data={chartData}>
           <CartesianGrid
             stroke="rgba(255,255,255,0.06)"
             vertical={false}
           />
 
-          <XAxis dataKey="date" />
+          <XAxis
+            dataKey="date"
+            axisLine={false}
+            tickLine={false}
+          />
 
-          <YAxis />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+          />
 
-          <Tooltip />
+          <Tooltip
+            formatter={(value) => {
+              if (
+                typeof value !==
+                "number"
+              ) {
+                return "";
+              }
+
+              return [
+                `$${value.toLocaleString()}`,
+                "",
+              ];
+            }}
+          />
+
+          <Legend />
 
           <ReferenceLine
-            y={forecast.budget}
+            y={budget}
             stroke="#EF4444"
             strokeDasharray="6 6"
             label="Budget"
           />
 
-          <Area
-            type="monotone"
-            dataKey="spend"
-            stroke="#60A5FA"
-            fill="url(#forecastGradient)"
-            strokeWidth={3}
+          <ReferenceLine
+            x={divider}
+            stroke="#94A3B8"
+            strokeDasharray="3 3"
+            label="Today"
           />
-        </AreaChart>
+
+          <Line
+            type="monotone"
+            dataKey="historicalSpend"
+            name="Historical Spend"
+            stroke="#60A5FA"
+            strokeWidth={3}
+            dot={false}
+            isAnimationActive={false}
+            connectNulls={false}
+          />
+
+          <Line
+            type="monotone"
+            dataKey="forecastSpend"
+            name="Forecast"
+            stroke="#F59E0B"
+            strokeWidth={3}
+            strokeDasharray="8 4"
+            dot={false}
+            connectNulls={false}
+          />
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

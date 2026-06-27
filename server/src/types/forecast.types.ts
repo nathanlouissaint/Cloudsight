@@ -27,13 +27,6 @@ export interface GrowthDriver {
   direction: "up" | "down";
 }
 
-export interface ForecastInsight {
-  type: "trend" | "budget" | "service";
-  severity: "info" | "warning" | "critical";
-  title: string;
-  message: string;
-}
-
 export interface ServiceForecast {
   service: string;
   projectedSpend: number;
@@ -44,7 +37,23 @@ export interface AccountForecast {
   projectedSpend: number;
 }
 
-export interface ForecastResponse {
+export interface ForecastInsight {
+  type:
+    | "trend"
+    | "budget"
+    | "service";
+
+  severity:
+    | "info"
+    | "warning"
+    | "critical";
+
+  title: string;
+
+  message: string;
+}
+
+export interface ForecastModel {
   summary: ForecastSummary;
 
   confidence: ForecastConfidence;

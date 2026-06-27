@@ -22,6 +22,9 @@ export async function findServiceSnapshotsByDateRange(
         lte: endDate,
       },
     },
+    include: {
+      account: true,
+    },
     orderBy: {
       snapshotDate: "asc",
     },
@@ -44,8 +47,73 @@ export async function findServiceSnapshotsByService(
         lte: endDate,
       },
     },
+    include: {
+      account: true,
+    },
     orderBy: {
       snapshotDate: "asc",
     },
   });
+}
+
+export async function findCurrentMonthServiceSnapshots() {
+
+  const now = new Date();
+
+  const monthStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1
+  );
+
+  return prisma.serviceCostSnapshot.findMany({
+    where: {
+      snapshotDate: {
+        gte: monthStart,
+        lte: now,
+      },
+    },
+    include: {
+      account: true,
+    },
+    orderBy: [
+      {
+        serviceName: "asc",
+      },
+      {
+        snapshotDate: "asc",
+      },
+    ],
+  });
+
+}
+
+export async function findCurrentMonthServiceSnapshotsByService(
+  serviceName: string
+) {
+
+  const now = new Date();
+
+  const monthStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1
+  );
+
+  return prisma.serviceCostSnapshot.findMany({
+    where: {
+      serviceName,
+      snapshotDate: {
+        gte: monthStart,
+        lte: now,
+      },
+    },
+    include: {
+      account: true,
+    },
+    orderBy: {
+      snapshotDate: "asc",
+    },
+  });
+
 }

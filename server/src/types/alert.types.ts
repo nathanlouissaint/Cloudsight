@@ -13,18 +13,28 @@ export type AlertType =
   | "budget_risk"
   | "forecast_risk";
 
-export interface Alert {
-  id: string;
-  type: AlertType;
-  severity: AlertSeverity;
-  status: AlertStatus;
-  title: string;
-  description: string;
-  recommendation: string;
-  metric: string;
-  currentValue: number;
-  threshold: number;
-  date: string;
-}
+export interface AlertModel {
 
-export type AlertsResponse = Alert[];
+  id: string;
+
+  type: AlertType;
+
+  severity: AlertSeverity;
+
+  status: AlertStatus;
+
+  title: string;
+
+  description: string;
+
+  recommendation: string;
+
+  metric: string;
+
+  currentValue: number;
+
+  threshold: number;
+
+  date: string;
+
+}
