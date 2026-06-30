@@ -1,72 +1,109 @@
+import TopNavigation from "../components/navigation/TopNavigation";
+
+import { DashboardLayout, SectionHeader } from "../components/layout";
+
+import {
+  MetricCard,
+  MetricGrid,
+} from "../components/shared";
+
+import {
+  EmptyState,
+  ErrorState,
+  SkeletonCard,
+} from "../components/states";
+
 import { useReport } from "../hooks/useReport";
 
 export default function ReportsPage() {
-  const { data, isLoading, error } = useReport();
-
-  if (isLoading) {
-    return <div>Loading report...</div>;
-  }
-
-  if (error) {
-    return <div>{error?.message}</div>;
-  }
-
-  if (!data) {
-    return <div>No report data</div>;
-  }
+  const {
+    data,
+    isLoading,
+    error,
+  } = useReport();
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">
-        Executive Report
-      </h1>
+    <DashboardLayout>
+      <TopNavigation />
 
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
-        <Metric
-          label="Total Spend"
-          value={`$${data.totalSpend.toLocaleString()}`}
-        />
+      <SectionHeader
+        title="Reporting Center"
+        subtitle="Review executive summaries, financial performance, and budget outcomes for the selected reporting period."
+      />
 
-        <Metric
-          label="Forecasted Spend"
-          value={`$${data.forecastedSpend.toLocaleString()}`}
-        />
+      {isLoading && <SkeletonCard />}
 
-        <Metric
-          label="Budget"
-          value={`$${data.budget.toLocaleString()}`}
-        />
-      </div>
+      {error && (
+        <ErrorState message={error.message} />
+      )}
 
-      <div className="bg-slate-900 rounded-xl p-6">
-        <h2 className="text-xl font-semibold mb-4">
-          Executive Summary
-        </h2>
+      {!isLoading && !error && !data && (
+        <EmptyState title="No report available" />
+      )}
 
-        <p className="text-slate-400">
-          {data.summary}
-        </p>
-      </div>
-    </div>
-  );
-}
+      {!isLoading && !error && data && (
+        <>
+          <MetricGrid>
+            <MetricCard
+              label="Total Spend"
+              value={`$${data.totalSpend.toLocaleString()}`}
+              subtitle="Cloud spend during this reporting period."
+            />
 
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-slate-900 rounded-xl p-6">
-      <div className="text-slate-400">
-        {label}
-      </div>
+            <MetricCard
+              label="Forecast"
+              value={`$${data.forecastedSpend.toLocaleString()}`}
+              subtitle="Projected month-end spend."
+            />
 
-      <div className="text-2xl font-bold mt-2">
-        {value}
-      </div>
-    </div>
+            <MetricCard
+              label="Budget"
+              value={`$${data.budget.toLocaleString()}`}
+              subtitle="Approved reporting budget."
+            />
+
+            <MetricCard
+              label="Top Service"
+              value={data.topService}
+              subtitle="Largest contributor to cloud spend."
+            />
+          </MetricGrid>
+
+          <SectionHeader
+            title="Executive Summary"
+            subtitle="Financial narrative generated from reporting data."
+          />
+
+          <div className="analytics-card">
+            <p
+              style={{
+                lineHeight: 1.8,
+              }}
+            >
+              {data.summary}
+            </p>
+          </div>
+
+          <SectionHeader
+            title="Financial Performance"
+            subtitle="Supporting financial metrics for executive review."
+          />
+
+          <MetricGrid>
+            <MetricCard
+              label="Top Service Spend"
+              value={`$${data.topServiceSpend.toLocaleString()}`}
+              subtitle="Highest individual service cost."
+            />
+
+            <MetricCard
+              label="Budget Status"
+              value={data.budgetStatus}
+              subtitle="Overall budget health."
+            />
+          </MetricGrid>
+        </>
+      )}
+    </DashboardLayout>
   );
 }

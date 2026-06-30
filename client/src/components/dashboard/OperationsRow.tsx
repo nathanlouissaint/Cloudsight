@@ -1,5 +1,5 @@
 import ServiceBreakdownCard from "./ServiceBreakdownCard";
-import ForecastCard from "./ForecastCard";
+import ForecastCard from "../forecast/ForecastCard";
 
 export default function OperationsRow() {
   return (

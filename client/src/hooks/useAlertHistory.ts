@@ -1,29 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-
-import { apiRequest } from "../api/client";
-
-import { queryKeys } from "../lib/queryKeys";
-
-import type {
-  AlertHistoryResponse,
-} from "../types/alert-history";
+import { useAlertHistoryQuery } from "../queries/services/alert-history.query";
 
 export function useAlertHistory() {
-
-  return useQuery({
-
-    queryKey:
-      queryKeys.alertHistory,
-
-    queryFn:
-      () =>
-        apiRequest<AlertHistoryResponse>(
-          "/alerts/history"
-        ),
-
-    staleTime:
-      1000 * 60 * 5,
-
-  });
-
+  return useAlertHistoryQuery();
 }

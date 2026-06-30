@@ -1,8 +1,17 @@
 import { motion } from "framer-motion";
-import SpendTrendChart from "../charts/SpendTrendChart";
+
+import { useHistoricalTrends } from "../../hooks/useHistoricalTrends";
+
+import AreaSpendChart from "../shared/charts/AreaSpendChart";
 import BudgetHealthCard from "./BudgetHealthCard";
+import AnalyticsCard from "../shared/AnalyticsCard";
 
 export default function AnalyticsRow() {
+  const {
+    data = [],
+    isLoading,
+  } = useHistoricalTrends();
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
@@ -10,21 +19,16 @@ export default function AnalyticsRow() {
       transition={{ duration: 0.45 }}
       className="analytics-grid"
     >
-      <div className="analytics-card">
-        <div className="analytics-header">
-          <div>
-            <div className="analytics-title">
-              Spend Trend
-            </div>
-
-            <div className="analytics-subtitle">
-              Last 30 days cloud spend
-            </div>
-          </div>
-        </div>
-
-        <SpendTrendChart />
-      </div>
+      <AnalyticsCard
+        title="Spend Trend"
+        subtitle="Last 30 days cloud spend"
+      >
+        {isLoading ? (
+          <div>Loading trends...</div>
+        ) : (
+          <AreaSpendChart data={data} />
+        )}
+      </AnalyticsCard>
 
       <BudgetHealthCard />
     </motion.section>

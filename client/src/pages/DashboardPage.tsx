@@ -1,31 +1,71 @@
-import DashboardLayout from "../components/layout/DashboardLayout";
 import TopNavigation from "../components/navigation/TopNavigation";
-import AnalyticsRow from "../components/dashboard/AnalyticsRow";
-import OperationsRow from "../components/dashboard/OperationsRow";
-import IntelligenceRow from "../components/dashboard/IntelligenceRow";
-import ExecutiveOverview from "../components/intelligence/ExecutiveOverview";
-import ExecutiveIntelligenceRow from "../components/intelligence/ExecutiveIntelligenceRow";
-import ForecastAndHealthRow from "../components/intelligence/ForecastAndHealthRow";
-import OptimizationRow from "../components/intelligence/OptimizationRow";
+
+import {
+  DashboardLayout,
+  SectionHeader,
+} from "../components/layout";
+
+import {
+  AnalyticsRow,
+  IntelligenceRow,
+  OperationsRow,
+} from "../components/dashboard";
+
+import {
+  ExecutiveIntelligenceRow,
+  ExecutiveOverview,
+  ForecastAndHealthRow,
+  OptimizationRow,
+} from "../components/intelligence";
 
 export default function DashboardPage() {
   return (
     <DashboardLayout>
-  <TopNavigation />
+      <TopNavigation />
 
-  <ExecutiveOverview />
+      <ExecutiveOverview />
 
-  <ForecastAndHealthRow />
+      <SectionHeader
+        title="Platform Health"
+        subtitle="A high-level view of financial health, forecasting confidence, and account status."
+      />
 
-  <ExecutiveIntelligenceRow />
+      <ForecastAndHealthRow />
 
-  <OptimizationRow />
+      <SectionHeader
+        title="Items Requiring Attention"
+        subtitle="Executive insights highlighting risks, forecast confidence, cost drivers, and optimization priorities."
+      />
 
-  <AnalyticsRow />
+      <ExecutiveIntelligenceRow />
 
-  <OperationsRow />
+      <SectionHeader
+        title="Optimization Opportunities"
+        subtitle="Recommended actions to improve cloud efficiency and reduce unnecessary spend."
+      />
 
-  <IntelligenceRow />
-</DashboardLayout>
+      <OptimizationRow />
+
+      <SectionHeader
+        title="Financial Performance"
+        subtitle="Historical cloud spending trends and overall budget health."
+      />
+
+      <AnalyticsRow />
+
+      <SectionHeader
+        title="Operational Visibility"
+        subtitle="Service-level operations and workload distribution across the platform."
+      />
+
+      <OperationsRow />
+
+      <SectionHeader
+        title="Executive Intelligence"
+        subtitle="AI-generated insights and anomaly detection to support strategic decision making."
+      />
+
+      <IntelligenceRow />
+    </DashboardLayout>
   );
 }

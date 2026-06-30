@@ -1,0 +1,71 @@
+name: CloudSight Smoke Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Production Smoke Test
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start Production Stack
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --build
+
+      - name: Wait for Containers
+        run: |
+          timeout 180 bash -c '
+            until [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-postgres-prod)" = "healthy" ] &&
+                  [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-server-prod)" = "healthy" ] &&
+                  [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-client-prod)" = "healthy" ];
+            do
+              echo "Waiting for services..."
+              sleep 5
+            done
+          '
+
+      - name: Smoke Test - Health
+        run: |
+          curl --fail http://localhost:3000/health
+
+      - name: Smoke Test - API
+        run: |
+          curl --fail http://localhost:3000/api/health
+
+      - name: Smoke Test - React
+        run: |
+          curl --fail http://localhost:3000/
+
+      - name: Container Status
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml ps
+
+      - name: Container Logs
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml logs
+
+      - name: Shutdown Stack
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v

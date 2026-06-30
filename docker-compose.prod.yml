@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cloudsight-postgres-prod
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: cloudsight_user
+      POSTGRES_PASSWORD: cloudsight_password
+      POSTGRES_DB: cloudsight
+
+    volumes:
+      - cloudsight_postgres_prod_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudsight_user -d cloudsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - cloudsight-network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    image: cloudsight-server:prod
+    container_name: cloudsight-server-prod
+
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      JWT_SECRET: supersecret
+      DATABASE_URL: postgresql://cloudsight_user:cloudsight_password@postgres:5432/cloudsight?schema=public
+
+    expose:
+      - "5001"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - cloudsight-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+
+    image: cloudsight-client:prod
+    container_name: cloudsight-client-prod
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      server:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - cloudsight-network
+
+volumes:
+  cloudsight_postgres_prod_data:
+
+networks:
+  cloudsight-network:
+    driver: bridge

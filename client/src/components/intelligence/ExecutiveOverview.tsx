@@ -1,4 +1,7 @@
 import { motion } from "framer-motion";
+
+import ExecutiveCard from "../shared/ExecutiveCard";
+
 import { useReport } from "../../hooks/useReport";
 
 export default function ExecutiveOverview() {
@@ -8,30 +11,20 @@ export default function ExecutiveOverview() {
     error,
   } = useReport();
 
-  if (isLoading) {
-    return null;
-  }
-
-  if (error || !data) {
+  if (isLoading || error || !data) {
     return null;
   }
 
   const budgetUsage =
     data.budget > 0
       ? (
-          (data.totalSpend /
-            data.budget) *
+          (data.totalSpend / data.budget) *
           100
         ).toFixed(1)
       : "0";
 
-  const status =
-    data.budgetStatus === "healthy"
-      ? "On Track"
-      : "Attention Required";
-
   return (
-    <motion.section
+    <motion.div
       initial={{
         opacity: 0,
         y: 16,
@@ -40,61 +33,56 @@ export default function ExecutiveOverview() {
         opacity: 1,
         y: 0,
       }}
-      className="executive-overview"
     >
-      <div className="overview-header">
-        <div>
-          <p className="overview-label">
-            EXECUTIVE OVERVIEW
-          </p>
+      <ExecutiveCard
+        eyebrow="EXECUTIVE OVERVIEW"
+        title="Cloud Financial Health"
+        status={
+          <div
+            className={`status-chip ${data.budgetStatus}`}
+          >
+            {data.budgetStatus === "healthy"
+              ? "On Track"
+              : "Attention Required"}
+          </div>
+        }
+      >
+        <div className="overview-grid">
+          <div className="overview-metric">
+            <span>Forecast</span>
 
-          <h1>
-            Cloud Financial Health
-          </h1>
+            <strong>
+              $
+              {data.forecastedSpend.toLocaleString()}
+            </strong>
+          </div>
+
+          <div className="overview-metric">
+            <span>Budget Usage</span>
+
+            <strong>
+              {budgetUsage}%
+            </strong>
+          </div>
+
+          <div className="overview-metric">
+            <span>Top Service</span>
+
+            <strong>
+              {data.topService}
+            </strong>
+          </div>
+
+          <div className="overview-metric">
+            <span>Monthly Spend</span>
+
+            <strong>
+              $
+              {data.totalSpend.toLocaleString()}
+            </strong>
+          </div>
         </div>
-
-        <div
-          className={`status-chip ${data.budgetStatus}`}
-        >
-          {status}
-        </div>
-      </div>
-
-      <div className="overview-grid">
-        <div className="overview-metric">
-          <span>Forecast</span>
-
-          <strong>
-            $
-            {data.forecastedSpend.toLocaleString()}
-          </strong>
-        </div>
-
-        <div className="overview-metric">
-          <span>Budget Usage</span>
-
-          <strong>
-            {budgetUsage}%
-          </strong>
-        </div>
-
-        <div className="overview-metric">
-          <span>Top Service</span>
-
-          <strong>
-            {data.topService}
-          </strong>
-        </div>
-
-        <div className="overview-metric">
-          <span>Monthly Spend</span>
-
-          <strong>
-            $
-            {data.totalSpend.toLocaleString()}
-          </strong>
-        </div>
-      </div>
-    </motion.section>
+      </ExecutiveCard>
+    </motion.div>
   );
 }

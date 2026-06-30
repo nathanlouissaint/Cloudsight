@@ -1,7 +1,7 @@
 import type { ForecastSummary } from "../../types/forecast";
 
 import ForecastMetricGrid from "./ForecastMetricGrid";
-import MetricCard from "./MetricCard";
+import MetricCard from "../shared/MetricCard";
 
 interface Props {
   summary: ForecastSummary;

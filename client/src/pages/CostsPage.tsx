@@ -1,61 +1,53 @@
-import DashboardLayout from "../components/layout/DashboardLayout";
+import TopNavigation from "../components/navigation/TopNavigation";
 
-import TopNavigation
-from "../components/navigation/TopNavigation";
+import {
+  DashboardLayout,
+  SectionHeader,
+} from "../components/layout";
 
-import AnalyticsRow
-from "../components/dashboard/AnalyticsRow";
+import {
+  AccountDistributionCard,
+  AnalyticsRow,
+  ServiceBreakdownCard,
+} from "../components/dashboard";
 
-import ServiceBreakdownCard
-from "../components/dashboard/ServiceBreakdownCard";
-
-import AccountDistributionCard
-from "../components/dashboard/AccountDistributionCard";
-
-import CostDriversCard
-from "../components/intelligence/CostDriversCard";
+import {
+  CostDriversCard,
+} from "../components/intelligence";
 
 export default function CostsPage() {
   return (
     <DashboardLayout>
       <TopNavigation />
 
-      <div
-        style={{
-          marginTop: "24px",
-        }}
-      >
-        <h1>
-          Cost Analytics
-        </h1>
+      <SectionHeader
+        title="Cost Analytics"
+        subtitle="Understand where cloud spend is occurring, which services contribute the most cost, and how spending is distributed across accounts."
+      />
 
-        <p>
-          Historical spend,
-          service analysis,
-          and account
-          distribution.
-        </p>
-      </div>
+      <SectionHeader
+        title="Historical Spend"
+        subtitle="Analyze spending trends over time to identify growth patterns and unusual changes."
+      />
 
       <AnalyticsRow />
 
-      <div
-        className="analytics-grid"
-        style={{
-          marginTop: "24px",
-        }}
-      >
-        <ServiceBreakdownCard />
+      <SectionHeader
+        title="Service Cost Distribution"
+        subtitle="Break down cloud spend by service to identify the largest contributors."
+      />
 
+      <div className="analytics-grid">
+        <ServiceBreakdownCard />
         <CostDriversCard />
       </div>
 
-      <div
-        className="analytics-grid"
-        style={{
-          marginTop: "24px",
-        }}
-      >
+      <SectionHeader
+        title="Account Distribution"
+        subtitle="Compare cloud spending across accounts to understand ownership and allocation."
+      />
+
+      <div className="analytics-grid">
         <AccountDistributionCard />
       </div>
     </DashboardLayout>

@@ -1,7 +1,7 @@
 import type { GrowthDriver } from "../../types/forecast";
 
 import ForecastMetricGrid from "./ForecastMetricGrid";
-import MetricCard from "./MetricCard";
+import MetricCard from "../shared/MetricCard";
 
 interface Props {
   drivers: GrowthDriver[];

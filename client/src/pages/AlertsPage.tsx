@@ -1,11 +1,13 @@
-import DashboardLayout from "../components/layout/DashboardLayout";
 import TopNavigation from "../components/navigation/TopNavigation";
-import SectionHeader from "../components/layout/SectionHeader";
 
-import AlertSummary from "../components/alerts/AlertSummary";
-import AlertCard from "../components/alerts/AlertCard";
-import AlertRecommendationPanel from "../components/alerts/AlertRecommendationPanel";
-import AlertHistoryTimeline from "../components/alerts/AlertHistoryTimeline";
+import { DashboardLayout, SectionHeader } from "../components/layout";
+
+import {
+  AlertCard,
+  AlertHistoryTimeline,
+  AlertRecommendationPanel,
+  AlertSummary,
+} from "../components/alerts";
 
 import { useAlerts } from "../hooks/useAlerts";
 import { useAlertHistory } from "../hooks/useAlertHistory";

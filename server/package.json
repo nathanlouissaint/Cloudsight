@@ -2,11 +2,12 @@
   "name": "cloudsight-server",
   "version": "1.0.0",
   "main": "dist/index.js",
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
+ "scripts": {
+  "dev": "tsx watch src/index.ts",
+  "build": "tsc",
+  "typecheck": "tsc --noEmit",
+  "start": "node dist/index.js"
+},
   "dependencies": {
     "@aws-sdk/client-budgets": "^3.1075.0",
     "@aws-sdk/client-cost-explorer": "^3.1075.0",
