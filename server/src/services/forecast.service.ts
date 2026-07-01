@@ -22,10 +22,30 @@ import type {
   AccountForecast,
 } from "../types/forecast.types";
 
+interface ServiceSnapshot {
+  serviceName: string;
+  cost: number;
+}
+
+interface AccountSnapshot {
+  accountId: string;
+  totalCost: number;
+  account: {
+    accountName: string;
+  };
+}
+
+interface ServiceGroup {
+  total: number;
+}
+
+interface AccountGroup {
+  total: number;
+  name: string;
+}
+
 export class ForecastService {
-
   async getForecast(): Promise<ForecastModel> {
-
     const now = new Date();
 
     const elapsedDays = now.getDate();
@@ -61,15 +81,17 @@ export class ForecastService {
       });
 
     const serviceSnapshots =
-      await findCurrentMonthServiceSnapshots();
+      await findCurrentMonthServiceSnapshots() as ServiceSnapshot[];
 
     const accountSnapshots =
-      await findCurrentMonthCostSnapshots();
+      await findCurrentMonthCostSnapshots() as AccountSnapshot[];
 
     const currentSpend =
       accountSnapshots.reduce(
-        (sum, row) =>
-          sum + row.totalCost,
+        (
+          sum: number,
+          row: AccountSnapshot
+        ) => sum + row.totalCost,
         0
       );
 
@@ -82,7 +104,6 @@ export class ForecastService {
       daysInMonth;
 
     const summary: ForecastSummary = {
-
       currentSpend:
         Number(
           currentSpend.toFixed(2)
@@ -116,123 +137,119 @@ export class ForecastService {
       onTrack:
         projectedSpend <=
         (budget?.amount ?? 0),
-
     };
 
     const serviceGroups =
       serviceSnapshots.reduce(
-        (acc, row) => {
-
+        (
+          acc: Record<string, ServiceGroup>,
+          row: ServiceSnapshot
+        ) => {
           if (!acc[row.serviceName]) {
-
             acc[row.serviceName] = {
               total: 0,
             };
-
           }
 
           acc[row.serviceName].total +=
             row.cost;
 
           return acc;
-
         },
-        {} as Record<
-          string,
-          { total: number }
-        >
+        {} as Record<string, ServiceGroup>
       );
+
+    const serviceEntries =
+      Object.entries(serviceGroups) as [
+        string,
+        ServiceGroup
+      ][];
 
     const serviceForecasts:
       ServiceForecast[] =
-      Object.entries(
-        serviceGroups
-      ).map(
-        ([service, value]) => ({
+      serviceEntries
+        .map(
+          ([service, value]) => ({
+            service,
 
-          service,
-
-          projectedSpend:
-            Number(
-              (
-                value.total /
-                Math.max(
-                  elapsedDays,
-                  1
-                ) *
-                daysInMonth
-              ).toFixed(2)
-            ),
-
-        })
-      )
-      .sort(
-        (a, b) =>
-          b.projectedSpend -
-          a.projectedSpend
-      );
+            projectedSpend:
+              Number(
+                (
+                  (value.total /
+                    Math.max(
+                      elapsedDays,
+                      1
+                    )) *
+                  daysInMonth
+                ).toFixed(2)
+              ),
+          })
+        )
+        .sort(
+          (
+            a: ServiceForecast,
+            b: ServiceForecast
+          ) =>
+            b.projectedSpend -
+            a.projectedSpend
+        );
 
     const accountGroups =
       accountSnapshots.reduce(
-        (acc, row) => {
-
+        (
+          acc: Record<string, AccountGroup>,
+          row: AccountSnapshot
+        ) => {
           if (!acc[row.accountId]) {
-
             acc[row.accountId] = {
               total: 0,
               name:
                 row.account.accountName,
             };
-
           }
 
           acc[row.accountId].total +=
             row.totalCost;
 
           return acc;
-
         },
-        {} as Record<
-          string,
-          {
-            total: number;
-            name: string;
-          }
-        >
+        {} as Record<string, AccountGroup>
       );
+
+    const accountValues =
+      Object.values(accountGroups) as AccountGroup[];
 
     const accountForecasts:
       AccountForecast[] =
-      Object.values(
-        accountGroups
-      ).map(
-        account => ({
+      accountValues
+        .map(
+          (account: AccountGroup) => ({
+            account:
+              account.name,
 
-          account:
-            account.name,
-
-          projectedSpend:
-            Number(
-              (
-                account.total /
-                Math.max(
-                  elapsedDays,
-                  1
-                ) *
-                daysInMonth
-              ).toFixed(2)
-            ),
-
-        })
-      )
-      .sort(
-        (a, b) =>
-          b.projectedSpend -
-          a.projectedSpend
-      );
+            projectedSpend:
+              Number(
+                (
+                  (account.total /
+                    Math.max(
+                      elapsedDays,
+                      1
+                    )) *
+                  daysInMonth
+                ).toFixed(2)
+              ),
+          })
+        )
+        .sort(
+          (
+            a: AccountForecast,
+            b: AccountForecast
+          ) =>
+            b.projectedSpend -
+            a.projectedSpend
+        );
 
     return {
-
       summary,
 
       confidence:
@@ -266,11 +283,8 @@ export class ForecastService {
       serviceForecasts,
 
       accountForecasts,
-
     };
-
   }
-
 }
 
 export const forecastService =
