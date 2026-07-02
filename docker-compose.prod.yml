@@ -5,15 +5,15 @@ services:
     restart: unless-stopped
 
     environment:
-      POSTGRES_USER: cloudsight_user
-      POSTGRES_PASSWORD: cloudsight_password
-      POSTGRES_DB: cloudsight
+      POSTGRES_USER: ${POSTGRES_USER:-cloudsight_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-cloudsight}
 
     volumes:
       - cloudsight_postgres_prod_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cloudsight_user -d cloudsight"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cloudsight_user} -d ${POSTGRES_DB:-cloudsight}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -21,10 +21,13 @@ services:
     networks:
       - cloudsight-network
 
+    security_opt:
+      - no-new-privileges:true
+
   server:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
 
     image: cloudsight-server:prod
     container_name: cloudsight-server-prod
@@ -34,8 +37,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5001
-      JWT_SECRET: supersecret
-      DATABASE_URL: postgresql://cloudsight_user:cloudsight_password@postgres:5432/cloudsight?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
 
     expose:
       - "5001"
@@ -53,10 +56,18 @@ services:
     networks:
       - cloudsight-network
 
+    security_opt:
+      - no-new-privileges:true
+
+    read_only: true
+
+    tmpfs:
+      - /tmp
+
   client:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: client/Dockerfile
 
     image: cloudsight-client:prod
     container_name: cloudsight-client-prod
@@ -78,6 +89,16 @@ services:
 
     networks:
       - cloudsight-network
+
+    security_opt:
+      - no-new-privileges:true
+
+    read_only: true
+
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
 
 volumes:
   cloudsight_postgres_prod_data:

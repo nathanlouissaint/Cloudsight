@@ -16,6 +16,7 @@ import awsRoutes from "./routes/aws.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import accountRoutes from "./routes/account.routes";
 import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
+import healthRoutes from "./routes/health.routes";
 
 import {
   errorHandler,
@@ -24,24 +25,17 @@ import {
 
 const app = express();
 
-app.set("trust proxy", true);
+app.set("trust proxy", false);
 
-app.use(
-  pinoHttp()
-);
+app.use(pinoHttp());
 
-app.use(
-  helmet()
-);
+app.use(helmet());
 
-app.use(
-  compression()
-);
+app.use(compression());
 
 app.use(
   cors({
-    origin:
-      process.env.CORS_ORIGIN ?? "*",
+    origin: process.env.CORS_ORIGIN ?? "*",
     credentials: true,
   })
 );
@@ -68,13 +62,7 @@ app.use(
   })
 );
 
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    status: "ok",
-    service: "CloudSight API",
-    timestamp: new Date().toISOString(),
-  });
-});
+app.use("/health", healthRoutes);
 
 app.use("/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
@@ -89,7 +77,6 @@ app.use("/analytics/accounts", accountRoutes);
 app.use("/analytics/services", serviceAnalyticsRoutes);
 
 app.use(notFoundHandler);
-
 app.use(errorHandler);
 
 export default app;

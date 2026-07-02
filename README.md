@@ -11,457 +11,549 @@ Enterprise Cloud Cost Intelligence Platform
 </h3>
 
 <p align="center">
-CloudSight is a production-focused full-stack cloud cost intelligence platform that helps engineering teams monitor, forecast, analyze, and optimize cloud spending through modern analytics, forecasting, and operational insights.
+CloudSight is a production-grade full-stack FinOps platform that demonstrates modern cloud engineering, infrastructure automation, DevOps, and software architecture practices.
 </p>
 
 <p align="center">
-Built with React • TypeScript • Express • PostgreSQL • Prisma • Docker • AWS
+
+React • TypeScript • Express • PostgreSQL • Prisma • Docker • Terraform • AWS • GitHub Actions
+
 </p>
 
 ---
 
-# Overview
+# Executive Overview
 
-CloudSight is an enterprise-inspired FinOps platform designed to demonstrate modern software engineering and cloud engineering practices.
+CloudSight is an enterprise-inspired Software-as-a-Service platform built to model how modern engineering organizations monitor, analyze, forecast, and optimize cloud infrastructure costs.
 
-The project models how organizations collect cloud billing data, aggregate analytics, generate forecasts, detect anomalies, and provide executive reporting through a scalable service-oriented architecture.
+Unlike a traditional portfolio application, CloudSight emphasizes production engineering practices across the entire software delivery lifecycle.
 
-Rather than being a simple dashboard project, CloudSight emphasizes:
+The repository demonstrates:
 
-* Clean Architecture
-* Repository Pattern
-* Service-Oriented Backend
-* Contract-Driven APIs
-* Backend-Owned Business Logic
-* Shared UI System
-* Production Deployment
-* Docker
-* Infrastructure as Code
-* AWS Integration
+- Enterprise Infrastructure as Code
+- Production Docker Architecture
+- CI/CD Automation
+- Infrastructure Validation
+- Operational Runbooks
+- Deployment Automation
+- Disaster Recovery Planning
+- Cloud Engineering Best Practices
+- Repository Governance
+- Production Readiness
 
-The long-term goal is to evolve CloudSight into a production-grade cloud application showcasing full-stack engineering, cloud architecture, DevOps, and infrastructure automation.
+The project is intentionally developed without AWS credentials during the infrastructure construction phases.
 
----
-
-# Features
-
-## Executive Dashboard
-
-* Executive KPIs
-* Monthly Spend Overview
-* Budget Health
-* Cloud Service Breakdown
-* Account Distribution
-* Optimization Center
-* Spend Trend Visualization
-* Executive Intelligence
-* AI Recommendation Panels
+Infrastructure is validated locally using Terraform validation mode until AWS bootstrap begins in Phase 11.
 
 ---
 
-## Cost Analytics
+# Design Goals
 
-* Historical Spend Analytics
-* Service-Level Analytics
-* Multi-Account Analytics
-* Trend Analysis
-* Cost Breakdown
-* Budget Monitoring
+CloudSight is designed around five engineering principles.
 
----
+## Reliability
 
-## Forecasting
+Infrastructure should be repeatable, deterministic, and resilient.
 
-Production forecasting engine including:
+## Maintainability
 
-* Forecast Projection
-* Historical Trend Analysis
-* Forecast Confidence
-* Budget Risk
-* Growth Drivers
-* Forecast Insights
-* Executive Explanation Engine
-* Service Forecasting
-* Account Forecasting
-* Run Rate Analytics
+Every component should be modular, loosely coupled, and easy to evolve.
+
+## Security
+
+Infrastructure should follow least-privilege principles and modern security practices.
+
+## Operational Excellence
+
+Deployments, validation, rollback, monitoring, and recovery should be documented and automated.
+
+## Developer Experience
+
+The repository should be simple to understand, easy to validate, and straightforward to contribute to.
 
 ---
 
-## Enterprise Alerts
+# Current Project Status
 
-Backend-owned alert intelligence including:
+Version
 
-* Cost Spike Detection
-* Forecast Risk Detection
-* Budget Breach Detection
-* Alert Summary Engine
-* Alert Metrics Engine
-* Alert Timeline
-* Recommendation Engine
-* Alert History
+**v2.1.0-alpha**
 
----
+Current Phase
 
-## Executive Reporting
+**Phase 10.7A — Repository Operational Excellence**
 
-* Executive Reports
-* Budget Reports
-* Forecast Reports
-* Cost Summaries
-* Financial Intelligence
+Overall Progress
 
----
+**99.8%**
 
-# Architecture
+Current Focus
 
-## Frontend Architecture
-
-```text
-React
-
-↓
-
-React Router
-
-↓
-
-React Query
-
-↓
-
-Feature Hooks
-
-↓
-
-Presentation Components
-
-↓
-
-Shared UI Components
-```
+- Production Readiness
+- Operational Excellence
+- Repository Consolidation
+- Documentation
+- AWS Bootstrap Preparation
 
 ---
 
-## Backend Architecture
+# Highlights
 
-```text
-REST API
+## Enterprise Infrastructure
 
-↓
+- Modular Terraform Architecture
+- Multi-Environment Configuration
+- Cloud-Init Templates
+- Infrastructure Modules
+- Backend Configuration Templates
 
-Controllers
+## Deployment
 
-↓
+- Production Docker Images
+- Deployment Automation
+- Rollback Framework
+- Deployment Metadata
+- Deployment History
+- Pre-flight Validation
 
-Domain Services
+## CI/CD
 
-↓
+- GitHub Actions
+- Docker Validation
+- Terraform Validation
+- Security Scanning
+- Smoke Testing
+- Container Publishing
+- Release Automation
 
-Repositories
+## Documentation
 
-↓
-
-Prisma ORM
-
-↓
-
-PostgreSQL
-```
-
----
-
-## Forecast Engine
-
-```text
-Historical Trends
-
-↓
-
-Trend Engine
-
-↓
-
-Projection Engine
-
-↓
-
-Confidence Engine
-
-↓
-
-Growth Driver Engine
-
-↓
-
-Insight Engine
-
-↓
-
-Forecast API
-```
+- Architecture Guides
+- Infrastructure Documentation
+- Operational Runbooks
+- Disaster Recovery
+- Environment Promotion
+- Production Readiness Checklist
 
 ---
 
-## Alert Engine
+# Enterprise Features
 
-```text
-Detection Services
+CloudSight is organized around production-ready engineering capabilities rather than isolated features.
 
-↓
+## FinOps Platform
 
-Alert Summary
-
-↓
-
-Alert Metrics
-
-↓
-
-Alert History
-
-↓
-
-Alert Service
-
-↓
-
-REST API
-```
+- Executive Dashboard
+- Cloud Cost Analytics
+- Budget Management
+- Forecasting Engine
+- Cost Optimization Recommendations
+- Executive Reporting
+- Alerting Framework
+- Historical Trend Analysis
 
 ---
 
-## Cloud Architecture (Roadmap)
+## Infrastructure Engineering
 
-```text
-AWS Cost Explorer
-
-↓
-
-AWS Budgets
-
-↓
-
-AWS Organizations
-
-↓
-
-Collection Services
-
-↓
-
-Analytics Engine
-
-↓
-
-Forecast Engine
-
-↓
-
-REST API
-
-↓
-
-React Dashboard
-```
-
----
-
-# Technology Stack
-
-## Frontend
-
-* React 19
-* TypeScript
-* Vite
-* React Router
-* React Query
-* Recharts
-* Framer Motion
-* CSS
-
----
-
-## Backend
-
-* Node.js
-* Express
-* TypeScript
-* Prisma ORM
-* PostgreSQL
-* Zod
-
----
-
-## Cloud
-
-* AWS SDK v3
-* Cost Explorer API
-* Budgets API
-* Organizations API
+- Enterprise Terraform Architecture
+- Modular Infrastructure as Code
+- Multi-Environment Configuration
+- Infrastructure Validation
+- Cloud-Init Bootstrap Templates
+- Backend Configuration Templates
 
 ---
 
 ## DevOps
 
-* Docker
-* Docker Compose
-* GitHub Actions (Planned)
-* Terraform (Planned)
+- Multi-stage Docker Images
+- Production Docker Compose
+- GitHub Actions CI/CD
+- GitHub Container Registry Publishing
+- Deployment Automation
+- Rollback Automation
+- Pre-flight Deployment Validation
+- Smoke Testing
+- Health Verification
 
 ---
 
-# Software Engineering Practices
+## Operational Excellence
 
-CloudSight is designed around production engineering principles.
-
-Implemented patterns include:
-
-* Repository Pattern
-* Service-Oriented Architecture
-* Thin Controllers
-* Backend-Owned Business Logic
-* Contract-Driven APIs
-* Runtime Validation with Zod
-* Shared Component Library
-* React Query Data Layer
-* Feature-Based Organization
-* Lazy Loading
-* Code Splitting
-* Bundle Optimization
+- Operations Runbooks
+- Disaster Recovery Procedures
+- Environment Promotion Guide
+- Production Readiness Checklist
+- Deployment History
+- Deployment Metadata
+- Repository Governance
 
 ---
 
-# Project Structure
+# Repository Architecture
 
 ```text
-CloudSight/
-
-├── client/
-│   ├── src/
-│   ├── public/
-│   ├── Dockerfile
-│   └── package.json
+CloudSight
 │
-├── server/
-│   ├── prisma/
-│   ├── src/
-│   ├── Dockerfile
-│   └── package.json
+├── client/                     React Frontend
+│
+├── server/                     Express API
+│
+├── terraform/                  Enterprise Infrastructure
+│   ├── modules/
+│   ├── environments/
+│   ├── templates/
+│   └── cloud-init/
+│
+├── scripts/                    Operational Automation
+│
+├── deployment/                 Deployment Metadata
 │
 ├── docs/
 │   ├── architecture/
-│   ├── api/
-│   ├── frontend/
+│   ├── infrastructure/
+│   ├── runbooks/
 │   ├── requirements/
-│   └── screenshots/
+│   ├── api/
+│   ├── database/
+│   └── project/
 │
-├── infrastructure/
-│   └── terraform/
+├── .github/
+│   └── workflows/
 │
-├── docker-compose.yml
+├── Makefile
 │
-└── README.md
+├── README.md
+│
+└── current.state.md
 ```
 
 ---
 
-# Current Modules
-
-| Module                | Status         |
-| --------------------- | -------------- |
-| Dashboard             | ✅ Complete     |
-| Cost Analytics        | ✅ Complete     |
-| Forecast Engine       | ✅ Complete     |
-| Alerts                | ✅ MVP Complete |
-| Reports               | ✅ Complete     |
-| AWS Integration       | 🚧 In Progress |
-| Docker                | 🚧 In Progress |
-| Terraform             | 📅 Planned     |
-| CI/CD                 | 📅 Planned     |
-| Production Deployment | 📅 Planned     |
-
----
-
-# Database
-
-CloudSight currently uses PostgreSQL with Prisma ORM.
-
-Core models include:
-
-* User
-* CloudService
-* CloudAccount
-* CostRecord
-* CostSnapshot
-* ServiceCostSnapshot
-* Budget
-* BudgetSnapshot
-* Forecast
-* Alert
-* AlertHistory
-* Report
-
----
-
-# REST API
-
-Current API endpoints include:
+# High-Level System Architecture
 
 ```text
-GET    /health
-
-POST   /auth/register
-POST   /auth/login
-
-GET    /dashboard
-
-GET    /costs
-GET    /forecast
-
-GET    /alerts
-GET    /alerts/history
-
-GET    /reports
-
-GET    /analytics
-GET    /analytics/accounts
-GET    /analytics/services
-
-GET    /aws
+                    GitHub
+                       │
+                       ▼
+              GitHub Actions CI/CD
+                       │
+                       ▼
+          GitHub Container Registry
+                       │
+                       ▼
+            Deployment Automation
+                       │
+                       ▼
+             Docker Compose Stack
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+   React Client    Express API    PostgreSQL
+                       │
+                       ▼
+                 Prisma ORM
+                       │
+                       ▼
+              CloudSight Database
 ```
 
 ---
 
-# Performance Optimizations
+# Infrastructure Architecture
 
-Implemented optimizations include:
+CloudSight follows a modular Infrastructure-as-Code architecture.
 
-* Route Lazy Loading
-* React Code Splitting
-* Manual Vendor Chunking
-* Query Chunk Separation
-* Chart Chunk Separation
-* Animation Chunk Separation
-* Bundle Analysis
-* Shared UI Components
+```text
+terraform/
+
+├── providers.tf
+├── versions.tf
+├── variables.tf
+├── outputs.tf
+├── locals.tf
+├── main.tf
+│
+├── network.tf
+├── security.tf
+├── iam.tf
+├── compute.tf
+├── database.tf
+├── load_balancer.tf
+├── autoscaling.tf
+├── monitoring.tf
+├── sns.tf
+├── acm.tf
+├── route53.tf
+├── backend.tf
+│
+├── modules/
+│   ├── network/
+│   ├── security/
+│   ├── iam/
+│   ├── compute/
+│   ├── database/
+│   ├── load_balancer/
+│   ├── autoscaling/
+│   ├── monitoring/
+│   ├── sns/
+│   ├── acm/
+│   └── route53/
+│
+├── environments/
+│   ├── dev/
+│   ├── staging/
+│   └── prod/
+│
+├── templates/
+└── cloud-init/
+```
 
 ---
 
-# Docker
+# Deployment Architecture
 
-CloudSight is fully containerized for local development.
+CloudSight uses a production deployment pipeline built around immutable container images.
 
-Services include:
+```text
+Developer
 
-* React Client
-* Express API
-* PostgreSQL
+        │
 
-Start the project with:
+        ▼
 
-```bash
-docker compose up --build
+GitHub Repository
+
+        │
+
+        ▼
+
+GitHub Actions
+
+        │
+
+        ▼
+
+Docker Build
+
+        │
+
+        ▼
+
+GitHub Container Registry
+
+        │
+
+        ▼
+
+Deployment Server
+
+        │
+
+        ▼
+
+scripts/preflight.sh
+
+        │
+
+        ▼
+
+scripts/deploy.sh
+
+        │
+
+        ▼
+
+Docker Compose
+
+        │
+
+        ▼
+
+Health Checks
+
+        │
+
+        ▼
+
+Deployment Verification
+
+        │
+
+        ▼
+
+Deployment History
+
+        │
+
+        ▼
+
+Production Ready
 ```
+
+---
+
+# Operational Architecture
+
+Every deployment follows the same deterministic workflow.
+
+```text
+Pre-flight Validation
+
+        │
+
+        ▼
+
+Image Pull
+
+        │
+
+        ▼
+
+Container Startup
+
+        │
+
+        ▼
+
+Container Health Checks
+
+        │
+
+        ▼
+
+Application Verification
+
+        │
+
+        ▼
+
+Deployment Metadata
+
+        │
+
+        ▼
+
+Deployment History
+
+        │
+
+        ▼
+
+Rollback Available
+```
+
+---
+
+
+# Technology Stack
+
+CloudSight combines modern application development with enterprise cloud engineering practices.
+
+---
+
+## Frontend
+
+| Technology | Purpose |
+|------------|---------|
+| React 19 | User Interface |
+| TypeScript | Type Safety |
+| Vite | Development & Build Tool |
+| React Router | Client Routing |
+| Recharts | Analytics Visualization |
+| Framer Motion | UI Animation |
+| CSS | Styling |
+
+---
+
+## Backend
+
+| Technology | Purpose |
+|------------|---------|
+| Node.js | Runtime |
+| Express | REST API |
+| TypeScript | Type Safety |
+| Prisma ORM | Database Access |
+| PostgreSQL | Relational Database |
+| Zod | Runtime Validation |
+
+---
+
+## Infrastructure
+
+| Technology | Purpose |
+|------------|---------|
+| Terraform | Infrastructure as Code |
+| AWS | Cloud Platform |
+| Docker | Containerization |
+| Docker Compose | Local & Production Orchestration |
+| Cloud-Init | Instance Bootstrap |
+
+---
+
+## DevOps
+
+| Technology | Purpose |
+|------------|---------|
+| GitHub Actions | CI/CD |
+| GitHub Container Registry | Container Images |
+| Checkov | Security Scanning |
+| TFLint | Terraform Linting |
+| Git | Version Control |
+
+---
+
+# Engineering Principles
+
+CloudSight follows enterprise engineering practices throughout the repository.
+
+## Infrastructure as Code
+
+Infrastructure is modular, repeatable, and validated locally before deployment.
+
+---
+
+## Automation First
+
+Every repeatable process should be automated.
+
+Examples include:
+
+- Deployment
+- Rollback
+- Health Verification
+- Deployment Verification
+- Terraform Validation
+- Smoke Testing
+
+---
+
+## Operational Excellence
+
+Infrastructure should be easy to deploy, monitor, recover, and maintain.
+
+Operational assets include:
+
+- Deployment Runbooks
+- Disaster Recovery Procedures
+- Environment Promotion
+- Production Readiness Checklist
+
+---
+
+## Security
+
+Security is incorporated throughout the development lifecycle.
+
+Practices include:
+
+- Least Privilege IAM
+- HTTPS
+- Security Scanning
+- Immutable Container Images
+- Environment Variables
+- Repository Governance
 
 ---
 
@@ -470,9 +562,9 @@ docker compose up --build
 ## Clone Repository
 
 ```bash
-git clone git@github.com:nathanlouissaint/Cloudsight.git
+git clone git@github.com:nathanlouissaint/CloudSight.git
 
-cd Cloudsight
+cd CloudSight
 ```
 
 ---
@@ -485,161 +577,432 @@ npm install
 
 ---
 
-## Configure Environment
-
-Create the required environment files.
-
-```text
-server/.env
-```
-
-Configure:
-
-* DATABASE_URL
-* JWT_SECRET
-* AWS_PROVIDER
-
----
-
-## Start Development
-
-Using Docker
+## Start Local Development
 
 ```bash
 docker compose up --build
 ```
 
-Or manually
+Or start services individually.
 
-```bash
-cd server
-npm install
-npm run dev
-```
+Frontend
 
 ```bash
 cd client
+
 npm install
+
+npm run dev
+```
+
+Backend
+
+```bash
+cd server
+
+npm install
+
 npm run dev
 ```
 
 ---
 
-# Screenshots
+# Docker Development
 
-Coming Soon
+CloudSight ships with both development and production Docker environments.
 
-* Executive Dashboard
-* Cost Analytics
-* Forecasting
-* Enterprise Alerts
-* Reports
-* Docker Deployment
-* AWS Architecture
+Development
 
----
+```bash
+docker compose up --build
+```
 
-# Infrastructure Roadmap
+Production Validation
 
-CloudSight is evolving into a production-ready cloud application.
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
 
-Planned infrastructure includes:
+Deployment
 
-* Docker Production Images
-* Nginx Reverse Proxy
-* GitHub Actions
-* Terraform
-* AWS EC2
-* Amazon RDS PostgreSQL
-* IAM
-* VPC
-* Security Groups
-* CloudWatch
-* Cost Explorer Integration
-* AWS Budgets
-* Organizations API
+```bash
+docker compose -f docker-compose.deploy.yml up -d
+```
 
 ---
 
-# Development Roadmap
+# Terraform Development
 
-## Phase 10
+CloudSight intentionally supports infrastructure development without AWS credentials.
 
-Production Readiness
+Validation workflow:
 
-* Repository Cleanup
-* Professional Documentation
-* Demo Mode
-* Root Development Scripts
-* Docker Improvements
+```bash
+terraform -chdir=terraform fmt -recursive
 
----
+terraform -chdir=terraform init -backend=false
 
-## Phase 11
+terraform -chdir=terraform validate
+```
 
-Cloud Infrastructure
+During Phase 10, infrastructure is validated locally only.
 
-* Terraform
-* CI/CD
-* Production Docker
-* AWS Deployment
-* Monitoring
+The following commands are intentionally deferred until Phase 12:
+
+- terraform plan
+- terraform apply
 
 ---
 
-## Phase 12
+# Development Workflow
 
-Enterprise Cloud Platform
+Feature Development
 
-* Live AWS Cost Data
-* CloudWatch Integration
-* Scheduled Collection Jobs
-* Production Monitoring
-* Public Demo Environment
+↓
+
+Repository Verification
+
+↓
+
+Docker Validation
+
+↓
+
+Terraform Validation
+
+↓
+
+Security Validation
+
+↓
+
+Smoke Tests
+
+↓
+
+GitHub Actions
+
+↓
+
+Container Publishing
+
+↓
+
+Deployment Validation
+
+↓
+
+Production Ready
 
 ---
 
-# Why CloudSight?
+# Validation Workflow
 
-CloudSight was built to demonstrate practical software engineering beyond CRUD applications.
+CloudSight validates every layer of the platform.
 
-The project focuses on:
+Repository
 
-* Enterprise backend architecture
-* Cloud-native application design
-* Modern React architecture
-* Scalable service layers
-* Production deployment practices
-* Cloud engineering workflows
-* Infrastructure automation
+```bash
+make verify
+```
 
-It represents the progression from application development to production cloud engineering.
+Terraform
+
+```bash
+make terraform
+```
+
+Docker
+
+```bash
+make docker
+```
+
+Documentation
+
+```bash
+make docs
+```
+
+Smoke Tests
+
+```bash
+make smoke
+```
+
+Security
+
+GitHub Actions executes:
+
+- Checkov
+- TFLint
+- Workflow Validation
 
 ---
 
-# Future Enhancements
+# Makefile Commands
 
-* Live AWS Cost Explorer integration
-* CloudWatch monitoring
-* GitHub Actions deployment pipeline
-* Terraform infrastructure provisioning
-* Production demo environment
-* Authentication improvements
-* Executive PDF reporting
-* Multi-cloud provider support
-* Kubernetes deployment
+| Command | Purpose |
+|----------|---------|
+| make help | Display available commands |
+| make verify | Repository verification |
+| make terraform | Terraform validation |
+| make docker | Docker validation |
+| make security | Security validation |
+| make smoke | Production smoke tests |
+| make deploy | Deployment automation |
+| make rollback | Rollback automation |
+| make docs | Documentation validation |
+| make clean | Cleanup temporary resources |
+
+---
+
+
+---
+
+# CI/CD Pipeline
+
+CloudSight implements a multi-stage continuous integration and delivery pipeline designed around validation, repeatability, and deployment safety.
+
+## Repository Validation
+
+Every change is validated before deployment through automated workflows.
+
+Pipeline stages include:
+
+- Repository Verification
+- Type Checking
+- Application Build
+- Docker Validation
+- Terraform Validation
+- Security Scanning
+- Smoke Testing
+- Release Automation
+
+---
+
+## GitHub Actions Workflows
+
+| Workflow | Purpose |
+|----------|---------|
+| verify.yml | Repository Verification |
+| docker.yml | Docker Validation |
+| terraform.yml | Infrastructure Validation |
+| security.yml | Security Checks |
+| smoke.yml | Production Smoke Tests |
+| publish.yml | Publish Images to GHCR |
+| deploy.yml | Deployment Automation |
+| release.yml | Release Management |
+
+---
+
+## Deployment Flow
+
+```text
+Developer
+
+    │
+
+    ▼
+
+Git Push
+
+    │
+
+    ▼
+
+Repository Verification
+
+    │
+
+    ▼
+
+Terraform Validation
+
+    │
+
+    ▼
+
+Docker Build
+
+    │
+
+    ▼
+
+Security Validation
+
+    │
+
+    ▼
+
+Smoke Tests
+
+    │
+
+    ▼
+
+Publish Images
+
+    │
+
+    ▼
+
+Production Deployment
+```
+
+---
+
+# Operational Documentation
+
+CloudSight includes operational documentation intended to support production deployment and long-term maintenance.
+
+| Document | Purpose |
+|----------|---------|
+| Deployment Runbook | Production deployment procedures |
+| Operations Runbook | Operational maintenance |
+| Disaster Recovery | Incident recovery process |
+| Environment Promotion | Promotion between environments |
+| Production Readiness Checklist | Final production verification |
+| Server Setup Guide | Infrastructure bootstrap |
+
+---
+
+# Repository Standards
+
+The repository follows enterprise engineering standards.
+
+## Infrastructure
+
+- Infrastructure as Code
+- Modular Terraform Architecture
+- Environment Isolation
+- Reusable Modules
+
+---
+
+## Software Engineering
+
+- Type Safety
+- Layered Architecture
+- RESTful APIs
+- Repository Pattern
+- Service Layer
+- Contract Validation
+
+---
+
+## DevOps
+
+- Automated Validation
+- Immutable Deployments
+- Health Monitoring
+- Rollback Procedures
+- Deployment Metadata
+- Deployment History
+
+---
+
+## Documentation
+
+Documentation is maintained alongside implementation.
+
+Major documentation categories include:
+
+- Architecture
+- Infrastructure
+- Requirements
+- Database
+- API
+- Runbooks
+- Repository Governance
+
+---
+
+# Project Roadmap
+
+## Completed
+
+- Executive Dashboard
+- Full-stack Application
+- Production Docker Architecture
+- Enterprise Terraform Architecture
+- Infrastructure Modules
+- GitHub Actions Automation
+- Deployment Framework
+- Operational Runbooks
+- Disaster Recovery Planning
+- Repository Governance
+
+---
+
+## Current Phase
+
+**Phase 10.7B — Repository Consolidation**
+
+Current objectives:
+
+- Enterprise README
+- Repository Documentation
+- Root current.state.md
+- Documentation Validation
+- Production Readiness Preparation
+
+---
+
+## Upcoming
+
+### Phase 10.8
+
+Production Readiness Review
+
+- Repository Audit
+- Documentation Audit
+- Infrastructure Review
+- Deployment Validation
+- Release Readiness
+
+---
+
+### Phase 11
+
+AWS Bootstrap
+
+- AWS Account Integration
+- Remote Terraform Backend
+- State Storage
+- IAM Provisioning
+- Initial Infrastructure Deployment
+
+---
+
+### Phase 12
+
+Production Infrastructure
+
+- terraform plan
+- terraform apply
+- DNS Configuration
+- TLS Certificates
+- Monitoring
+- Production Operations
 
 ---
 
 # License
 
-MIT License
+This project is licensed under the MIT License.
+
+See the LICENSE file for additional information.
 
 ---
 
-<p align="center">
-Built by <strong>Nathan Louissaint</strong>
+# Closing Summary
 
-Production-focused Full-Stack & Cloud Engineering Portfolio Project
+CloudSight demonstrates how a modern cloud-native SaaS platform can be engineered using enterprise software development practices.
 
-</p>
+The repository emphasizes maintainability, infrastructure automation, operational excellence, and production engineering over isolated application features.
+
+Although the infrastructure is currently validated using offline Terraform workflows, the project has been intentionally structured to transition directly into AWS bootstrap with minimal architectural change.
+
+CloudSight is approaching production readiness and will next transition into comprehensive production review before live cloud deployment.
+

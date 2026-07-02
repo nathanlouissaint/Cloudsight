@@ -2,12 +2,12 @@
   "name": "cloudsight-server",
   "version": "1.0.0",
   "main": "dist/index.js",
- "scripts": {
-  "dev": "tsx watch src/index.ts",
-  "build": "tsc",
-  "typecheck": "tsc --noEmit",
-  "start": "node dist/index.js"
-},
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
   "dependencies": {
     "@aws-sdk/client-budgets": "^3.1075.0",
     "@aws-sdk/client-cost-explorer": "^3.1075.0",
@@ -15,18 +15,23 @@
     "@faker-js/faker": "^10.5.0",
     "@prisma/client": "^6.10.1",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
+    "pino-http": "^11.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.1.0",
     "nodemon": "^3.1.14",
     "prisma": "^6.10.1",
     "tsx": "^4.22.4",

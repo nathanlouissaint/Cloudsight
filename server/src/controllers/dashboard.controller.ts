@@ -2,6 +2,16 @@ import type { Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { DashboardContract } from "../contracts/dashboard.contract";
 
+type CloudServiceSummary = Awaited<
+  ReturnType<typeof prisma.cloudService.findMany>
+>[number];
+
+interface ServiceBreakdownItem {
+  name: string;
+  spend: number;
+  percentage: number;
+}
+
 export async function getDashboardSummary(
   _req: Request,
   res: Response
@@ -73,8 +83,11 @@ export async function getDashboardSummary(
         },
       });
 
-    const serviceIds =
-      serviceCosts.map((item) => item.serviceId);
+   const serviceIds =
+  serviceCosts.map(
+    (item: (typeof serviceCosts)[number]) =>
+      item.serviceId
+  );
 
     const services =
       await prisma.cloudService.findMany({
@@ -86,10 +99,12 @@ export async function getDashboardSummary(
       });
 
     const serviceNameById = new Map(
-      services.map((service) => [
-        service.id,
-        service.name,
-      ])
+      services.map(
+        (service: CloudServiceSummary) => [
+          service.id,
+          service.name,
+        ]
+      )
     );
 
     const currentMonthSpend =
@@ -135,21 +150,29 @@ export async function getDashboardSummary(
 
     const totalSavings = 1240;
 
-    const serviceBreakdown =
-      serviceCosts.map((item) => {
+    const serviceBreakdown: ServiceBreakdownItem[] =
+  serviceCosts.map(
+    (item: (typeof serviceCosts)[number]) => {
         const spend =
-          item._sum.cost ?? 0;
+          item._sum?.cost ?? 0;
+
+
 
         return {
           name:
             serviceNameById.get(item.serviceId) ??
             "Unknown Service",
-          spend: Number(spend.toFixed(2)),
+
+          spend: Number(
+            spend.toFixed(2)
+          ),
+
           percentage:
             currentMonthSpend > 0
               ? Number(
                   (
-                    (spend / currentMonthSpend) *
+                    (spend /
+                      currentMonthSpend) *
                     100
                   ).toFixed(1)
                 )
@@ -161,129 +184,147 @@ export async function getDashboardSummary(
       serviceBreakdown[0]?.name ??
       "No service data";
 
-    const response = DashboardContract.parse({
-      overview: {
-        forecast: Number(
-          forecastedSpend.toFixed(2)
-        ),
-        budgetUsage: Number(
-          budgetUsage.toFixed(1)
-        ),
-        confidence: 92,
-        savings: totalSavings,
-      },
+    const response =
+      DashboardContract.parse({
+        overview: {
+          forecast: Number(
+            forecastedSpend.toFixed(2)
+          ),
+          budgetUsage: Number(
+            budgetUsage.toFixed(1)
+          ),
+          confidence: 92,
+          savings: totalSavings,
+        },
 
-      summary: {
-        content: [
-          `Current month spend is $${currentMonthSpend.toFixed(
-            2
-          )}.`,
-          `Forecasted spend is $${forecastedSpend.toFixed(
-            2
-          )}.`,
-          `${topService} is the current top cost driver.`,
+        summary: {
+          content: [
+            `Current month spend is $${currentMonthSpend.toFixed(
+              2
+            )}.`,
+            `Forecasted spend is $${forecastedSpend.toFixed(
+              2
+            )}.`,
+            `${topService} is the current top cost driver.`,
+          ],
+        },
+
+        costDrivers:
+          serviceBreakdown
+            .slice(0, 3)
+            .map(
+              (
+                service: ServiceBreakdownItem
+              ) => ({
+                service: service.name,
+                increase: 8,
+                reason:
+                  "Current month spend concentration",
+              })
+            ),
+
+        optimization: [
+          {
+            resource:
+              "Idle EC2 Instances",
+            savings: 420,
+            priority: "High",
+          },
+          {
+            resource:
+              "Unused EBS Volumes",
+            savings: 190,
+            priority: "Medium",
+          },
+          {
+            resource:
+              "Savings Plan Coverage",
+            savings: 630,
+            priority: "High",
+          },
         ],
-      },
 
-      costDrivers: serviceBreakdown
-        .slice(0, 3)
-        .map((service) => ({
-          service: service.name,
-          increase: 8,
-          reason: "Current month spend concentration",
-        })),
+        insights: [
+          {
+            title: "Budget Status",
+            description:
+              budgetUsage < 80
+                ? "Current spend remains within budget thresholds."
+                : "Current spend is approaching budget threshold.",
+          },
+          {
+            title: "Top Service",
+            description: `${topService} is currently driving the largest share of cloud spend.`,
+          },
+        ],
 
-      optimization: [
-        {
-          resource: "Idle EC2 Instances",
-          savings: 420,
-          priority: "High",
-        },
-        {
-          resource: "Unused EBS Volumes",
-          savings: 190,
-          priority: "Medium",
-        },
-        {
-          resource: "Savings Plan Coverage",
-          savings: 630,
-          priority: "High",
-        },
-      ],
+        anomalies: [
+          {
+            service: topService,
+            impact:
+              previousMonthSpend > 0
+                ? `+${(
+                    ((currentMonthSpend -
+                      previousMonthSpend) /
+                      previousMonthSpend) *
+                    100
+                  ).toFixed(1)}%`
+                : "+0%",
+            severity:
+              currentMonthSpend >
+              previousMonthSpend
+                ? "warning"
+                : "healthy",
+          },
+        ],
 
-      insights: [
-        {
-          title: "Budget Status",
-          description:
-            budgetUsage < 80
-              ? "Current spend remains within budget thresholds."
-              : "Current spend is approaching budget threshold.",
-        },
-        {
-          title: "Top Service",
-          description: `${topService} is currently driving the largest share of cloud spend.`,
-        },
-      ],
+        accounts: [
+          {
+            name: "Production",
+            status: "Healthy",
+          },
+          {
+            name: "Staging",
+            status: "Healthy",
+          },
+          {
+            name: "Development",
+            status:
+              budgetUsage > 80
+                ? "Warning"
+                : "Healthy",
+          },
+        ],
 
-      anomalies: [
-        {
-          service: topService,
-          impact:
-            previousMonthSpend > 0
-              ? `+${(
-                  ((currentMonthSpend -
-                    previousMonthSpend) /
-                    previousMonthSpend) *
-                  100
-                ).toFixed(1)}%`
-              : "+0%",
-          severity:
-            currentMonthSpend >
-            previousMonthSpend
-              ? "warning"
-              : "healthy",
-        },
-      ],
+        forecastFactors: [
+          {
+            name:
+              "Current Daily Run Rate",
+            impact: `$${averageDailySpend.toFixed(
+              2
+            )}/day`,
+          },
+          {
+            name:
+              "Budget Utilization",
+            impact: `${budgetUsage.toFixed(
+              1
+            )}%`,
+          },
+          {
+            name:
+              "Days Remaining",
+            impact: `${daysInMonth - today}`,
+          },
+        ],
 
-      accounts: [
-        {
-          name: "Production",
-          status: "Healthy",
-        },
-        {
-          name: "Staging",
-          status: "Healthy",
-        },
-        {
-          name: "Development",
-          status:
-            budgetUsage > 80
-              ? "Warning"
-              : "Healthy",
-        },
-      ],
+        services:
+          serviceBreakdown,
+      });
 
-      forecastFactors: [
-        {
-          name: "Current Daily Run Rate",
-          impact: `$${averageDailySpend.toFixed(
-            2
-          )}/day`,
-        },
-        {
-          name: "Budget Utilization",
-          impact: `${budgetUsage.toFixed(1)}%`,
-        },
-        {
-          name: "Days Remaining",
-          impact: `${daysInMonth - today}`,
-        },
-      ],
-
-      services: serviceBreakdown,
-    });
-
-    return res.status(200).json(response);
+    return res
+      .status(200)
+      .json(response);
   } catch (error) {
     console.error(
       "Dashboard summary error:",

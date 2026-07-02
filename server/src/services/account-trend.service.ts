@@ -1,5 +1,10 @@
-import { findAccountTrend }
-  from "../repositories/account-trend.repository";
+import {
+  findAccountTrend,
+} from "../repositories/account-trend.repository";
+
+type AccountTrendSnapshot = Awaited<
+  ReturnType<typeof findAccountTrend>
+>[number];
 
 export async function getAccountTrend(
   accountId: string,
@@ -15,14 +20,20 @@ export async function getAccountTrend(
 
   return {
     accountId,
+
     totalCost: snapshots.reduce(
-      (sum, row) => sum + row.totalCost,
+      (
+        sum: number,
+        row: AccountTrendSnapshot
+      ) => sum + row.totalCost,
       0
     ),
 
-    trend: snapshots.map((row) => ({
-      date: row.snapshotDate,
-      cost: row.totalCost,
-    })),
+    trend: snapshots.map(
+      (row: AccountTrendSnapshot) => ({
+        date: row.snapshotDate,
+        cost: row.totalCost,
+      })
+    ),
   };
 }
