@@ -27,7 +27,7 @@ FROM node:20-alpine AS runner
 
 LABEL org.opencontainers.image.title="CloudSight Server"
 LABEL org.opencontainers.image.description="CloudSight enterprise cloud cost intelligence API"
-LABEL org.opencontainers.image.version="2.2.0-alpha"
+LABEL org.opencontainers.image.version="2.6.0-alpha"
 LABEL org.opencontainers.image.source="https://github.com/nathanlouissaint/Cloudsight"
 
 WORKDIR /app

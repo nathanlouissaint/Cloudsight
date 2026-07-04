@@ -24,7 +24,7 @@ FROM nginx:1.29-alpine
 
 LABEL org.opencontainers.image.title="CloudSight Client"
 LABEL org.opencontainers.image.description="CloudSight enterprise cloud cost intelligence frontend"
-LABEL org.opencontainers.image.version="2.2.0-alpha"
+LABEL org.opencontainers.image.version="2.6.0-alpha"
 LABEL org.opencontainers.image.source="https://github.com/nathanlouissaint/Cloudsight"
 
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf

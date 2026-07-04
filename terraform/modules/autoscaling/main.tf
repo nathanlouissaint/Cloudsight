@@ -40,7 +40,35 @@ resource "aws_launch_template" "app" {
   }
 
   user_data = base64encode(
-    file("${path.root}/templates/user_data.sh.tftpl")
+    templatefile(
+      "${path.root}/templates/user_data.sh.tftpl",
+      {
+        docker_compose = templatefile(
+          "${path.root}/templates/docker-compose.tftpl",
+          {
+            ghcr_owner = var.ghcr_owner
+            image_tag  = var.image_tag
+          }
+        )
+
+
+        deploy_script = file(
+          "${path.root}/../scripts/deploy.sh"
+        )
+
+
+        ghcr_owner = var.ghcr_owner
+        image_tag  = var.image_tag
+
+        postgres_user     = var.postgres_user
+        postgres_password = var.password
+        postgres_db       = var.postgres_db
+        jwt_secret        = var.jwt_secret
+
+        container_registry_username = var.container_registry_username
+        container_registry_password = var.container_registry_password
+      }
+    )
   )
 
   tag_specifications {

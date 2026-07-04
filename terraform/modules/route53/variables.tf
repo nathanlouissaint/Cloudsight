@@ -24,11 +24,14 @@ variable "hosted_zone_id" {
   default = ""
 }
 
-variable "validation_records" {
-  type = list(object({
-    name  = string
-    type  = string
-    value = string
-  }))
-  default = []
+variable "validation_domain_names" {
+  description = "Domain names requiring ACM DNS validation records. These values must be known during planning."
+  type        = list(string)
+  default     = []
+}
+
+variable "certificate_domain_validation_options" {
+  description = "ACM certificate domain validation options."
+  type        = any
+  default     = []
 }

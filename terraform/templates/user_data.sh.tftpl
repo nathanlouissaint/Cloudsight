@@ -1,17 +1,253 @@
 #!/bin/bash
-set -euxo pipefail
+set -Eeuo pipefail
 
+LOG_FILE="/var/log/cloudsight-bootstrap.log"
+
+exec > >(tee -a "$${LOG_FILE}" | logger -t cloudsight-bootstrap)
+exec 2>&1
+
+log() {
+    local level="$1"
+    shift
+
+    printf "[%s] [%s] %s\n" \
+        "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        "$level" \
+        "$*"
+}
+
+fail() {
+    log ERROR "$*"
+    exit 1
+}
+
+validate_file() {
+    local file_path="$1"
+
+    [[ -f "$file_path" ]] \
+        || fail "Required file missing: $file_path"
+}
+
+validate_directory() {
+    local directory_path="$1"
+
+    [[ -d "$directory_path" ]] \
+        || fail "Required directory missing: $directory_path"
+}
+
+log INFO "=================================================="
+log INFO "CloudSight Bootstrap Started"
+log INFO "$(date -u)"
+log INFO "=================================================="
+
+log INFO "System baseline..."
+uname -a || true
+df -h || true
+free -m || true
+ip addr || true
+
+log INFO "Installing system packages..."
 dnf update -y
+dnf install -y docker git curl
 
-dnf install -y docker git
-
+log INFO "Starting Docker..."
 systemctl enable docker
 systemctl start docker
+usermod -aG docker ec2-user || true
 
-usermod -aG docker ec2-user
+log INFO "Validating Docker installation..."
+command -v docker >/dev/null \
+    || fail "Docker binary not found."
 
-curl -SL \
-https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
--o /usr/local/bin/docker-compose
+docker --version
 
-chmod +x /usr/local/bin/docker-compose
+systemctl is-active --quiet docker \
+    || fail "Docker daemon is not active."
+
+docker info >/dev/null \
+    || fail "Docker daemon is not responding."
+
+log INFO "Installing Docker Compose plugin..."
+mkdir -p /usr/local/lib/docker/cli-plugins
+
+curl -fsSL \
+    https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+    -o /usr/local/lib/docker/cli-plugins/docker-compose
+
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+ln -sf \
+    /usr/local/lib/docker/cli-plugins/docker-compose \
+    /usr/local/bin/docker-compose
+
+log INFO "Validating Docker Compose installation..."
+docker compose version \
+    || fail "Docker Compose plugin validation failed."
+
+docker-compose version \
+    || fail "docker-compose compatibility command failed."
+
+log INFO "Creating CloudSight directory structure..."
+
+mkdir -p /opt/cloudsight
+mkdir -p /opt/cloudsight/logs
+mkdir -p /opt/cloudsight/scripts
+mkdir -p /opt/cloudsight/backups
+mkdir -p /opt/cloudsight/config
+
+touch /opt/cloudsight/logs/bootstrap.log
+touch /opt/cloudsight/logs/deploy.log
+
+log INFO "Writing Docker Compose file..."
+
+cat <<'COMPOSE_EOF' >/opt/cloudsight/docker-compose.yml
+${docker_compose}
+COMPOSE_EOF
+
+chmod 644 /opt/cloudsight/docker-compose.yml
+
+log INFO "Writing production environment file..."
+
+cat >/opt/cloudsight/config/.env <<ENV_EOF
+GHCR_OWNER=${ghcr_owner}
+IMAGE_TAG=${image_tag}
+
+CONTAINER_REGISTRY_USERNAME=${container_registry_username}
+CONTAINER_REGISTRY_PASSWORD=${container_registry_password}
+
+POSTGRES_USER=${postgres_user}
+POSTGRES_PASSWORD=${postgres_password}
+POSTGRES_DB=${postgres_db}
+
+DATABASE_URL=postgresql://${postgres_user}:${postgres_password}@postgres:5432/${postgres_db}
+
+JWT_SECRET=${jwt_secret}
+ENV_EOF
+
+chmod 600 /opt/cloudsight/config/.env
+
+log INFO "Writing deployment script..."
+
+cat <<'DEPLOY_EOF' >/opt/cloudsight/scripts/deploy.sh
+${deploy_script}
+DEPLOY_EOF
+
+chmod +x /opt/cloudsight/scripts/deploy.sh
+
+log INFO "Validating CloudSight filesystem..."
+
+validate_directory /opt/cloudsight
+validate_directory /opt/cloudsight/logs
+validate_directory /opt/cloudsight/scripts
+validate_directory /opt/cloudsight/config
+
+validate_file /opt/cloudsight/docker-compose.yml
+validate_file /opt/cloudsight/config/.env
+validate_file /opt/cloudsight/scripts/deploy.sh
+
+[[ -x /opt/cloudsight/scripts/deploy.sh ]] \
+    || fail "Deployment script is not executable."
+
+log INFO "Validating production environment variables..."
+
+grep -q '^GHCR_OWNER=' /opt/cloudsight/config/.env \
+    || fail "GHCR_OWNER missing from production environment."
+
+grep -q '^IMAGE_TAG=' /opt/cloudsight/config/.env \
+    || fail "IMAGE_TAG missing from production environment."
+
+grep -q '^CONTAINER_REGISTRY_USERNAME=' /opt/cloudsight/config/.env \
+    || fail "CONTAINER_REGISTRY_USERNAME missing from production environment."
+
+grep -q '^CONTAINER_REGISTRY_PASSWORD=' /opt/cloudsight/config/.env \
+    || fail "CONTAINER_REGISTRY_PASSWORD missing from production environment."
+
+grep -q '^DATABASE_URL=' /opt/cloudsight/config/.env \
+    || fail "DATABASE_URL missing from production environment."
+
+grep -q '^JWT_SECRET=' /opt/cloudsight/config/.env \
+    || fail "JWT_SECRET missing from production environment."
+
+log INFO "Validating Docker Compose configuration..."
+
+docker compose \
+    --env-file /opt/cloudsight/config/.env \
+    -f /opt/cloudsight/docker-compose.yml \
+    config >/dev/null \
+    || fail "Docker Compose configuration is invalid."
+
+log INFO "Validating GHCR login path..."
+
+set -a
+source /opt/cloudsight/config/.env
+set +a
+
+[[ -n "$${CONTAINER_REGISTRY_USERNAME:-}" ]] \
+    || fail "CONTAINER_REGISTRY_USERNAME is empty."
+
+[[ -n "$${CONTAINER_REGISTRY_PASSWORD:-}" ]] \
+    || fail "CONTAINER_REGISTRY_PASSWORD is empty."
+
+echo "$${CONTAINER_REGISTRY_PASSWORD}" \
+    | docker login ghcr.io \
+        --username "$${CONTAINER_REGISTRY_USERNAME}" \
+        --password-stdin \
+    || fail "GHCR login validation failed."
+
+log INFO "GHCR login validation passed."
+
+log INFO "Starting CloudSight Deployment..."
+
+set +e
+/opt/cloudsight/scripts/deploy.sh
+DEPLOY_STATUS=$?
+set -e
+
+if [ "$DEPLOY_STATUS" -ne 0 ]; then
+    log ERROR "CloudSight deployment FAILED with exit code $DEPLOY_STATUS."
+    docker ps -a || true
+    docker compose \
+        --env-file /opt/cloudsight/config/.env \
+        -f /opt/cloudsight/docker-compose.yml \
+        ps || true
+    exit "$DEPLOY_STATUS"
+fi
+
+log INFO "Validating image pull results..."
+
+docker images | grep -E 'cloudsight|postgres' \
+    || fail "Expected CloudSight/Postgres images were not found."
+
+log INFO "Validating container startup..."
+
+docker ps --format '{{.Names}}' | grep -q 'cloudsight-postgres-prod' \
+    || fail "Postgres container is not running."
+
+docker ps --format '{{.Names}}' | grep -q 'cloudsight-server-prod' \
+    || fail "Server container is not running."
+
+docker ps --format '{{.Names}}' | grep -q 'cloudsight-client-prod' \
+    || fail "Client container is not running."
+
+log INFO "Validating local health endpoint..."
+
+curl --silent --fail http://localhost:5001/health >/dev/null \
+    || fail "Local API health endpoint failed."
+
+log INFO "Deployment containers..."
+
+docker compose \
+    --env-file /opt/cloudsight/config/.env \
+    -f /opt/cloudsight/docker-compose.yml \
+    ps
+
+log INFO "=================================================="
+log INFO "BOOTSTRAP VALIDATION PASSED"
+log INFO "CloudSight Production Bootstrap Complete"
+log INFO "$(date -u)"
+log INFO "=================================================="
+
+echo "Bootstrap completed at $(date -u)" \
+    >> /opt/cloudsight/logs/bootstrap.log
+
+exit 0

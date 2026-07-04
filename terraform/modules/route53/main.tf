@@ -17,18 +17,36 @@ locals {
     ? aws_route53_zone.this[0].zone_id
     : var.hosted_zone_id
   )
+
+  validation_domain_names = toset(var.validation_domain_names)
 }
 
 resource "aws_route53_record" "certificate_validation" {
-  for_each = {
-    for record in var.validation_records :
-    record.name => record
-  }
+  for_each = local.validation_domain_names
 
   zone_id = local.zone_id
 
-  name    = each.value.name
-  type    = each.value.type
-  ttl     = 60
-  records = [each.value.value]
+  name = one([
+    for option in var.certificate_domain_validation_options :
+    option.resource_record_name
+    if option.domain_name == each.key
+  ])
+
+  type = one([
+    for option in var.certificate_domain_validation_options :
+    option.resource_record_type
+    if option.domain_name == each.key
+  ])
+
+  ttl = 60
+
+  records = [
+    one([
+      for option in var.certificate_domain_validation_options :
+      option.resource_record_value
+      if option.domain_name == each.key
+    ])
+  ]
+
+  allow_overwrite = true
 }

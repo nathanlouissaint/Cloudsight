@@ -27,6 +27,18 @@ variable "target_group_arn_suffix" {
   default     = null
 }
 
+variable "enable_load_balancer_alarms" {
+  description = "Enable ALB CloudWatch alarms."
+  type        = bool
+  default     = true
+}
+
+variable "enable_target_group_alarms" {
+  description = "Enable Target Group CloudWatch alarms."
+  type        = bool
+  default     = true
+}
+
 variable "log_retention_days" {
   type    = number
   default = 30

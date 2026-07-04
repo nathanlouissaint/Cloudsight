@@ -1,0 +1,43 @@
+name: CloudSight Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - CloudSight Publish Images
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Production
+
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.2.2
+
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+          script: |
+            export GHCR_USERNAME="${{ secrets.GHCR_USERNAME }}"
+            export GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
+            export IMAGE_TAG=latest
+
+            /opt/cloudsight/scripts/deploy.sh

@@ -1,0 +1,10 @@
+# CloudSight Code Owners
+
+* @nathanlouissaint
+
+terraform/ @nathanlouissaint
+scripts/ @nathanlouissaint
+docs/ @nathanlouissaint
+.github/ @nathanlouissaint
+server/ @nathanlouissaint
+client/ @nathanlouissaint

@@ -35,20 +35,17 @@ output "database_security_group_id" {
 
 output "load_balancer_dns_name" {
   description = "Application Load Balancer DNS"
-
-  value = module.load_balancer.load_balancer_dns_name
+  value       = module.load_balancer.load_balancer_dns_name
 }
 
 output "load_balancer_arn" {
   description = "Application Load Balancer ARN"
-
-  value = module.load_balancer.load_balancer_arn
+  value       = module.load_balancer.load_balancer_arn
 }
 
 output "target_group_arn" {
   description = "Application Target Group"
-
-  value = module.load_balancer.target_group_arn
+  value       = module.load_balancer.target_group_arn
 }
 
 output "ec2_role_arn" {
@@ -61,44 +58,22 @@ output "ec2_instance_profile_name" {
   value       = module.iam.instance_profile_name
 }
 
-output "hosted_zone_id" {
-  description = "Route53 Hosted Zone ID."
-
-  value = module.route53.hosted_zone_id
-}
-
-output "certificate_validation_record_fqdns" {
-  description = "ACM DNS validation record FQDNs."
-
-  value = module.route53.validation_record_fqdns
-}
-
-output "validated_certificate_arn" {
-  description = "Validated ACM certificate ARN."
-
-  value = aws_acm_certificate_validation.this.certificate_arn
-}
-
 output "cloudwatch_log_group" {
-  description = "CloudWatch Log Group."
-
-  value = module.monitoring.log_group_name
+  description = "CloudWatch Log Group"
+  value       = module.monitoring.log_group_name
 }
 
 output "cpu_alarm_arn" {
-  description = "CloudWatch CPU alarm."
-
-  value = module.monitoring.cpu_alarm_arn
+  description = "CloudWatch CPU alarm"
+  value       = module.monitoring.cpu_alarm_arn
 }
 
 output "status_alarm_arn" {
-  description = "CloudWatch status check alarm."
-
-  value = module.monitoring.status_alarm_arn
+  description = "CloudWatch status check alarm"
+  value       = module.monitoring.status_alarm_arn
 }
 
 output "sns_topic_arn" {
-  description = "SNS topic ARN for infrastructure alerts."
-
-  value = module.sns.topic_arn
+  description = "SNS topic ARN for infrastructure alerts"
+  value       = module.sns.topic_arn
 }

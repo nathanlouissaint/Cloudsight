@@ -54,6 +54,7 @@ jobs:
             type=raw,value=latest
             type=ref,event=branch
             type=sha
+            type=ref,event=tag
 
       - name: Docker Metadata (Client)
         id: client-meta
@@ -64,6 +65,7 @@ jobs:
             type=raw,value=latest
             type=ref,event=branch
             type=sha
+            type=ref,event=tag
 
       - name: Build and Push Server
         uses: docker/build-push-action@v6

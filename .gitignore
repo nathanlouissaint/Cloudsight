@@ -16,3 +16,34 @@ coverage
 .turbo
 
 /src/generated/prisma
+
+# Terraform local secrets
+terraform/terraform.tfvars
+*.tfvars
+!*.tfvars.example
+
+# Terraform local artifacts
+terraform/.terraform/
+terraform/tfplan
+*.tfplan
+
+# Local backups
+*.bak
+
+# Local environment
+.env.production
+
+# Bootstrap logs
+*{LOG_FILE}
+
+# Terraform local cache
+terraform/.terraform/
+**/.terraform/*
+
+# Terraform plans
+terraform/tfplan
+*.tfplan
+
+# Local Terraform variables
+terraform/terraform.tfvars
+

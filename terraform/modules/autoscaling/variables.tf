@@ -62,3 +62,45 @@ variable "target_cpu_utilization" {
   type        = number
   default     = 60
 }
+variable "ghcr_owner" {
+  description = "GitHub Container Registry owner."
+  type        = string
+}
+
+variable "image_tag" {
+  description = "CloudSight container image version."
+  type        = string
+}
+
+variable "postgres_user" {
+  description = "Application PostgreSQL username."
+  type        = string
+}
+
+variable "postgres_db" {
+  description = "Application PostgreSQL database."
+  type        = string
+}
+
+variable "password" {
+  description = "Application PostgreSQL password."
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT signing secret."
+  type        = string
+  sensitive   = true
+}
+variable "container_registry_username" {
+  description = "Container registry username."
+  type        = string
+  sensitive   = true
+}
+
+variable "container_registry_password" {
+  description = "Container registry password or access token."
+  type        = string
+  sensitive   = true
+}

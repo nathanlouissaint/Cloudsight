@@ -13,11 +13,7 @@ services:
       - cloudsight_postgres_prod_data:/var/lib/postgresql/data
 
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-cloudsight_user} -d ${POSTGRES_DB:-cloudsight}"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cloudsight_user} -d ${POSTGRES_DB:-cloudsight}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -29,8 +25,7 @@ services:
       - no-new-privileges:true
 
   server:
-    image: ghcr.io/${GHCR_OWNER}/cloudsight-server:${IMAGE_TAG}
-
+    image: ghcr.io/nathanlouissaint/cloudsight-server:${IMAGE_TAG:-latest}
     container_name: cloudsight-server-prod
 
     restart: unless-stopped
@@ -49,11 +44,7 @@ services:
         condition: service_healthy
 
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --spider -q http://localhost:5001/health || exit 1"
-        ]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5001/health"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -70,8 +61,7 @@ services:
       - /tmp
 
   client:
-    image: ghcr.io/${GHCR_OWNER}/cloudsight-client:${IMAGE_TAG}
-
+    image: ghcr.io/nathanlouissaint/cloudsight-client:${IMAGE_TAG:-latest}
     container_name: cloudsight-client-prod
 
     restart: unless-stopped
@@ -84,11 +74,7 @@ services:
         condition: service_healthy
 
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --spider -q http://127.0.0.1/health || exit 1"
-        ]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/health"]
       interval: 15s
       timeout: 5s
       retries: 5

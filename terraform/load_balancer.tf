@@ -12,8 +12,8 @@ module "load_balancer" {
 
   common_tags = local.common_tags
 
-  certificate_arn = try(
-    aws_acm_certificate_validation.this.certificate_arn,
-    null
-  )
+  # HTTP-only deployment for Phase 11.3A.
+  # When DNS/ACM are reintroduced, this can be replaced with the
+  # validated ACM certificate ARN.
+  certificate_arn = null
 }

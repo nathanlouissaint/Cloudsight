@@ -74,3 +74,43 @@ variable "password" {
   type        = string
   sensitive   = true
 }
+variable "ghcr_owner" {
+  description = "GitHub Container Registry owner."
+  type        = string
+  default     = "nathanlouissaint"
+}
+
+variable "image_tag" {
+  description = "CloudSight image version."
+  type        = string
+  default     = "v2.6.0-alpha"
+}
+variable "postgres_user" {
+  description = "Application PostgreSQL username."
+  type        = string
+  default     = "cloudsight_user"
+}
+
+variable "postgres_db" {
+  description = "Application PostgreSQL database name."
+  type        = string
+  default     = "cloudsight"
+}
+
+variable "jwt_secret" {
+  description = "JWT signing secret."
+  type        = string
+  sensitive   = true
+}
+
+variable "container_registry_username" {
+  description = "Container registry username."
+  type        = string
+  sensitive   = true
+}
+
+variable "container_registry_password" {
+  description = "Container registry access token or password."
+  type        = string
+  sensitive   = true
+}

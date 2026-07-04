@@ -51,7 +51,7 @@ resource "aws_cloudwatch_metric_alarm" "status_check" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_5xx_high" {
-  count = var.load_balancer_arn_suffix != null ? 1 : 0
+  count = var.enable_load_balancer_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-alb-5xx-high"
   comparison_operator = "GreaterThanThreshold"
@@ -73,7 +73,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_response_time_high" {
-  count = var.load_balancer_arn_suffix != null ? 1 : 0
+  count = var.enable_load_balancer_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-alb-response-time-high"
   comparison_operator = "GreaterThanThreshold"
@@ -95,10 +95,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_response_time_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "target_group_unhealthy_hosts" {
-  count = (
-    var.load_balancer_arn_suffix != null &&
-    var.target_group_arn_suffix != null
-  ) ? 1 : 0
+  count = var.enable_target_group_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-tg-unhealthy-hosts"
   comparison_operator = "GreaterThanThreshold"
@@ -121,10 +118,7 @@ resource "aws_cloudwatch_metric_alarm" "target_group_unhealthy_hosts" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "target_group_healthy_hosts_low" {
-  count = (
-    var.load_balancer_arn_suffix != null &&
-    var.target_group_arn_suffix != null
-  ) ? 1 : 0
+  count = var.enable_target_group_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-tg-healthy-hosts-low"
   comparison_operator = "LessThanThreshold"
