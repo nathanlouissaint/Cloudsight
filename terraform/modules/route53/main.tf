@@ -20,10 +20,10 @@ locals {
 }
 
 resource "aws_route53_record" "certificate_validation" {
-  for_each = {
-    for record in var.validation_records :
-    record.name => record
-  }
+  for_each = var.create_hosted_zone ? {
+    for index, record in var.validation_records :
+    tostring(index) => record
+  } : {}
 
   zone_id = local.zone_id
 

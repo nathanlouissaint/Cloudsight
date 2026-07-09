@@ -39,7 +39,7 @@ resource "aws_db_instance" "postgres" {
 
   deletion_protection = true
 
-  backup_retention_period    = 7
+  backup_retention_period    = 0
   auto_minor_version_upgrade = true
 
   tags = merge(

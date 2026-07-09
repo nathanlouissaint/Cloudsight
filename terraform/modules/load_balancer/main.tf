@@ -53,7 +53,7 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   dynamic "default_action" {
-    for_each = var.certificate_arn == null ? [1] : []
+    for_each = var.enable_https_listener ? [] : [1]
 
     content {
       type             = "forward"
@@ -62,7 +62,7 @@ resource "aws_lb_listener" "http" {
   }
 
   dynamic "default_action" {
-    for_each = var.certificate_arn != null ? [1] : []
+    for_each = var.enable_https_listener ? [1] : []
 
     content {
       type = "redirect"
@@ -77,7 +77,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_listener" "https" {
-  count = var.certificate_arn != null ? 1 : 0
+  count = var.enable_https_listener ? 1 : 0
 
   load_balancer_arn = aws_lb.this.arn
   port              = 443

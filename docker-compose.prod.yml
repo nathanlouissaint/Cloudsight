@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
 
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-cloudsight_user}
+      POSTGRES_USER: ${POSTGRES_USER:-cloudsight}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-cloudsight}
 
@@ -13,7 +13,9 @@ services:
       - cloudsight_postgres_prod_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cloudsight_user} -d ${POSTGRES_DB:-cloudsight}"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-cloudsight} -d ${POSTGRES_DB:-cloudsight}
       interval: 10s
       timeout: 5s
       retries: 10
@@ -25,11 +27,7 @@ services:
       - no-new-privileges:true
 
   server:
-    build:
-      context: .
-      dockerfile: server/Dockerfile
-
-    image: cloudsight-server:prod
+    image: ${SERVER_IMAGE:?SERVER_IMAGE is required}
     container_name: cloudsight-server-prod
 
     restart: unless-stopped
@@ -48,7 +46,9 @@ services:
         condition: service_healthy
 
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5001/health || exit 1"]
+      test:
+        - CMD-SHELL
+        - wget --spider -q http://localhost:5001/health || exit 1
       interval: 15s
       timeout: 5s
       retries: 5
@@ -65,11 +65,7 @@ services:
       - /tmp
 
   client:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-
-    image: cloudsight-client:prod
+    image: ${CLIENT_IMAGE:?CLIENT_IMAGE is required}
     container_name: cloudsight-client-prod
 
     restart: unless-stopped
@@ -82,7 +78,9 @@ services:
         condition: service_healthy
 
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1/health || exit 1"]
+      test:
+        - CMD-SHELL
+        - wget --spider -q http://127.0.0.1/health || exit 1
       interval: 15s
       timeout: 5s
       retries: 5

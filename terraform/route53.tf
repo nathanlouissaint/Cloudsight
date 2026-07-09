@@ -11,11 +11,11 @@ module "route53" {
   create_hosted_zone = var.create_hosted_zone
   hosted_zone_id     = var.hosted_zone_id
 
-  validation_records = [
-    for option in module.acm.domain_validation_options : {
+  validation_records = var.enable_acm ? [
+    for option in module.acm[0].domain_validation_options : {
       name  = option.resource_record_name
       type  = option.resource_record_type
       value = option.resource_record_value
     }
-  ]
+  ] : []
 }

@@ -1,18 +1,37 @@
-node_modules
+node_modules/
+
+dist/
+
+build/
+
+coverage/
+
+.terraform/
+
+*.tfstate
+
+*.tfstate.*
+
+tfplan
+
+tfplan.json
+
+*.log
+
 .env
 
-dist
-build
+.env.*
 
-*.js
-*.js.map
-*.d.ts
-*.d.ts.map
+!.env.example
 
-coverage
+!config/.env.production.template
 
-.vite
-.next
-.turbo
+client/dist/
 
-/src/generated/prisma
+server/dist/
+
+build/
+
+tmp/
+
+.vscode/settings.json

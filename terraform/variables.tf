@@ -74,3 +74,42 @@ variable "password" {
   type        = string
   sensitive   = true
 }
+variable "jwt_secret" {
+  description = "JWT signing secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "container_registry_username" {
+  description = "GitHub Container Registry username"
+  type        = string
+}
+
+variable "container_registry_password" {
+  description = "GitHub Container Registry Personal Access Token"
+  type        = string
+  sensitive   = true
+}
+
+variable "enable_acm" {
+  description = "Enable ACM certificate provisioning."
+  type        = bool
+  default     = false
+}
+
+variable "enable_https" {
+  description = "Enable the HTTPS listener on the Application Load Balancer."
+  type        = bool
+  default     = false
+}
+
+variable "enable_alb_deletion_protection" {
+  description = "Enable ALB deletion protection."
+  type        = bool
+  default     = false
+}
+
+variable "deployment_artifact_version" {
+  type    = string
+  default = "v2.8.7-alpha"
+}

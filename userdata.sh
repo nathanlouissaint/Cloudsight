@@ -8,11 +8,11 @@ set -Eeuo pipefail
 LOG_FILE="/var/log/cloudsight-bootstrap.log"
 
 # Ensure the log directory and file exist
-mkdir -p "$$(dirname "$${LOG_FILE}")"
-touch "$${LOG_FILE}"
+mkdir -p "$$(dirname "${LOG_FILE}")"
+touch "${LOG_FILE}"
 
 # Redirect all output to the bootstrap log, console, and syslog
-exec > >(tee -a "$${LOG_FILE}" | logger -t cloudsight-bootstrap -s) 2>&1
+exec > >(tee -a "${LOG_FILE}" | logger -t cloudsight-bootstrap -s) 2>&1
 
 # --------------------------------------------------
 # Logging Functions
@@ -30,10 +30,10 @@ fail() {
 require_command() {
     local cmd="$1"
 
-    if command -v "$${cmd}" >/dev/null 2>&1; then
-        log "Verified: $${cmd}"
+    if command -v "${cmd}" >/dev/null 2>&1; then
+        log "Verified: ${cmd}"
     else
-        fail "Missing required command: $${cmd}"
+        fail "Missing required command: ${cmd}"
     fi
 }
 
@@ -41,7 +41,7 @@ require_command() {
 # Error Handling
 # --------------------------------------------------
 
-trap 'fail "Bootstrap failed on line $${LINENO}"' ERR
+trap 'fail "Bootstrap failed on line ${LINENO}"' ERR
 
 # --------------------------------------------------
 # Bootstrap Metadata
@@ -49,10 +49,10 @@ trap 'fail "Bootstrap failed on line $${LINENO}"' ERR
 
 log "=================================================="
 log "CloudSight Immutable Bootstrap Started"
-log "Artifact Version: ${deployment_artifact_version}"
-log "AWS Region: ${aws_region}"
-log "Artifact Bucket: ${artifact_bucket}"
-log "Artifact Key: ${deployment_artifact_key}"
+log "Artifact Version: v2.8.3-alpha"
+log "AWS Region: us-east-1"
+log "Artifact Bucket: cloudsight-production-deployment-artifacts"
+log "Artifact Key: releases/v2.8.3-alpha/cloudsight-deploy.tar.gz"
 log "=================================================="
 
 # --------------------------------------------------
@@ -79,7 +79,7 @@ log "Installing Docker Compose..."
 DOCKER_COMPOSE_VERSION="v2.40.1"
 
 curl -fsSL \
-    "https://github.com/docker/compose/releases/download/$${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64" \
+    "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64" \
     -o /usr/local/bin/docker-compose
 
 chmod +x /usr/local/bin/docker-compose
@@ -146,23 +146,23 @@ log "Bootstrap prerequisite installation completed successfully."
 log "Creating CloudSight runtime directories..."
 
 RUNTIME_ROOT="/opt/cloudsight"
-DOWNLOAD_DIR="$${RUNTIME_ROOT}/download"
-RUNTIME_DIR="$${RUNTIME_ROOT}/runtime"
-LOG_DIR="$${RUNTIME_ROOT}/logs"
+DOWNLOAD_DIR="${RUNTIME_ROOT}/download"
+RUNTIME_DIR="${RUNTIME_ROOT}/runtime"
+LOG_DIR="${RUNTIME_ROOT}/logs"
 
 mkdir -p \
-    "$${DOWNLOAD_DIR}" \
-    "$${RUNTIME_DIR}" \
-    "$${LOG_DIR}"
+    "${DOWNLOAD_DIR}" \
+    "${RUNTIME_DIR}" \
+    "${LOG_DIR}"
 
-chmod 755 "$${RUNTIME_ROOT}"
-chmod 755 "$${DOWNLOAD_DIR}"
-chmod 755 "$${RUNTIME_DIR}"
-chmod 755 "$${LOG_DIR}"
+chmod 755 "${RUNTIME_ROOT}"
+chmod 755 "${DOWNLOAD_DIR}"
+chmod 755 "${RUNTIME_DIR}"
+chmod 755 "${LOG_DIR}"
 
 log "Runtime directory structure created."
 
-find "$${RUNTIME_ROOT}" -maxdepth 2 -type d | sort
+find "${RUNTIME_ROOT}" -maxdepth 2 -type d | sort
 
 # --------------------------------------------------
 # Download Deployment Artifact
@@ -170,19 +170,19 @@ find "$${RUNTIME_ROOT}" -maxdepth 2 -type d | sort
 
 log "Downloading deployment artifact..."
 
-ARTIFACT_PATH="$${DOWNLOAD_DIR}/cloudsight-deploy.tar.gz"
+ARTIFACT_PATH="${DOWNLOAD_DIR}/cloudsight-deploy.tar.gz"
 
 aws s3 cp \
-    "s3://${artifact_bucket}/${deployment_artifact_key}" \
-    "$${ARTIFACT_PATH}"
+    "s3://cloudsight-production-deployment-artifacts/releases/v2.8.3-alpha/cloudsight-deploy.tar.gz" \
+    "${ARTIFACT_PATH}"
 
-if [[ ! -f "$${ARTIFACT_PATH}" ]]; then
+if [[ ! -f "${ARTIFACT_PATH}" ]]; then
     fail "Deployment artifact download failed."
 fi
 
 log "Deployment artifact downloaded successfully."
 
-ls -lh "$${ARTIFACT_PATH}"
+ls -lh "${ARTIFACT_PATH}"
 
 
 # --------------------------------------------------
@@ -191,23 +191,23 @@ ls -lh "$${ARTIFACT_PATH}"
 
 log "Downloading release metadata..."
 
-RELEASE_METADATA="$${DOWNLOAD_DIR}/release.json"
+RELEASE_METADATA="${DOWNLOAD_DIR}/release.json"
 
 aws s3 cp \
-    "s3://${artifact_bucket}/releases/${deployment_artifact_version}/release.json" \
-    "$${RELEASE_METADATA}"
+    "s3://cloudsight-production-deployment-artifacts/releases/v2.8.3-alpha/release.json" \
+    "${RELEASE_METADATA}"
 
-[[ -f "$${RELEASE_METADATA}" ]] || \
+[[ -f "${RELEASE_METADATA}" ]] || \
     fail "Release metadata download failed."
 
-EXPECTED_SHA256=$(jq -r '.sha256' "$${RELEASE_METADATA}")
+EXPECTED_SHA256=$(jq -r '.sha256' "${RELEASE_METADATA}")
 
-ACTUAL_SHA256=$(sha256sum "$${ARTIFACT_PATH}" | awk '{print $1}')
+ACTUAL_SHA256=$(sha256sum "${ARTIFACT_PATH}" | awk '{print $1}')
 
-log "Expected SHA256: $${EXPECTED_SHA256}"
-log "Actual SHA256:   $${ACTUAL_SHA256}"
+log "Expected SHA256: ${EXPECTED_SHA256}"
+log "Actual SHA256:   ${ACTUAL_SHA256}"
 
-if [[ "$${EXPECTED_SHA256}" != "$${ACTUAL_SHA256}" ]]; then
+if [[ "${EXPECTED_SHA256}" != "${ACTUAL_SHA256}" ]]; then
     fail "Deployment artifact checksum verification failed."
 fi
 
@@ -223,12 +223,12 @@ log "Deployment artifact integrity verified."
 
 log "Extracting deployment artifact..."
 
-tar -xzf "$${ARTIFACT_PATH}" \
-    -C "$${RUNTIME_DIR}"
+tar -xzf "${ARTIFACT_PATH}" \
+    -C "${RUNTIME_DIR}"
 
 log "Deployment artifact extracted."
 
-find "$${RUNTIME_DIR}" -maxdepth 2 | sort
+find "${RUNTIME_DIR}" -maxdepth 2 | sort
 
 # --------------------------------------------------
 # Validate Deployment Bundle
@@ -236,20 +236,20 @@ find "$${RUNTIME_DIR}" -maxdepth 2 | sort
 
 log "Validating deployment bundle..."
 
-MANIFEST="$${RUNTIME_DIR}/cloudsight-deploy/manifest.json"
-STAGE_SCRIPT="$${RUNTIME_DIR}/cloudsight-deploy/scripts/stage-assets.sh"
-DEPLOY_SCRIPT="$${RUNTIME_DIR}/cloudsight-deploy/scripts/deploy.sh"
-VALIDATE_SCRIPT="$${RUNTIME_DIR}/cloudsight-deploy/scripts/validate-bootstrap.sh"
+MANIFEST="${RUNTIME_DIR}/cloudsight-deploy/manifest.json"
+STAGE_SCRIPT="${RUNTIME_DIR}/cloudsight-deploy/scripts/stage-assets.sh"
+DEPLOY_SCRIPT="${RUNTIME_DIR}/cloudsight-deploy/scripts/deploy.sh"
+VALIDATE_SCRIPT="${RUNTIME_DIR}/cloudsight-deploy/scripts/validate-bootstrap.sh"
 
-[[ -f "$${MANIFEST}" ]] || fail "manifest.json not found."
+[[ -f "${MANIFEST}" ]] || fail "manifest.json not found."
 
-[[ -x "$${STAGE_SCRIPT}" || -f "$${STAGE_SCRIPT}" ]] || \
+[[ -x "${STAGE_SCRIPT}" || -f "${STAGE_SCRIPT}" ]] || \
     fail "stage-assets.sh not found."
 
-[[ -x "$${DEPLOY_SCRIPT}" || -f "$${DEPLOY_SCRIPT}" ]] || \
+[[ -x "${DEPLOY_SCRIPT}" || -f "${DEPLOY_SCRIPT}" ]] || \
     fail "deploy.sh not found."
 
-[[ -x "$${VALIDATE_SCRIPT}" || -f "$${VALIDATE_SCRIPT}" ]] || \
+[[ -x "${VALIDATE_SCRIPT}" || -f "${VALIDATE_SCRIPT}" ]] || \
     fail "validate-bootstrap.sh not found."
 
 log "Deployment bundle validation successful."
@@ -260,7 +260,7 @@ log "Deployment bundle validation successful."
 
 log "Executing deployment lifecycle..."
 
-cd "$${RUNTIME_DIR}/cloudsight-deploy"
+cd "${RUNTIME_DIR}/cloudsight-deploy"
 
 log "Running stage-assets.sh..."
 bash scripts/stage-assets.sh

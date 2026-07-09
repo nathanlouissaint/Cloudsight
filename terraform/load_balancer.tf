@@ -12,8 +12,12 @@ module "load_balancer" {
 
   common_tags = local.common_tags
 
-  certificate_arn = try(
-    aws_acm_certificate_validation.this.certificate_arn,
+  enable_https_listener = var.enable_https
+
+  enable_deletion_protection = var.enable_alb_deletion_protection
+
+  certificate_arn = var.enable_acm ? try(
+    aws_acm_certificate_validation.this[0].certificate_arn,
     null
-  )
+  ) : null
 }

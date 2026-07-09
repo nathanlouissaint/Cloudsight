@@ -8,6 +8,8 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+  count = var.enable_https ? 1 : 0
+
   security_group_id = aws_security_group.alb.id
 
   cidr_ipv4   = "0.0.0.0/0"

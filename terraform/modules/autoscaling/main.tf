@@ -40,7 +40,12 @@ resource "aws_launch_template" "app" {
   }
 
   user_data = base64encode(
-    file("${path.root}/templates/user_data.sh.tftpl")
+    templatefile("${path.root}/templates/user_data.sh.tftpl", {
+      aws_region                  = var.aws_region
+      artifact_bucket             = var.artifact_bucket
+      deployment_artifact_key     = var.deployment_artifact_key
+      deployment_artifact_version = var.deployment_artifact_version
+    })
   )
 
   tag_specifications {

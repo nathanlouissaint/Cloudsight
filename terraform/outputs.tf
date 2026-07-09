@@ -76,7 +76,7 @@ output "certificate_validation_record_fqdns" {
 output "validated_certificate_arn" {
   description = "Validated ACM certificate ARN."
 
-  value = aws_acm_certificate_validation.this.certificate_arn
+  value = var.enable_acm ? aws_acm_certificate_validation.this[0].certificate_arn : null
 }
 
 output "cloudwatch_log_group" {
@@ -102,3 +102,14 @@ output "sns_topic_arn" {
 
   value = module.sns.topic_arn
 }
+output "deployment_artifacts_bucket_name" {
+  description = "S3 bucket used for CloudSight deployment artifacts."
+  value       = module.artifacts.bucket_name
+}
+
+output "deployment_artifacts_bucket_arn" {
+  description = "S3 bucket ARN used for CloudSight deployment artifacts."
+  value       = module.artifacts.bucket_arn
+}
+
+

@@ -62,3 +62,23 @@ variable "target_cpu_utilization" {
   type        = number
   default     = 60
 }
+
+variable "artifact_bucket" {
+  description = "Deployment artifact S3 bucket."
+  type        = string
+}
+
+variable "deployment_artifact_key" {
+  description = "S3 key of the deployment artifact."
+  type        = string
+}
+
+variable "deployment_artifact_version" {
+  description = "Deployment artifact version."
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS region."
+  type        = string
+}

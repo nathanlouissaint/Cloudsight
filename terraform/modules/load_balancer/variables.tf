@@ -51,3 +51,8 @@ variable "idle_timeout" {
   type        = number
   default     = 60
 }
+variable "enable_https_listener" {
+  description = "Whether to create the HTTPS listener."
+  type        = bool
+  default     = false
+}

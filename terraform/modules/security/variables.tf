@@ -17,3 +17,9 @@ variable "common_tags" {
   description = "Common tags applied to all resources."
   type        = map(string)
 }
+
+variable "enable_https" {
+  description = "Allow HTTPS ingress to the Application Load Balancer."
+  type        = bool
+  default     = false
+}
