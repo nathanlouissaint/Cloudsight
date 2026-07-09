@@ -35,3 +35,58 @@ build/
 tmp/
 
 .vscode/settings.json
+
+# Dependencies
+node_modules/
+
+# Build Output
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+tfplan.json
+
+# Logs
+*.log
+
+# Runtime
+tmp/
+
+# Environment
+.env
+.env.*
+!.env.example
+!config/.env.production.template
+
+# Generated
+client/dist/
+server/dist/
+build/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/settings.
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+client/.env*
+server/.env*
+terraform/terraform.tfvars
+terraform/environments/*/terraform.tfvars
+
+# Keep only templates
+!.env.example
+!config/.env.production.template
+!terraform/terraform.tfvars.example

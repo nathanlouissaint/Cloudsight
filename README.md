@@ -226,7 +226,7 @@ CloudSight
 │
 ├── README.md
 │
-└── current.state.md
+└── CURRENT_STATE.md
 ```
 
 ---
