@@ -1,21 +1,22 @@
 import { motion } from "framer-motion";
 
-const accounts = [
-  {
-    name: "Production",
-    status: "Healthy",
-  },
-  {
-    name: "Staging",
-    status: "Healthy",
-  },
-  {
-    name: "Development",
-    status: "Warning",
-  },
-];
+import { useAccountsAnalytics } from "../../hooks/useAccountsAnalytics";
 
 export default function AccountHealth() {
+  const { data, isLoading } =
+    useAccountsAnalytics();
+
+  if (isLoading || !data) {
+    return null;
+  }
+
+  const maxSpend = Math.max(
+    ...data.accounts.map(
+      (account) => account.totalCost
+    ),
+    1
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -23,31 +24,55 @@ export default function AccountHealth() {
       className="analytics-card"
     >
       <div className="analytics-title">
-        Account Health
+        Account Spend
       </div>
 
       <div className="analytics-subtitle">
-        Environment status overview
+        Current month spend across AWS accounts
       </div>
 
-      {accounts.map((account) => (
-        <div
-          key={account.name}
-          className="driver-row"
-        >
-          <span>{account.name}</span>
+      {data.accounts.map((account) => {
+        const utilization =
+          (account.totalCost / maxSpend) *
+          100;
 
+        return (
           <div
-            className={
-              account.status === "Healthy"
-                ? "status-chip healthy"
-                : "status-chip warning"
-            }
+            key={account.accountId}
+            className="driver-row"
           >
-            {account.status}
+            <div>
+              {account.accountName}
+            </div>
+
+            <div
+              style={{
+                textAlign: "right",
+              }}
+            >
+              <strong>
+                $
+                {account.totalCost.toLocaleString()}
+              </strong>
+
+              <div
+                className="forecast-progress"
+                style={{
+                  width: 80,
+                  marginTop: 6,
+                }}
+              >
+                <div
+                  className="forecast-fill"
+                  style={{
+                    width: `${utilization}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </motion.div>
   );
 }

@@ -4,15 +4,13 @@ interface CostSnapshotWithAccount {
   accountId: string;
   totalCost: number;
   account: {
-    accountName: string;
-    awsAccountId: string;
+  accountName: string;
   };
 }
 
 interface AccountSummary {
   accountId: string;
   accountName: string;
-  awsAccountId: string;
   totalCost: number;
 }
 
@@ -35,11 +33,10 @@ export async function getAccountSummary(
 
       if (!acc[id]) {
         acc[id] = {
-          accountId: id,
-          accountName: snapshot.account.accountName,
-          awsAccountId: snapshot.account.awsAccountId,
-          totalCost: 0,
-        };
+  accountId: id,
+  accountName: snapshot.account.accountName,
+  totalCost: 0,
+};
       }
 
       acc[id].totalCost += snapshot.totalCost;

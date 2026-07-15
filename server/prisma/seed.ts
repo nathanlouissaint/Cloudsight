@@ -9,31 +9,32 @@ const SERVICE_PROFILES: Record<
     variance: number;
   }
 > = {
-  EC2: { base: 42, variance: 18 },
-  S3: { base: 8, variance: 4 },
-  RDS: { base: 28, variance: 10 },
-  Lambda: { base: 5, variance: 3 },
-  CloudFront: { base: 11, variance: 5 },
-  ECS: { base: 22, variance: 8 },
-  EKS: { base: 35, variance: 12 },
-  Route53: { base: 2, variance: 1 },
+  EC2: { base: 58, variance: 20 },
+  EKS: { base: 48, variance: 16 },
+  RDS: { base: 34, variance: 12 },
+  ECS: { base: 28, variance: 10 },
+  CloudFront: { base: 16, variance: 6 },
+  S3: { base: 12, variance: 5 },
+  Lambda: { base: 8, variance: 4 },
+  Route53: { base: 3, variance: 1 },
 };
+
 
 const CLOUD_ACCOUNTS = [
   {
     awsAccountId: "111111111111",
     accountName: "Production",
-    multiplier: 1.35,
+    multiplier: 0.65,
   },
   {
     awsAccountId: "222222222222",
     accountName: "Staging",
-    multiplier: 0.45,
+    multiplier: 0.22,
   },
   {
     awsAccountId: "333333333333",
     accountName: "Development",
-    multiplier: 0.3,
+    multiplier: 0.13,
   },
 ];
 
@@ -171,19 +172,17 @@ async function main() {
       }
     }
 
-    for (const account of accounts) {
-      const accountCost = generateCost(
-        totalDailySpend,
-        totalDailySpend * 0.12,
-        account.multiplier
-      );
+for (const account of accounts) {
+  const accountCost = Number(
+    (totalDailySpend * account.multiplier).toFixed(2)
+  );
 
-      costSnapshots.push({
-        accountId: account.id,
-        snapshotDate: usageDate,
-        totalCost: accountCost,
-      });
-    }
+  costSnapshots.push({
+    accountId: account.id,
+    snapshotDate: usageDate,
+    totalCost: accountCost,
+  });
+}
 
     budgetSnapshots.push({
       budgetName: "Monthly Cloud Budget",

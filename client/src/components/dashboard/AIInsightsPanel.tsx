@@ -23,11 +23,11 @@ export default function AIInsightsPanel() {
       <div className="analytics-header">
         <div>
           <div className="analytics-title">
-            Executive Insights
+        AI-Powered Cost Intelligence
           </div>
 
           <div className="analytics-subtitle">
-            AI-generated operational summary
+            AI continuously analyzes cloud spending to surface unusual activity, budget risks, and opportunities to reduce costs.
           </div>
         </div>
 

@@ -5,11 +5,7 @@ import {
   SectionHeader,
 } from "../components/layout";
 
-import {
-  AnalyticsRow,
-  IntelligenceRow,
-  OperationsRow,
-} from "../components/dashboard";
+import { IntelligenceRow } from "../components/dashboard";
 
 import {
   ExecutiveIntelligenceRow,
@@ -47,22 +43,8 @@ export default function DashboardPage() {
       <OptimizationRow />
 
       <SectionHeader
-        title="Financial Performance"
-        subtitle="Historical cloud spending trends and overall budget health."
-      />
-
-      <AnalyticsRow />
-
-      <SectionHeader
-        title="Operational Visibility"
-        subtitle="Service-level operations and workload distribution across the platform."
-      />
-
-      <OperationsRow />
-
-      <SectionHeader
         title="Executive Intelligence"
-        subtitle="AI-generated insights and anomaly detection to support strategic decision making."
+        subtitle="Additional business insights, optimization context, and financial observations for executive review."
       />
 
       <IntelligenceRow />

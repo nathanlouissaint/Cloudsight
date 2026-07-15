@@ -1,6 +1,9 @@
 import TopNavigation from "../components/navigation/TopNavigation";
 
-import { DashboardLayout, SectionHeader } from "../components/layout";
+import {
+  DashboardLayout,
+  SectionHeader,
+} from "../components/layout";
 
 import {
   MetricCard,
@@ -15,6 +18,9 @@ import {
 
 import { useReport } from "../hooks/useReport";
 
+import ExportCsvButton from "../components/reports/ExportCsvButton";
+import ExecutiveNotes from "../components/reports/ExecutiveNotes";
+
 export default function ReportsPage() {
   const {
     data,
@@ -22,14 +28,37 @@ export default function ReportsPage() {
     error,
   } = useReport();
 
+  const forecastVariance =
+    data
+      ? data.forecastedSpend - data.budget
+      : 0;
+
+  const varianceLabel =
+    forecastVariance >= 0
+      ? `+$${forecastVariance.toLocaleString()}`
+      : `-$${Math.abs(
+          forecastVariance
+        ).toLocaleString()}`;
+
   return (
     <DashboardLayout>
       <TopNavigation />
 
-      <SectionHeader
-        title="Reporting Center"
-        subtitle="Review executive summaries, financial performance, and budget outcomes for the selected reporting period."
-      />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+        <SectionHeader
+          title="Reporting Center"
+          subtitle="Review executive summaries, financial performance, and budget outcomes for the selected reporting period."
+        />
+
+        <ExportCsvButton />
+      </div>
 
       {isLoading && <SkeletonCard />}
 
@@ -37,73 +66,75 @@ export default function ReportsPage() {
         <ErrorState message={error.message} />
       )}
 
-      {!isLoading && !error && !data && (
-        <EmptyState title="No report available" />
-      )}
+      {!isLoading &&
+        !error &&
+        !data && (
+          <EmptyState title="No report available" />
+        )}
 
-      {!isLoading && !error && data && (
-        <>
-          <MetricGrid>
-            <MetricCard
-              label="Total Spend"
-              value={`$${data.totalSpend.toLocaleString()}`}
-              subtitle="Cloud spend during this reporting period."
+      {!isLoading &&
+        !error &&
+        data && (
+          <>
+            <MetricGrid>
+              <MetricCard
+                label="Total Spend"
+                value={`$${data.totalSpend.toLocaleString()}`}
+                subtitle="Cloud spend during this reporting period."
+              />
+
+              <MetricCard
+                label="Forecast"
+                value={`$${data.forecastedSpend.toLocaleString()}`}
+                subtitle="Projected month-end spend."
+              />
+
+              <MetricCard
+                label="Budget"
+                value={`$${data.budget.toLocaleString()}`}
+                subtitle="Approved reporting budget."
+              />
+
+              <MetricCard
+                label="Forecast Variance"
+                value={varianceLabel}
+                subtitle="Difference between projected spend and approved budget."
+              />
+            </MetricGrid>
+
+            <SectionHeader
+              title="Executive Summary"
+              subtitle="Financial narrative generated from reporting data."
             />
 
-            <MetricCard
-              label="Forecast"
-              value={`$${data.forecastedSpend.toLocaleString()}`}
-              subtitle="Projected month-end spend."
-            />
+            <div className="analytics-card">
+              <p
+                style={{
+                  lineHeight: 1.8,
+                  marginBottom: 24,
+                }}
+              >
+                {data.summary}
+              </p>
 
-            <MetricCard
-              label="Budget"
-              value={`$${data.budget.toLocaleString()}`}
-              subtitle="Approved reporting budget."
-            />
+              <MetricGrid>
+                <MetricCard
+                  label="Primary Cost Driver"
+                  value={data.topService}
+                  subtitle={`${data.topService} accounts for the largest share of cloud spend.`}
+                />
 
-            <MetricCard
-              label="Top Service"
-              value={data.topService}
-              subtitle="Largest contributor to cloud spend."
-            />
-          </MetricGrid>
+                <MetricCard
+                  label="Top Service Spend"
+                  value={`$${data.topServiceSpend.toLocaleString()}`}
+                  subtitle="Highest individual service cost."
+                />
+              </MetricGrid>
+            </div>
 
-          <SectionHeader
-            title="Executive Summary"
-            subtitle="Financial narrative generated from reporting data."
-          />
-
-          <div className="analytics-card">
-            <p
-              style={{
-                lineHeight: 1.8,
-              }}
-            >
-              {data.summary}
-            </p>
-          </div>
-
-          <SectionHeader
-            title="Financial Performance"
-            subtitle="Supporting financial metrics for executive review."
-          />
-
-          <MetricGrid>
-            <MetricCard
-              label="Top Service Spend"
-              value={`$${data.topServiceSpend.toLocaleString()}`}
-              subtitle="Highest individual service cost."
-            />
-
-            <MetricCard
-              label="Budget Status"
-              value={data.budgetStatus}
-              subtitle="Overall budget health."
-            />
-          </MetricGrid>
-        </>
-      )}
+            <ExecutiveNotes />
+          </>
+        )}
     </DashboardLayout>
   );
 }

@@ -25,24 +25,24 @@ export class ForecastRiskDetectionService {
       return [];
     }
 
-    const spend =
-      await prisma.costSnapshot.aggregate({
-        _sum: {
-          totalCost: true,
-        },
-        where: {
-          snapshotDate: {
-            gte: new Date(
-              now.getFullYear(),
-              now.getMonth(),
-              1
-            ),
-          },
-        },
-      });
+ const spend =
+  await prisma.costRecord.aggregate({
+    _sum: {
+      cost: true,
+    },
+    where: {
+      usageDate: {
+        gte: new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          1
+        ),
+      },
+    },
+  });
 
-    const currentSpend =
-      spend._sum.totalCost ?? 0;
+const currentSpend =
+  spend._sum.cost ?? 0;
 
     const elapsedDays =
       Math.max(now.getDate(), 1);

@@ -8,7 +8,7 @@ export default function EmptyState({
   return (
     <div className="empty-state">
       <h3>{title}</h3>
-      <p>No data available.</p>
+      <p>No data is available for the selected reporting period.</p>
     </div>
   );
 }

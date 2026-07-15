@@ -3,42 +3,66 @@ import { useForecast } from "../../hooks/useForecast";
 export default function ForecastCard() {
   const { data, isLoading } = useForecast();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!data) return null;
+  if (isLoading || !data) {
+    return null;
+  }
+
+  const {
+    currentSpend,
+    projectedSpend,
+    budget,
+    projectedVariance,
+    remainingDays,
+    onTrack,
+  } = data.summary;
+
+  const varianceAmount =
+    Math.abs(projectedVariance);
+
+  const varianceLabel = onTrack
+    ? `$${varianceAmount.toLocaleString()} under budget`
+    : `$${varianceAmount.toLocaleString()} over budget`;
 
   return (
-    <div className="summary-card">
-      <h2>Forecast</h2>
+    <div className="analytics-card">
+      <h2>Monthly Spend Forecast</h2>
 
       <p>
         Status:{" "}
         <strong>
-          {data.summary.onTrack ? "On Track" : "Over Budget"}
+          {onTrack ? "On Track" : "Over Budget"}
         </strong>
       </p>
 
       <p>
-        Projected Spend: $
-        {data.summary.projectedSpend.toLocaleString()}
+        Projected Spend:{" "}
+        <strong>
+          ${projectedSpend.toLocaleString()}
+        </strong>
       </p>
 
       <p>
-        Current Spend: $
-        {data.summary.currentSpend.toLocaleString()}
+        Current Spend:{" "}
+        <strong>
+          ${currentSpend.toLocaleString()}
+        </strong>
       </p>
 
       <p>
-        Budget: $
-        {data.summary.budget.toLocaleString()}
+        Budget:{" "}
+        <strong>
+          ${budget.toLocaleString()}
+        </strong>
       </p>
 
       <p>
-        Variance: $
-        {data.summary.projectedVariance.toLocaleString()}
+        Forecast Variance:{" "}
+        <strong>{varianceLabel}</strong>
       </p>
 
       <p>
-        Remaining Days: {data.summary.remainingDays}
+        Remaining Days:{" "}
+        <strong>{remainingDays}</strong>
       </p>
     </div>
   );

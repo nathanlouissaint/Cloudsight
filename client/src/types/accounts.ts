@@ -1,7 +1,6 @@
 export interface AccountAnalytics {
   accountId: string;
   accountName: string;
-  awsAccountId: string;
   totalCost: number;
 }
 

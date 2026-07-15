@@ -25,11 +25,11 @@ export default function ServiceBreakdownCard() {
       <div className="analytics-header">
         <div>
           <div className="analytics-title">
-            Service Breakdown
+       Service Spend Breakdown
           </div>
 
           <div className="analytics-subtitle">
-            Cost distribution by AWS service
+           Track where cloud spend is concentrated across compute, storage, networking, and database services.
           </div>
         </div>
       </div>

@@ -65,7 +65,7 @@ export default function AlertsPage() {
 
       <SectionHeader
         title="Alert Center"
-        subtitle="Operational visibility into cloud cost anomalies, forecast risks, and budget health."
+        subtitle="Monitor cloud spending anomalies, forecast risks, budget thresholds, and operational events that may require attention."
       />
 
       <AlertSummary
@@ -75,7 +75,7 @@ export default function AlertsPage() {
 
       <SectionHeader
         title="Active Alerts"
-        subtitle="Alerts currently requiring investigation."
+        subtitle="High-priority issues requiring immediate investigation to prevent unexpected cloud costs or operational impact."
       />
 
       <div className="analytics-grid">

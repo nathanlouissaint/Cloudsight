@@ -161,7 +161,7 @@ export async function getDashboardSummary(
         return {
           name:
             serviceNameById.get(item.serviceId) ??
-            "Unknown Service",
+            "No dominant service",
 
           spend: Number(
             spend.toFixed(2)
@@ -181,8 +181,9 @@ export async function getDashboardSummary(
       });
 
     const topService =
-      serviceBreakdown[0]?.name ??
-      "No service data";
+  serviceBreakdown.length > 0
+    ? serviceBreakdown[0].name
+    : "No dominant cost driver";
 
     const response =
       DashboardContract.parse({
@@ -259,24 +260,24 @@ export async function getDashboardSummary(
         ],
 
         anomalies: [
-          {
-            service: topService,
-            impact:
-              previousMonthSpend > 0
-                ? `+${(
-                    ((currentMonthSpend -
-                      previousMonthSpend) /
-                      previousMonthSpend) *
-                    100
-                  ).toFixed(1)}%`
-                : "+0%",
-            severity:
-              currentMonthSpend >
-              previousMonthSpend
-                ? "warning"
-                : "healthy",
-          },
-        ],
+  {
+    service: topService,
+    impact:
+      previousMonthSpend > 0
+        ? `+${(
+            ((currentMonthSpend -
+              previousMonthSpend) /
+              previousMonthSpend) *
+            100
+          ).toFixed(1)}%`
+        : "No historical comparison",
+    severity:
+      currentMonthSpend >
+      previousMonthSpend
+        ? "warning"
+        : "healthy",
+  },
+],
 
         accounts: [
           {

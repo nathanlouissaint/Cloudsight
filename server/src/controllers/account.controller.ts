@@ -6,15 +6,19 @@ export async function getAccounts(
   res: Response
 ) {
   try {
-    const endDate = req.query.endDate
-      ? new Date(String(req.query.endDate))
-      : new Date();
+    const now = new Date();
 
     const startDate = req.query.startDate
       ? new Date(String(req.query.startDate))
       : new Date(
-          Date.now() - 30 * 24 * 60 * 60 * 1000
+          now.getFullYear(),
+          now.getMonth(),
+          1
         );
+
+    const endDate = req.query.endDate
+      ? new Date(String(req.query.endDate))
+      : now;
 
     const result = await getAccountSummary(
       startDate,

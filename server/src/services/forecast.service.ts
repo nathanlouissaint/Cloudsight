@@ -80,20 +80,32 @@ export class ForecastService {
         },
       });
 
-    const serviceSnapshots =
-      await findCurrentMonthServiceSnapshots() as ServiceSnapshot[];
+const serviceSnapshots =
+  await findCurrentMonthServiceSnapshots() as ServiceSnapshot[];
 
-    const accountSnapshots =
-      await findCurrentMonthCostSnapshots() as AccountSnapshot[];
+const accountSnapshots =
+  await findCurrentMonthCostSnapshots() as AccountSnapshot[];
 
-    const currentSpend =
-      accountSnapshots.reduce(
-        (
-          sum: number,
-          row: AccountSnapshot
-        ) => sum + row.totalCost,
-        0
-      );
+const currentMonthStart = new Date(
+  now.getFullYear(),
+  now.getMonth(),
+  1
+);
+
+const spend =
+  await prisma.costRecord.aggregate({
+    _sum: {
+      cost: true,
+    },
+    where: {
+      usageDate: {
+        gte: currentMonthStart,
+      },
+    },
+  });
+
+const currentSpend =
+  spend._sum.cost ?? 0;
 
     const averageDailySpend =
       currentSpend /

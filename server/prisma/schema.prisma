@@ -20,8 +20,8 @@ model User {
 }
 
 model CloudService {
-  id          String  @id @default(uuid())
-  name        String  @unique
+  id          String @id @default(uuid())
+  name        String @unique
   description String?
 
   costRecords CostRecord[]
@@ -61,8 +61,7 @@ model CostSnapshot {
   account   CloudAccount @relation(fields: [accountId], references: [id])
 
   snapshotDate DateTime
-
-  totalCost Float
+  totalCost    Float
 
   createdAt DateTime @default(now())
 
@@ -78,8 +77,7 @@ model ServiceCostSnapshot {
   serviceName String
 
   snapshotDate DateTime
-
-  cost Float
+  cost         Float
 
   createdAt DateTime @default(now())
 
@@ -106,7 +104,7 @@ model Budget {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
   name   String
   amount Float
@@ -154,7 +152,8 @@ model AlertHistory {
 }
 
 model Forecast {
-  id            String   @id @default(uuid())
+  id String @id @default(uuid())
+
   forecastDate  DateTime
   projectedCost Float
 
@@ -165,10 +164,23 @@ model Report {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
   title   String
   summary String
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReportNote {
+  id String @id @default(uuid())
+
+  title   String
+  content String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }

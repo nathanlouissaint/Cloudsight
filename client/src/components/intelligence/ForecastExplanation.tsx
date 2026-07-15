@@ -1,6 +1,17 @@
 import { motion } from "framer-motion";
 
+import { useForecast } from "../../hooks/useForecast";
+
 export default function ForecastExplanation() {
+  const { data, isLoading } = useForecast();
+
+  if (isLoading || !data) {
+    return null;
+  }
+
+  const topDrivers =
+    data.growthDrivers.slice(0, 3);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -8,28 +19,26 @@ export default function ForecastExplanation() {
       className="analytics-card"
     >
       <div className="analytics-title">
-        Forecast Explanation
+        Forecast Drivers
       </div>
 
       <div className="analytics-subtitle">
-        Primary forecast contributors
+        Largest contributors to projected month-end spend
       </div>
 
       <div className="driver-list">
-        <div className="driver-row">
-          <span>EKS Expansion</span>
-          <strong>+8.2%</strong>
-        </div>
+        {topDrivers.map((driver) => (
+          <div
+            key={driver.name}
+            className="driver-row"
+          >
+            <span>{driver.name}</span>
 
-        <div className="driver-row">
-          <span>Compute Growth</span>
-          <strong>+3.1%</strong>
-        </div>
-
-        <div className="driver-row">
-          <span>Data Transfer</span>
-          <strong>+1.4%</strong>
-        </div>
+            <strong>
+              ${driver.impact.toLocaleString()}
+            </strong>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
