@@ -1,7 +1,7 @@
 # CloudSight
 
 <p align="center">
-  <img src="docs/screenshots/logo.png" width="140" alt="CloudSight Logo">
+  <img src="./assets/screenshots/Cloudsight.png" width="140" alt="CloudSight Logo">
 </p>
 
 <h1 align="center">CloudSight</h1>
