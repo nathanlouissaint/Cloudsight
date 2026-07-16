@@ -1,46 +1,52 @@
 import type { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { prisma } from "../config/prisma";
 import {
   hashPassword,
   comparePassword,
 } from "../services/auth/password.service";
 
+import {
+  generateAccessToken,
+} from "../services/auth/token.service";
+
+import {
+  registerUser,
+  loginUser,
+} from "../services/auth/auth.service";
+
+
+
 export async function register(req: Request, res: Response) {
-  try {
-    const { email, password } = req.body;
+try {
+  const { email, password } = req.body;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+  const user =
+    await registerUser(
+      email,
+      password
+    );
 
-    if (existingUser) {
-      return res.status(409).json({
-        message: "User already exists",
-      });
-    }
+  return res.status(201).json(user);
 
-    const passwordHash = await hashPassword(password);
+} catch (error) {
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-      },
-    });
-
-    return res.status(201).json({
-      id: user.id,
-      email: user.email,
-    });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Internal server error",
+  if (
+    error instanceof Error &&
+    error.message === "USER_EXISTS"
+  ) {
+    return res.status(409).json({
+      message: "User already exists",
     });
   }
+
+  console.error(error);
+
+  return res.status(500).json({
+    message: "Internal server error",
+  });
 }
+  }
+
 
 export async function login(req: Request, res: Response) {
   try {
@@ -66,20 +72,17 @@ const passwordMatches = await comparePassword(
       });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "7d",
-      }
-    );
+   const token =
+  generateAccessToken({
+    userId: user.id,
+    email: user.email,
+  });
 
     return res.json({
       token,
     });
+
+
   } catch (error) {
     console.error(error);
 
