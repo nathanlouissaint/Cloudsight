@@ -51,6 +51,10 @@ export async function loginUser(
     throw new Error("INVALID_CREDENTIALS");
   }
 
+  if (!user.passwordHash) {
+    throw new Error("PASSWORD_LOGIN_UNAVAILABLE");
+  }
+
   const validPassword =
     await comparePassword(
       password,
