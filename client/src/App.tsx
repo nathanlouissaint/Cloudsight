@@ -9,6 +9,8 @@ import {
   lazy,
 } from "react";
 
+import { useAuth } from "./auth/useAuth";
+
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -30,6 +32,10 @@ const ReportsPage = lazy(
 );
 
 export default function App() {
+
+  const { isAuthenticated } = useAuth();
+
+console.log("Authenticated:", isAuthenticated);
   return (
     <BrowserRouter>
       <Suspense
