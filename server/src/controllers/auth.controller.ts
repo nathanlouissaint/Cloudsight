@@ -1,7 +1,10 @@
 import type { Request, Response } from "express";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../config/prisma";
+import {
+  hashPassword,
+  comparePassword,
+} from "../services/auth/password.service";
 
 export async function register(req: Request, res: Response) {
   try {
@@ -17,7 +20,7 @@ export async function register(req: Request, res: Response) {
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
     const user = await prisma.user.create({
       data: {
@@ -52,11 +55,10 @@ export async function login(req: Request, res: Response) {
         message: "Invalid credentials",
       });
     }
-
-    const passwordMatches = await bcrypt.compare(
-      password,
-      user.passwordHash
-    );
+const passwordMatches = await comparePassword(
+  password,
+  user.passwordHash
+);
 
     if (!passwordMatches) {
       return res.status(401).json({
