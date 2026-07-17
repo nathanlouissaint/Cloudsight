@@ -72,6 +72,13 @@ export async function loginUser(
     });
 
   return {
-    token,
-  };
+  token,
+  user: {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    authProvider: user.authProvider,
+    avatarUrl: user.avatarUrl,
+  },
+};
 }

@@ -10,6 +10,8 @@ import {
 } from "react";
 
 import { useAuth } from "./auth/useAuth";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
@@ -46,6 +48,20 @@ console.log("Authenticated:", isAuthenticated);
         }
       >
         <Routes>
+
+<Route
+  path="/register"
+  element={<RegisterPage />}
+/>
+
+
+
+        <Route
+         path="/login"
+         element={<LoginPage />}
+         />
+
+                  
 
           <Route
             path="/"

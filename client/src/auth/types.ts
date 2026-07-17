@@ -1,6 +1,9 @@
 export interface AuthUser {
   id: string;
   email: string;
+  name: string | null;
+  authProvider: "LOCAL" | "GOOGLE";
+  avatarUrl: string | null;
 }
 
 export interface AuthContextType {
