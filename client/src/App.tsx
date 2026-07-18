@@ -9,6 +9,10 @@ import {
   lazy,
 } from "react";
 
+import { useAuth } from "./auth/useAuth";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -30,6 +34,10 @@ const ReportsPage = lazy(
 );
 
 export default function App() {
+
+  const { isAuthenticated } = useAuth();
+
+console.log("Authenticated:", isAuthenticated);
   return (
     <BrowserRouter>
       <Suspense
@@ -40,6 +48,20 @@ export default function App() {
         }
       >
         <Routes>
+
+<Route
+  path="/register"
+  element={<RegisterPage />}
+/>
+
+
+
+        <Route
+         path="/login"
+         element={<LoginPage />}
+         />
+
+                  
 
           <Route
             path="/"

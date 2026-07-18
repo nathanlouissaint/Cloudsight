@@ -1,4 +1,5 @@
 import TopNavigation from "../components/navigation/TopNavigation";
+import LogoutButton from "../components/auth/LogoutButton";
 
 import {
   DashboardLayout,
@@ -18,7 +19,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <TopNavigation />
-
+      <LogoutButton />
       <ExecutiveOverview />
 
       <SectionHeader
