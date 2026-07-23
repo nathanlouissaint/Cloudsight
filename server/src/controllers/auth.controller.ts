@@ -13,14 +13,14 @@ import {
 
 export async function register(
   req: Request,
-  res: Response
+  res: Response,
 ) {
   try {
     const { email, password } = req.body;
 
     const user = await registerUser(
       email,
-      password
+      password,
     );
 
     return res
@@ -46,14 +46,21 @@ export async function register(
 
 export async function login(
   req: Request,
-  res: Response
+  res: Response,
 ) {
   try {
     const { email, password } = req.body;
 
+    const userAgent = req.get("User-Agent");
+    const ipAddress = req.ip;
+
     const result = await loginUser(
       email,
-      password
+      password,
+      {
+        userAgent,
+        ipAddress,
+      },
     );
 
     return res.json(result);
@@ -89,7 +96,7 @@ export async function login(
 
 export async function me(
   req: AuthenticatedRequest,
-  res: Response
+  res: Response,
 ) {
   try {
     const userId = req.user?.userId;
@@ -101,7 +108,7 @@ export async function me(
     }
 
     const user = await getCurrentUser(
-      userId
+      userId,
     );
 
     return res.status(200).json(user);

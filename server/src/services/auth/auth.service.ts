@@ -1,14 +1,13 @@
 import { userRepository } from "../../repositories/auth/user.repository";
 
+import { sessionMetadataService } from "./session-metadata.service";
 import {
   comparePassword,
   hashPassword,
 } from "./password.service";
-
 import {
   generateAccessToken,
 } from "./token.service";
-
 import { sessionService } from "./session.service";
 import { refreshTokenService } from "./refresh-token.service";
 
@@ -41,6 +40,10 @@ export async function registerUser(
 export async function loginUser(
   email: string,
   password: string,
+  metadata: {
+    userAgent?: string;
+    ipAddress?: string;
+  },
 ) {
   const user =
     await userRepository.findByEmail(email);
@@ -63,6 +66,12 @@ export async function loginUser(
     throw new Error("INVALID_CREDENTIALS");
   }
 
+  const sessionMetadata =
+    sessionMetadataService.build(
+      metadata.userAgent,
+      metadata.ipAddress,
+    );
+
   // Generate refresh token
   const refreshToken =
     refreshTokenService.generate();
@@ -74,6 +83,12 @@ export async function loginUser(
         userId: user.id,
         expiresAt:
           refreshTokenService.getExpirationDate(),
+        deviceName:
+          sessionMetadata.deviceName,
+        userAgent:
+          sessionMetadata.userAgent,
+        ipAddress:
+          sessionMetadata.ipAddress,
       },
       refreshToken,
     );
