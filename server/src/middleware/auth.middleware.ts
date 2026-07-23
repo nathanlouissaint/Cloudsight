@@ -1,14 +1,13 @@
-import type { Request, Response, NextFunction } from "express";
+import type {
+  Response,
+  NextFunction,
+} from "express";
+
+import type { AuthenticatedRequest } from "../types/auth/request.types";
+
 import {
   verifyAccessToken,
 } from "../services/auth/token.service";
-
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-  };
-}
 
 export function authenticateToken(
   req: AuthenticatedRequest,
@@ -27,7 +26,7 @@ export function authenticateToken(
 
   try {
     const decoded =
-  verifyAccessToken(token);
+      verifyAccessToken(token);
 
     req.user = decoded;
 

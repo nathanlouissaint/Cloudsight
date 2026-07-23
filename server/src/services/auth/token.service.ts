@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 export interface JwtPayload {
   userId: string;
   email: string;
+  sessionId: string;
 }
 
 function getJwtSecret(): string {
@@ -16,18 +17,22 @@ function getJwtSecret(): string {
 }
 
 export function generateAccessToken(
-  payload: JwtPayload
+  payload: JwtPayload,
 ): string {
-  return jwt.sign(payload, getJwtSecret(), {
-    expiresIn: "7d",
-  });
+  return jwt.sign(
+    payload,
+    getJwtSecret(),
+    {
+      expiresIn: "15m",
+    },
+  );
 }
 
 export function verifyAccessToken(
-  token: string
+  token: string,
 ): JwtPayload {
   return jwt.verify(
     token,
-    getJwtSecret()
-  ) as unknown as JwtPayload;
+    getJwtSecret(),
+  ) as JwtPayload;
 }

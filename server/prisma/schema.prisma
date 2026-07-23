@@ -36,11 +36,39 @@ model User {
   budgets Budget[]
 
   reports Report[]
+
+  sessions Session[]
+}
+
+model Session {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String @unique
+
+  ipAddress  String?
+  userAgent  String?
+  deviceName String?
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  lastUsedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@index([userId, revokedAt])
 }
 
 model CloudService {
-  id          String @id @default(uuid())
-  name        String @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   description String?
 
   costRecords CostRecord[]
@@ -123,7 +151,7 @@ model Budget {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   name   String
   amount Float
@@ -183,7 +211,7 @@ model Report {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   title   String
   summary String
