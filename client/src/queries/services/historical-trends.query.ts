@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { apiRequest } from "../../api/client";
+import { apiRequest } from "../../lib/apiClient";
 import { queryKeys } from "../queryKeys";
 
 export interface HistoricalTrend {

@@ -9,7 +9,9 @@ export interface AuthUser {
 export interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
+
   isAuthenticated: boolean;
+  initializing: boolean;
 
   login: (
     token: string,

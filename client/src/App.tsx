@@ -9,12 +9,16 @@ import {
   lazy,
 } from "react";
 
-import { useAuth } from "./auth/useAuth";
+import ProtectedRoute from "./auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
+);
+
+const SecurityPage = lazy(
+  () => import("./pages/settings/SecurityPage")
 );
 
 const CostsPage = lazy(
@@ -34,10 +38,6 @@ const ReportsPage = lazy(
 );
 
 export default function App() {
-
-  const { isAuthenticated } = useAuth();
-
-console.log("Authenticated:", isAuthenticated);
   return (
     <BrowserRouter>
       <Suspense
@@ -48,46 +48,69 @@ console.log("Authenticated:", isAuthenticated);
         }
       >
         <Routes>
+          <Route
+            path="/login"
+            element={<LoginPage />}
+          />
 
-<Route
-  path="/register"
-  element={<RegisterPage />}
-/>
-
-
-
-        <Route
-         path="/login"
-         element={<LoginPage />}
-         />
-
-                  
+          <Route
+            path="/register"
+            element={<RegisterPage />}
+          />
 
           <Route
             path="/"
-            element={<DashboardPage />}
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/costs"
-            element={<CostsPage />}
+            element={
+              <ProtectedRoute>
+                <CostsPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/forecasting"
-            element={<ForecastingPage />}
+            element={
+              <ProtectedRoute>
+                <ForecastingPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/alerts"
-            element={<AlertsPage />}
+            element={
+              <ProtectedRoute>
+                <AlertsPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/reports"
-            element={<ReportsPage />}
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
+              </ProtectedRoute>
+            }
           />
 
+          <Route
+            path="/settings/security"
+            element={
+              <ProtectedRoute>
+                <SecurityPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Suspense>
     </BrowserRouter>

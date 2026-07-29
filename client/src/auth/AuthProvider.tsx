@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useMemo,
   useState,
   type ReactNode,
@@ -9,6 +10,14 @@ import type {
   AuthContextType,
   AuthUser,
 } from "./types";
+
+import {
+  getAccessToken,
+  removeAccessToken,
+  setAccessToken,
+} from "./utils/tokenStorage";
+
+import { useInitializeAuth } from "./hooks/useInitializeAuth";
 
 export const AuthContext =
   createContext<AuthContextType | null>(
@@ -26,31 +35,53 @@ export function AuthProvider({
     useState<AuthUser | null>(null);
 
   const [token, setToken] =
-    useState<string | null>(null);
+    useState<string | null>(() =>
+      getAccessToken()
+    );
 
-  function login(
-    token: string,
-    user: AuthUser
-  ) {
-    setToken(token);
-    setUser(user);
-  }
+  const login = useCallback(
+    (
+      accessToken: string,
+      authenticatedUser: AuthUser
+    ) => {
+      setAccessToken(accessToken);
+      setToken(accessToken);
+      setUser(authenticatedUser);
+    },
+    []
+  );
 
-  function logout() {
+  const logout = useCallback(() => {
+    removeAccessToken();
     setToken(null);
     setUser(null);
-  }
+  }, []);
 
-  const value = useMemo(
+  const initializing =
+    useInitializeAuth(
+      token,
+      login,
+      logout
+    );
+
+  const value = useMemo<AuthContextType>(
     () => ({
       user,
       token,
       isAuthenticated:
-        token !== null,
+        token !== null &&
+        user !== null,
+      initializing,
       login,
       logout,
     }),
-    [user, token]
+    [
+      user,
+      token,
+      initializing,
+      login,
+      logout,
+    ]
   );
 
   return (

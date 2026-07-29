@@ -10,4 +10,7 @@ export const queryKeys = {
   serviceAnalytics: ["service-analytics"] as const,
   services: ["services"] as const,
   topDrivers: ["top-drivers"] as const,
+
+  // Authentication
+  sessions: ["auth", "sessions"] as const,
 };

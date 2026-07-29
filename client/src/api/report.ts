@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest } from "../lib/apiClient";
 
 export interface ReportNote {
   id: string;

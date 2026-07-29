@@ -31,6 +31,10 @@ const navItems = [
     label: "Reports",
     path: "/reports",
   },
+  {
+    label: "Security",
+    path: "/settings/security",
+  },
 ];
 
 export default function TopNavigation() {
@@ -66,23 +70,19 @@ export default function TopNavigation() {
       </div>
 
       <nav className="nav-center">
-        {navItems.map(
-          (item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({
-                isActive,
-              }) =>
-                isActive
-                  ? "nav-link active"
-                  : "nav-link"
-              }
-            >
-              {item.label}
-            </NavLink>
-          )
-        )}
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-link active"
+                : "nav-link"
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="nav-right">
@@ -92,11 +92,19 @@ export default function TopNavigation() {
           <kbd>⌘K</kbd>
         </button>
 
-        <button className="icon-button">
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Notifications"
+        >
           <Bell size={18} />
         </button>
 
-        <button className="account-switcher">
+        <button
+          type="button"
+          className="account-switcher"
+          aria-label="Switch environment"
+        >
           Production
           <ChevronDown size={14} />
         </button>

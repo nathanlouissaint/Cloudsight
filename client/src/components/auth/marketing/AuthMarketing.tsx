@@ -2,7 +2,6 @@
 
 import FeatureList from "./FeatureList";
 import TrustedTechnologies from "./TrustedTechnologies";
-import logo from "../../../assets/branding/cloudsight-logo.png";
 export default function AuthMarketing() {
   return (
     <div className="auth-marketing">

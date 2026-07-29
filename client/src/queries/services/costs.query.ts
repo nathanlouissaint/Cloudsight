@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { apiRequest } from "../../api/client";
+import { apiRequest } from "../../lib/apiClient";
 import { USE_MOCK_DATA } from "../../config/features";
 import { costsMock } from "../../mocks/costs.mock";
 import { queryKeys } from "../queryKeys";
