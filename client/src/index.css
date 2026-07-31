@@ -2314,6 +2314,65 @@ kbd {
   color: var(--accent-light);
 }
 
+.device-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 14px;
+
+  background: rgba(59,130,246,.12);
+  border: 1px solid rgba(59,130,246,.22);
+
+  flex-shrink: 0;
+}
+
+.device-badge svg {
+  color: var(--accent-light);
+}
+
+/* Add these immediately below */
+
+.device-badge--desktop {
+  background: rgba(59,130,246,.12);
+  border-color: rgba(59,130,246,.22);
+}
+
+.device-badge--desktop svg {
+  color: #60a5fa;
+}
+
+.device-badge--mobile {
+  background: rgba(34,197,94,.12);
+  border-color: rgba(34,197,94,.22);
+}
+
+.device-badge--mobile svg {
+  color: #4ade80;
+}
+
+.device-badge--tablet {
+  background: rgba(168,85,247,.12);
+  border-color: rgba(168,85,247,.22);
+}
+
+.device-badge--tablet svg {
+  color: #c084fc;
+}
+
+.device-badge--unknown {
+  background: rgba(148,163,184,.12);
+  border-color: rgba(148,163,184,.22);
+}
+
+.device-badge--unknown svg {
+  color: #cbd5e1;
+}
+
+
 .session-card__title {
   margin: 0;
   font-size: 20px;

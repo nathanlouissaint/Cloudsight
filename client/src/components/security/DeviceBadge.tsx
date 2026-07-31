@@ -5,7 +5,7 @@ import {
   Tablet,
 } from "lucide-react";
 
-import type { ReactNode } from "react";
+import clsx from "clsx";
 
 import type { Session } from "../../auth/types/session";
 
@@ -13,22 +13,52 @@ interface Props {
   deviceType: Session["deviceType"];
 }
 
-const ICONS: Record<
+const DEVICE_CONFIG: Record<
   Session["deviceType"],
-  ReactNode
+  {
+    icon: React.ReactNode;
+    label: string;
+    className: string;
+  }
 > = {
-  Desktop: <Monitor size={22} />,
-  Mobile: <Smartphone size={22} />,
-  Tablet: <Tablet size={22} />,
-  Unknown: <Laptop size={22} />,
+  Desktop: {
+    icon: <Monitor size={22} />,
+    label: "Desktop",
+    className: "device-badge--desktop",
+  },
+  Mobile: {
+    icon: <Smartphone size={22} />,
+    label: "Mobile",
+    className: "device-badge--mobile",
+  },
+  Tablet: {
+    icon: <Tablet size={22} />,
+    label: "Tablet",
+    className: "device-badge--tablet",
+  },
+  Unknown: {
+    icon: <Laptop size={22} />,
+    label: "Unknown",
+    className: "device-badge--unknown",
+  },
 };
 
 export default function DeviceBadge({
   deviceType,
 }: Props) {
+  const config =
+    DEVICE_CONFIG[deviceType];
+
   return (
-    <div className="device-badge">
-      {ICONS[deviceType]}
+    <div
+      className={clsx(
+        "device-badge",
+        config.className,
+      )}
+      title={config.label}
+      aria-label={config.label}
+    >
+      {config.icon}
     </div>
   );
 }
