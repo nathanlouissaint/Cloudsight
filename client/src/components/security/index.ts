@@ -6,3 +6,4 @@ export { default as TerminateSessionButton } from "./TerminateSessionButton";
 export { default as SecurityOverview } from "./SecurityOverview";
 export { default as DeviceBadge } from "./DeviceBadge";
 export { default as MetadataChip } from "./MetadataChip";
+export { default as SecurityTimeline } from "./SecurityTimeline";

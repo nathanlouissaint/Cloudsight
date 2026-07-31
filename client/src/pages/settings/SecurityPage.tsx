@@ -9,6 +9,7 @@ import {
 import {
   ActiveSessionsCard,
   SecurityOverview,
+  SecurityTimeline,
 } from "../../components/security";
 
 export default function SecurityPage() {
@@ -19,12 +20,14 @@ export default function SecurityPage() {
       <PageContainer>
         <SectionHeader
           title="Security Center"
-          subtitle="Manage account security, authenticated devices, and active sessions."
+          subtitle="Manage account security, authenticated devices, active sessions, and recent security activity."
         />
 
         <SecurityOverview />
 
         <ActiveSessionsCard />
+
+        <SecurityTimeline />
       </PageContainer>
     </DashboardLayout>
   );
