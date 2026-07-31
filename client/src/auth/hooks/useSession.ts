@@ -3,6 +3,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import {
   deleteSession,
@@ -26,10 +27,23 @@ export function useDeleteSession() {
 
   return useMutation({
     mutationFn: deleteSession,
+
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: sessionQueryKeys.all,
       });
+
+      toast.success(
+        "Session terminated successfully."
+      );
+    },
+
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to terminate the session."
+      );
     },
   });
 }
@@ -39,10 +53,23 @@ export function useLogoutAllSessions() {
 
   return useMutation({
     mutationFn: logoutAllSessions,
-    onSuccess: () => {
-      queryClient.removeQueries({
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: sessionQueryKeys.all,
       });
+
+      toast.success(
+        "Signed out of all other devices."
+      );
+    },
+
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out of other devices."
+      );
     },
   });
 }
