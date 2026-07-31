@@ -2,9 +2,13 @@ import { Session } from "@prisma/client";
 import crypto from "crypto";
 
 import { refreshTokenService } from "./refresh-token.service";
+import { deviceService } from "./device.service";
 import { sessionRepository } from "../../repositories/auth/session.repository";
 
-import { CreateSessionInput } from "../../types/auth/session.types";
+import type {
+  CreateSessionInput,
+  SessionResponse,
+} from "../../types/auth/session.types";
 
 export class SessionService {
   /**
@@ -24,9 +28,22 @@ export class SessionService {
     input: Omit<CreateSessionInput, "refreshTokenHash">,
     refreshToken: string,
   ): Promise<Session> {
+    const device =
+      deviceService.parse(
+        input.userAgent,
+      );
+
     return sessionRepository.create({
       ...input,
-      refreshTokenHash: this.hashRefreshToken(refreshToken),
+
+      deviceName:
+        input.deviceName ??
+        device.deviceName,
+
+      refreshTokenHash:
+        this.hashRefreshToken(
+          refreshToken,
+        ),
     });
   }
 
@@ -98,23 +115,45 @@ export class SessionService {
   async listActiveSessions(
     userId: string,
     currentSessionId: string,
-  ) {
+  ): Promise<SessionResponse[]> {
     const sessions =
       await sessionRepository.findActiveByUserId(
         userId,
       );
 
-    return sessions.map((session) => ({
-      id: session.id,
-      deviceName: session.deviceName,
-      userAgent: session.userAgent,
-      ipAddress: session.ipAddress,
-      createdAt: session.createdAt,
-      lastUsedAt: session.lastUsedAt,
-      expiresAt: session.expiresAt,
-      isCurrent:
-        session.id === currentSessionId,
-    }));
+    return sessions.map((session) => {
+      const device =
+        deviceService.parse(
+          session.userAgent,
+        );
+
+      return {
+        id: session.id,
+        deviceName:
+          device.deviceName,
+        browser:
+          device.browser,
+        browserVersion:
+          device.browserVersion,
+        operatingSystem:
+          device.operatingSystem,
+        deviceType:
+          device.deviceType,
+        userAgent:
+          session.userAgent,
+        ipAddress:
+          session.ipAddress,
+        createdAt:
+          session.createdAt,
+        lastUsedAt:
+          session.lastUsedAt,
+        expiresAt:
+          session.expiresAt,
+        isCurrent:
+          session.id ===
+          currentSessionId,
+      };
+    });
   }
 
   /**
