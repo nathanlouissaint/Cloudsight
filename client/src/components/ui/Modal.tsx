@@ -16,6 +16,7 @@ interface ModalProps {
   onClose: () => void;
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
+  isBusy?: boolean;
 }
 
 export default function Modal({
@@ -27,6 +28,7 @@ export default function Modal({
   onClose,
   closeOnBackdrop = true,
   closeOnEscape = true,
+  isBusy = false,
 }: ModalProps) {
   useEffect(() => {
     if (!isOpen) {
@@ -45,7 +47,11 @@ export default function Modal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !closeOnEscape) {
+    if (
+      !isOpen ||
+      !closeOnEscape ||
+      isBusy
+    ) {
       return;
     }
 
@@ -71,6 +77,7 @@ export default function Modal({
   }, [
     isOpen,
     closeOnEscape,
+    isBusy,
     onClose,
   ]);
 
@@ -79,7 +86,10 @@ export default function Modal({
   }
 
   function handleBackdropClick() {
-    if (closeOnBackdrop) {
+    if (
+      closeOnBackdrop &&
+      !isBusy
+    ) {
       onClose();
     }
   }
@@ -88,6 +98,12 @@ export default function Modal({
     event: MouseEvent<HTMLDivElement>
   ) {
     event.stopPropagation();
+  }
+
+  function handleClose() {
+    if (!isBusy) {
+      onClose();
+    }
   }
 
   return createPortal(
@@ -100,6 +116,7 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        aria-busy={isBusy}
         onClick={handleDialogClick}
       >
         <header className="modal__header">
@@ -122,7 +139,8 @@ export default function Modal({
             type="button"
             className="modal__close"
             aria-label="Close dialog"
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={isBusy}
           >
             <X size={18} />
           </button>

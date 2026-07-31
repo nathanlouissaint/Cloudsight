@@ -37,26 +37,51 @@ export default function ActiveSessionsCard() {
     );
   }
 
+  async function handleTerminateSession(
+    sessionId: string
+  ) {
+    await deleteSession.mutateAsync(
+      sessionId
+    );
+  }
+
+  async function handleLogoutAllSessions() {
+    await logoutAll.mutateAsync();
+  }
+
   return (
     <section className="active-sessions-card">
       <div className="active-sessions-card__header">
         <h2>Active Sessions</h2>
 
         <LogoutAllButton
-          onLogoutAll={() => logoutAll.mutate()}
+          onLogoutAll={
+            handleLogoutAllSessions
+          }
           loading={logoutAll.isPending}
         />
       </div>
 
       <div className="active-sessions-card__list">
-        {sessions.map((session) => (
-          <SessionCard
-            key={session.id}
-            session={session}
-            onTerminate={(id) => deleteSession.mutate(id)}
-            isTerminating={deleteSession.isPending}
-          />
-        ))}
+        {sessions.map((session) => {
+          const isTerminatingSession =
+            deleteSession.isPending &&
+            deleteSession.variables ===
+              session.id;
+
+          return (
+            <SessionCard
+              key={session.id}
+              session={session}
+              onTerminate={
+                handleTerminateSession
+              }
+              isTerminating={
+                isTerminatingSession
+              }
+            />
+          );
+        })}
       </div>
     </section>
   );

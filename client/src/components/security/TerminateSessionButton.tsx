@@ -4,7 +4,9 @@ import { Modal } from "../ui";
 
 interface Props {
   sessionId: string;
-  onTerminate: (sessionId: string) => void;
+  onTerminate: (
+    sessionId: string
+  ) => Promise<void>;
   loading?: boolean;
 }
 
@@ -16,9 +18,38 @@ export default function TerminateSessionButton({
   const [isModalOpen, setIsModalOpen] =
     useState(false);
 
-  function handleConfirm() {
-    onTerminate(sessionId);
+  const [errorMessage, setErrorMessage] =
+    useState<string | null>(null);
+
+  function openModal() {
+    setErrorMessage(null);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    if (loading) {
+      return;
+    }
+
+    setErrorMessage(null);
     setIsModalOpen(false);
+  }
+
+  async function handleConfirm() {
+    if (loading) {
+      return;
+    }
+
+    setErrorMessage(null);
+
+    try {
+      await onTerminate(sessionId);
+      setIsModalOpen(false);
+    } catch {
+      setErrorMessage(
+        "Unable to terminate this session. Please try again."
+      );
+    }
   }
 
   return (
@@ -26,7 +57,7 @@ export default function TerminateSessionButton({
       <button
         type="button"
         className="terminate-session-button"
-        onClick={() => setIsModalOpen(true)}
+        onClick={openModal}
         disabled={loading}
       >
         {loading
@@ -38,30 +69,8 @@ export default function TerminateSessionButton({
         isOpen={isModalOpen}
         title="Terminate Session"
         description="This device will immediately lose access to your account. Continue?"
-        onClose={() =>
-          setIsModalOpen(false)
-        }
-        footer={
-          <>
-            <button
-              type="button"
-              className="modal__secondary"
-              onClick={() =>
-                setIsModalOpen(false)
-              }
-            >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              className="modal__primary"
-              onClick={handleConfirm}
-            >
-              Terminate Session
-            </button>
-          </>
-        }
+        onClose={closeModal}
+        isBusy={loading}
       >
         <p>
           The selected session will be signed
@@ -69,6 +78,37 @@ export default function TerminateSessionButton({
           your device, terminating it helps
           protect your account.
         </p>
+
+        {errorMessage && (
+          <p
+            className="modal__error"
+            role="alert"
+          >
+            {errorMessage}
+          </p>
+        )}
+
+        <div className="modal__footer">
+          <button
+            type="button"
+            className="modal__secondary"
+            onClick={closeModal}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="modal__primary"
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            {loading
+              ? "Terminating..."
+              : "Terminate Session"}
+          </button>
+        </div>
       </Modal>
     </>
   );
