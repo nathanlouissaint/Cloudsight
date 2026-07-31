@@ -11,6 +11,10 @@ import {
   logoutAllSessions,
 } from "../services/session.api";
 
+import type {
+  Session,
+} from "../types/session";
+
 export const sessionQueryKeys = {
   all: ["auth", "sessions"] as const,
 };
@@ -28,22 +32,55 @@ export function useDeleteSession() {
   return useMutation({
     mutationFn: deleteSession,
 
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
+    async onMutate(sessionId) {
+      await queryClient.cancelQueries({
         queryKey: sessionQueryKeys.all,
       });
 
+      const previousSessions =
+        queryClient.getQueryData<Session[]>(
+          sessionQueryKeys.all
+        );
+
+      queryClient.setQueryData<Session[]>(
+        sessionQueryKeys.all,
+        (current = []) =>
+          current.filter(
+            (session) =>
+              session.id !== sessionId
+          )
+      );
+
+      return {
+        previousSessions,
+      };
+    },
+
+    onSuccess() {
       toast.success(
         "Session terminated successfully."
       );
     },
 
-    onError: (error) => {
+    onError(error, _, context) {
+      if (context?.previousSessions) {
+        queryClient.setQueryData(
+          sessionQueryKeys.all,
+          context.previousSessions
+        );
+      }
+
       toast.error(
         error instanceof Error
           ? error.message
           : "Unable to terminate the session."
       );
+    },
+
+    onSettled: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: sessionQueryKeys.all,
+      });
     },
   });
 }
@@ -64,7 +101,7 @@ export function useLogoutAllSessions() {
       );
     },
 
-    onError: (error) => {
+    onError(error) {
       toast.error(
         error instanceof Error
           ? error.message
