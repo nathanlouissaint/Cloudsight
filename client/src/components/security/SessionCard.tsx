@@ -1,7 +1,6 @@
 import {
   Clock3,
   Globe,
-  Monitor,
   Shield,
 } from "lucide-react";
 
@@ -9,17 +8,21 @@ import Card from "../layout/Card";
 
 import type { Session } from "../../auth/types/session";
 
+import DeviceBadge from "./DeviceBadge";
 import CurrentDeviceBadge from "./CurrentDeviceBadge";
 import TerminateSessionButton from "./TerminateSessionButton";
 
+import {
+  formatFullDate,
+  formatRelativeTime,
+} from "../../utils/date";
+
 interface Props {
   session: Session;
-  onTerminate: (sessionId: string) => void;
+  onTerminate: (
+    sessionId: string
+  ) => Promise<void>;
   isTerminating?: boolean;
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleString();
 }
 
 export default function SessionCard({
@@ -31,16 +34,25 @@ export default function SessionCard({
     <Card className="session-card">
       <div className="session-card__header">
         <div className="session-card__device">
-          <Monitor size={22} />
+          <DeviceBadge
+            deviceType={session.deviceType}
+          />
 
           <div>
             <h3 className="session-card__title">
-              {session.deviceName ??
-                "Unknown Device"}
+              {session.deviceName}
             </h3>
 
-            <p className="session-card__agent">
-              {session.userAgent}
+            <p
+              className="session-card__agent"
+              title={session.userAgent ?? ""}
+            >
+              {session.browser}
+              {session.browserVersion
+                ? ` ${session.browserVersion}`
+                : ""}
+              {" • "}
+              {session.operatingSystem}
             </p>
           </div>
         </div>
@@ -70,8 +82,12 @@ export default function SessionCard({
           <div>
             <strong>Last Active</strong>
 
-            <p>
-              {formatDate(
+            <p
+              title={formatFullDate(
+                session.lastUsedAt
+              )}
+            >
+              {formatRelativeTime(
                 session.lastUsedAt
               )}
             </p>
@@ -84,8 +100,12 @@ export default function SessionCard({
           <div>
             <strong>Expires</strong>
 
-            <p>
-              {formatDate(
+            <p
+              title={formatFullDate(
+                session.expiresAt
+              )}
+            >
+              {formatRelativeTime(
                 session.expiresAt
               )}
             </p>
@@ -97,12 +117,8 @@ export default function SessionCard({
         <div className="session-card__actions">
           <TerminateSessionButton
             sessionId={session.id}
-            onTerminate={
-              onTerminate
-            }
-            loading={
-              isTerminating
-            }
+            onTerminate={onTerminate}
+            loading={isTerminating}
           />
         </div>
       )}
