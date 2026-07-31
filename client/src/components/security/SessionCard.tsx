@@ -10,6 +10,7 @@ import type { Session } from "../../auth/types/session";
 
 import DeviceBadge from "./DeviceBadge";
 import CurrentDeviceBadge from "./CurrentDeviceBadge";
+import MetadataChip from "./MetadataChip";
 import TerminateSessionButton from "./TerminateSessionButton";
 
 import {
@@ -43,17 +44,26 @@ export default function SessionCard({
               {session.deviceName}
             </h3>
 
-            <p
-              className="session-card__agent"
+            <div
+              className="session-card__metadata"
               title={session.userAgent ?? ""}
             >
-              {session.browser}
-              {session.browserVersion
-                ? ` ${session.browserVersion}`
-                : ""}
-              {" • "}
-              {session.operatingSystem}
-            </p>
+              <MetadataChip
+                label={`${session.browser}${
+                  session.browserVersion
+                    ? ` ${session.browserVersion}`
+                    : ""
+                }`}
+              />
+
+              <MetadataChip
+                label={session.operatingSystem}
+              />
+
+              <MetadataChip
+                label={session.deviceType}
+              />
+            </div>
           </div>
         </div>
 
