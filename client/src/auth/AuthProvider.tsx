@@ -12,8 +12,8 @@ import type {
 } from "./types";
 
 import {
+  clearTokens,
   getAccessToken,
-  removeAccessToken,
   setAccessToken,
 } from "./utils/tokenStorage";
 
@@ -45,6 +45,7 @@ export function AuthProvider({
       authenticatedUser: AuthUser
     ) => {
       setAccessToken(accessToken);
+
       setToken(accessToken);
       setUser(authenticatedUser);
     },
@@ -52,7 +53,8 @@ export function AuthProvider({
   );
 
   const logout = useCallback(() => {
-    removeAccessToken();
+    clearTokens();
+
     setToken(null);
     setUser(null);
   }, []);

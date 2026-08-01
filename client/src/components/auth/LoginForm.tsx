@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { login as loginRequest } from "../../auth/auth.api";
 import { useAuth } from "../../auth/useAuth";
+import { setRefreshToken } from "../../auth/utils/tokenStorage";
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -31,7 +32,14 @@ export default function LoginForm() {
         password,
       });
 
-      login(response.token, response.user);
+      setRefreshToken(
+        response.refreshToken
+      );
+
+      login(
+        response.token,
+        response.user
+      );
 
       navigate("/");
     } catch {

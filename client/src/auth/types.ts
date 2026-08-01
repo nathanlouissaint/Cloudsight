@@ -14,7 +14,7 @@ export interface AuthContextType {
   initializing: boolean;
 
   login: (
-    token: string,
+    accessToken: string,
     user: AuthUser
   ) => void;
 
