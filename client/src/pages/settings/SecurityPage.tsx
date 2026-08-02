@@ -8,7 +8,7 @@ import {
 
 import {
   ActiveSessionsCard,
-  SecurityOverview,
+  SecurityMetrics,
   SecurityTimeline,
 } from "../../components/security";
 
@@ -23,7 +23,7 @@ export default function SecurityPage() {
           subtitle="Manage account security, authenticated devices, active sessions, and recent security activity."
         />
 
-        <SecurityOverview />
+        <SecurityMetrics />
 
         <ActiveSessionsCard />
 
