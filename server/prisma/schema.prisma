@@ -49,13 +49,15 @@ model User {
   sessions Session[]
 
   securityAudits SecurityAudit[]
+
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Session {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   refreshTokenHash String @unique
 
@@ -81,7 +83,7 @@ model SecurityAudit {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   eventType AuditEventType
 
@@ -96,9 +98,27 @@ model SecurityAudit {
   @@index([createdAt])
 }
 
+model PasswordResetToken {
+  id String @id @default(uuid())
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+
+  usedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 model CloudService {
-  id          String  @id @default(uuid())
-  name        String  @unique
+  id          String @id @default(uuid())
+  name        String @unique
   description String?
 
   costRecords CostRecord[]
@@ -181,7 +201,7 @@ model Budget {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
   name   String
   amount Float
@@ -241,7 +261,7 @@ model Report {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
   title   String
   summary String
