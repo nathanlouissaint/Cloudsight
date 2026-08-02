@@ -11,6 +11,10 @@ import {
   registerUser,
 } from "../services/auth/auth.service";
 
+import {
+  auditService,
+} from "../services/auth/audit.service";
+
 export async function register(
   req: Request,
   res: Response,
@@ -123,6 +127,34 @@ export async function me(
       });
     }
 
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+}
+
+export async function getAuditHistory(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const events =
+      await auditService.getUserAuditHistory(
+        userId,
+      );
+
+    return res.status(200).json(events);
+  } catch (error) {
     console.error(error);
 
     return res.status(500).json({

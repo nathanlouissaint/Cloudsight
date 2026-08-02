@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  getAuditHistory,
   login,
   me,
   register,
@@ -29,6 +30,12 @@ router.get(
   "/me",
   authenticateToken,
   me,
+);
+
+router.get(
+  "/audit",
+  authenticateToken,
+  getAuditHistory,
 );
 
 router.post(

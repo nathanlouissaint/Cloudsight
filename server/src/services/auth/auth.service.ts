@@ -1,15 +1,20 @@
+import {
+  AuditEventType,
+} from "@prisma/client";
+
 import { userRepository } from "../../repositories/auth/user.repository";
 
-import { sessionMetadataService } from "./session-metadata.service";
+import { auditService } from "./audit.service";
 import {
   comparePassword,
   hashPassword,
 } from "./password.service";
+import { refreshTokenService } from "./refresh-token.service";
+import { sessionMetadataService } from "./session-metadata.service";
+import { sessionService } from "./session.service";
 import {
   generateAccessToken,
 } from "./token.service";
-import { sessionService } from "./session.service";
-import { refreshTokenService } from "./refresh-token.service";
 
 export async function registerUser(
   email: string,
@@ -81,17 +86,32 @@ export async function loginUser(
     await sessionService.createSession(
       {
         userId: user.id,
+
         expiresAt:
           refreshTokenService.getExpirationDate(),
-        deviceName:
-          sessionMetadata.deviceName,
+
         userAgent:
           sessionMetadata.userAgent,
+
         ipAddress:
           sessionMetadata.ipAddress,
       },
       refreshToken,
     );
+
+  // Record security audit event
+  await auditService.recordEvent({
+    userId: user.id,
+
+    eventType:
+      AuditEventType.LOGIN,
+
+    ipAddress:
+      sessionMetadata.ipAddress,
+
+    userAgent:
+      sessionMetadata.userAgent,
+  });
 
   // Generate short-lived access token
   const accessToken =
@@ -108,8 +128,10 @@ export async function loginUser(
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl,
-      authProvider: user.authProvider,
+      avatarUrl:
+        user.avatarUrl,
+      authProvider:
+        user.authProvider,
     },
   };
 }
@@ -118,10 +140,14 @@ export async function getCurrentUser(
   userId: string,
 ) {
   const user =
-    await userRepository.findById(userId);
+    await userRepository.findById(
+      userId,
+    );
 
   if (!user) {
-    throw new Error("USER_NOT_FOUND");
+    throw new Error(
+      "USER_NOT_FOUND",
+    );
   }
 
   return user;
@@ -136,7 +162,9 @@ export async function logoutUser(
     );
 
   if (!session) {
-    throw new Error("INVALID_REFRESH_TOKEN");
+    throw new Error(
+      "INVALID_REFRESH_TOKEN",
+    );
   }
 
   await sessionService.revokeSession(
