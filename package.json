@@ -1,6 +1,6 @@
 {
   "name": "cloudsight",
-  "version": "1.4.0-alpha",
+  "version": "1.7.0-alpha",
   "private": true,
 
   "workspaces": [

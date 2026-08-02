@@ -1,92 +1,67 @@
-node_modules/
+# ==========================================================
+# CloudSight .gitignore
+# ==========================================================
 
-dist/
-
-build/
-
-coverage/
-
-.terraform/
-
-*.tfstate
-
-*.tfstate.*
-
-tfplan
-
-tfplan.json
-
-*.log
-
-.env
-
-.env.*
-
-!.env.example
-
-!config/.env.production.template
-
-client/dist/
-
-server/dist/
-
-build/
-
-tmp/
-
-.vscode/settings.json
-
+# ----------------------------------------------------------
 # Dependencies
+# ----------------------------------------------------------
 node_modules/
 
+# ----------------------------------------------------------
 # Build Output
+# ----------------------------------------------------------
 dist/
 build/
-
-# Coverage
-coverage/
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-tfplan
-tfplan.json
-
-# Logs
-*.log
-
-# Runtime
-tmp/
-
-# Environment
-.env
-.env.*
-!.env.example
-!config/.env.production.template
-
-# Generated
 client/dist/
 server/dist/
-build/
 
-# macOS
-.DS_Store
+# ----------------------------------------------------------
+# Coverage
+# ----------------------------------------------------------
+coverage/
 
-# IDE
-.vscode/settings.
+# ----------------------------------------------------------
+# Runtime / Temporary Files
+# ----------------------------------------------------------
+tmp/
+*.log
 
-# Environment files
+# ----------------------------------------------------------
+# Environment Files
+# ----------------------------------------------------------
 .env
+.env.*
 .env.local
-.env.production
 .env.development
+.env.production
 client/.env*
 server/.env*
+
+# Keep environment templates
+!.env.example
+!config/.env.production.template
+
+# ----------------------------------------------------------
+# Terraform
+# ----------------------------------------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+tfplan.json
 terraform/terraform.tfvars
 terraform/environments/*/terraform.tfvars
 
-# Keep only templates
-!.env.example
-!config/.env.production.template
+# Keep Terraform templates
 !terraform/terraform.tfvars.example
+
+# ----------------------------------------------------------
+# IDE
+# ----------------------------------------------------------
+.vscode/
+!.vscode/settings.json
+
+# ----------------------------------------------------------
+# macOS
+# ----------------------------------------------------------
+.DS_Store
