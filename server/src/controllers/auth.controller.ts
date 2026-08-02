@@ -9,11 +9,16 @@ import {
   getCurrentUser,
   loginUser,
   registerUser,
+  resetPassword,
 } from "../services/auth/auth.service";
 
 import {
   auditService,
 } from "../services/auth/audit.service";
+
+import {
+  passwordResetService,
+} from "../services/auth/password-reset.service";
 
 export async function register(
   req: Request,
@@ -98,6 +103,84 @@ export async function login(
   }
 }
 
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+) {
+  try {
+    const { email } = req.body;
+
+    if (typeof email === "string") {
+      try {
+        await passwordResetService.createResetRequest(
+          email,
+        );
+      } catch {
+        // Prevent account enumeration.
+      }
+    }
+
+    return res.status(200).json({
+      message:
+        "If an account exists for that email, password reset instructions have been generated.",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+}
+
+export async function resetPasswordController(
+  req: Request,
+  res: Response,
+) {
+  try {
+    const {
+      token,
+      password,
+    } = req.body;
+
+    const result =
+      await resetPassword(
+        token,
+        password,
+      );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message ===
+        "INVALID_RESET_TOKEN"
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid reset token.",
+      });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message ===
+        "RESET_TOKEN_EXPIRED"
+    ) {
+      return res.status(400).json({
+        message:
+          "Reset token has expired.",
+      });
+    }
+
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+}
+
 export async function me(
   req: AuthenticatedRequest,
   res: Response,
@@ -111,9 +194,10 @@ export async function me(
       });
     }
 
-    const user = await getCurrentUser(
-      userId,
-    );
+    const user =
+      await getCurrentUser(
+        userId,
+      );
 
     return res.status(200).json(user);
   } catch (error) {
@@ -153,7 +237,9 @@ export async function getAuditHistory(
         userId,
       );
 
-    return res.status(200).json(events);
+    return res.status(200).json(
+      events,
+    );
   } catch (error) {
     console.error(error);
 
