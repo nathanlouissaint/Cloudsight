@@ -1,14 +1,26 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import { getCurrentUser } from "../services/me.api";
 
+import type {
+  AuthUser,
+} from "../types";
+
 export function useInitializeAuth(
   token: string | null,
-  login: (token: string, user: any) => void,
+  login: (
+    token: string,
+    user: AuthUser
+  ) => void,
   logout: () => void,
 ) {
-  const [initializing, setInitializing] =
-    useState(true);
+  const [
+    initializing,
+    setInitializing,
+  ] = useState(true);
 
   useEffect(() => {
     async function initialize() {
@@ -30,7 +42,11 @@ export function useInitializeAuth(
     }
 
     void initialize();
-  }, [token, login, logout]);
+  }, [
+    token,
+    login,
+    logout,
+  ]);
 
   return initializing;
 }

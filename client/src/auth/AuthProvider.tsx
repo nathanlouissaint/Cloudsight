@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useMemo,
   useState,
@@ -11,6 +10,8 @@ import type {
   AuthUser,
 } from "./types";
 
+import { AuthContext } from "./context/AuthContext";
+
 import {
   clearTokens,
   getAccessToken,
@@ -18,11 +19,6 @@ import {
 } from "./utils/tokenStorage";
 
 import { useInitializeAuth } from "./hooks/useInitializeAuth";
-
-export const AuthContext =
-  createContext<AuthContextType | null>(
-    null
-  );
 
 interface Props {
   children: ReactNode;
