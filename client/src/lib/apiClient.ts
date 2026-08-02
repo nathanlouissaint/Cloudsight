@@ -1,11 +1,16 @@
+import { refreshAccessToken } from "../auth/services/refresh.api";
+
 import {
+  clearTokens,
   getAccessToken,
-  removeAccessToken,
 } from "../auth/utils/tokenStorage";
 
 const API_URL =
   import.meta.env.VITE_API_URL ??
   "http://localhost:5001";
+
+let refreshPromise: Promise<string> | null =
+  null;
 
 export class ApiError extends Error {
   status: number;
@@ -41,12 +46,10 @@ async function getResponseMessage(
   );
 }
 
-export async function apiRequest<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = getAccessToken();
-
+function createHeaders(
+  options: RequestInit,
+  accessToken: string | null
+): Headers {
   const headers = new Headers(
     options.headers
   );
@@ -61,25 +64,49 @@ export async function apiRequest<T>(
     );
   }
 
-  if (token) {
+  if (accessToken) {
     headers.set(
       "Authorization",
-      `Bearer ${token}`
+      `Bearer ${accessToken}`
     );
+  } else {
+    headers.delete("Authorization");
   }
 
-  const response = await fetch(
+  return headers;
+}
+
+function sendRequest(
+  path: string,
+  options: RequestInit,
+  accessToken: string | null
+): Promise<Response> {
+  return fetch(
     `${API_URL}${path}`,
     {
       ...options,
-      headers,
+      headers: createHeaders(
+        options,
+        accessToken
+      ),
     }
   );
+}
 
-  if (response.status === 401) {
-    removeAccessToken();
+async function getRefreshedAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise =
+      refreshAccessToken().finally(() => {
+        refreshPromise = null;
+      });
   }
 
+  return refreshPromise;
+}
+
+async function parseResponse<T>(
+  response: Response
+): Promise<T> {
   if (!response.ok) {
     throw new ApiError(
       await getResponseMessage(response),
@@ -92,4 +119,61 @@ export async function apiRequest<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+async function executeRequest<T>(
+  path: string,
+  options: RequestInit,
+  allowRefresh: boolean
+): Promise<T> {
+  const response = await sendRequest(
+    path,
+    options,
+    getAccessToken()
+  );
+
+  if (
+    response.status !== 401 ||
+    !allowRefresh
+  ) {
+    return parseResponse<T>(response);
+  }
+
+  try {
+    const accessToken =
+      await getRefreshedAccessToken();
+
+    const retryResponse =
+      await sendRequest(
+        path,
+        options,
+        accessToken
+      );
+
+    return parseResponse<T>(
+      retryResponse
+    );
+  } catch (error) {
+    clearTokens();
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      await getResponseMessage(response),
+      response.status
+    );
+  }
+}
+
+export function apiRequest<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  return executeRequest<T>(
+    path,
+    options,
+    true
+  );
 }
