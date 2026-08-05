@@ -2,16 +2,39 @@ import {
   AuditEventType,
 } from "@prisma/client";
 
-import { userRepository } from "../../repositories/auth/user.repository";
+import {
+  userRepository,
+} from "../../repositories/auth/user.repository";
 
-import { auditService } from "./audit.service";
+import {
+  auditService,
+} from "./audit.service";
+
+import {
+  emailVerificationService,
+} from "./email-verification.service";
+
 import {
   comparePassword,
   hashPassword,
 } from "./password.service";
-import { refreshTokenService } from "./refresh-token.service";
-import { sessionMetadataService } from "./session-metadata.service";
-import { sessionService } from "./session.service";
+
+import {
+  passwordResetService,
+} from "./password-reset.service";
+
+import {
+  refreshTokenService,
+} from "./refresh-token.service";
+
+import {
+  sessionMetadataService,
+} from "./session-metadata.service";
+
+import {
+  sessionService,
+} from "./session.service";
+
 import {
   generateAccessToken,
 } from "./token.service";
@@ -36,9 +59,17 @@ export async function registerUser(
       passwordHash,
     });
 
+  const verificationToken =
+    await emailVerificationService.createVerificationRequest(
+      user.email,
+    );
+
   return {
     id: user.id,
     email: user.email,
+
+    // Development only.
+    verificationToken,
   };
 }
 
@@ -54,11 +85,15 @@ export async function loginUser(
     await userRepository.findByEmail(email);
 
   if (!user) {
-    throw new Error("INVALID_CREDENTIALS");
+    throw new Error(
+      "INVALID_CREDENTIALS",
+    );
   }
 
   if (!user.passwordHash) {
-    throw new Error("PASSWORD_LOGIN_UNAVAILABLE");
+    throw new Error(
+      "PASSWORD_LOGIN_UNAVAILABLE",
+    );
   }
 
   const validPassword =
@@ -68,7 +103,9 @@ export async function loginUser(
     );
 
   if (!validPassword) {
-    throw new Error("INVALID_CREDENTIALS");
+    throw new Error(
+      "INVALID_CREDENTIALS",
+    );
   }
 
   const sessionMetadata =
@@ -77,11 +114,9 @@ export async function loginUser(
       metadata.ipAddress,
     );
 
-  // Generate refresh token
   const refreshToken =
     refreshTokenService.generate();
 
-  // Persist session
   const session =
     await sessionService.createSession(
       {
@@ -99,7 +134,6 @@ export async function loginUser(
       refreshToken,
     );
 
-  // Record security audit event
   await auditService.recordEvent({
     userId: user.id,
 
@@ -113,7 +147,6 @@ export async function loginUser(
       sessionMetadata.userAgent,
   });
 
-  // Generate short-lived access token
   const accessToken =
     generateAccessToken({
       userId: user.id,
@@ -124,6 +157,7 @@ export async function loginUser(
   return {
     accessToken,
     refreshToken,
+
     user: {
       id: user.id,
       email: user.email,
@@ -170,4 +204,44 @@ export async function logoutUser(
   await sessionService.revokeSession(
     session.id,
   );
+}
+
+/**
+ * Reset a user's password using
+ * a valid password reset token.
+ */
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+) {
+  const resetRecord =
+    await passwordResetService.consumeToken(
+      token,
+    );
+
+  const passwordHash =
+    await hashPassword(
+      newPassword,
+    );
+
+  await userRepository.updatePassword(
+    resetRecord.userId,
+    passwordHash,
+  );
+
+  await sessionService.revokeAllSessions(
+    resetRecord.userId,
+  );
+
+  await auditService.recordEvent({
+    userId: resetRecord.userId,
+
+    eventType:
+      AuditEventType.PASSWORD_RESET,
+  });
+
+  return {
+    message:
+      "Password reset successfully.",
+  };
 }

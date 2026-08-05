@@ -19,6 +19,7 @@ enum AuditEventType {
   SESSION_REVOKED
   PASSWORD_CHANGED
   PASSWORD_RESET
+  EMAIL_VERIFIED
 }
 
 model User {
@@ -36,7 +37,7 @@ model User {
 
   avatarUrl String?
 
-  emailVerified Boolean @default(false)
+  emailVerifiedAt DateTime?
 
   createdAt DateTime @default(now())
 
@@ -51,13 +52,15 @@ model User {
   securityAudits SecurityAudit[]
 
   passwordResetTokens PasswordResetToken[]
+
+  emailVerificationTokens EmailVerificationToken[]
 }
 
 model Session {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   refreshTokenHash String @unique
 
@@ -83,7 +86,7 @@ model SecurityAudit {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   eventType AuditEventType
 
@@ -102,7 +105,25 @@ model PasswordResetToken {
   id String @id @default(uuid())
 
   userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+
+  usedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tokenHash String @unique
 
@@ -117,8 +138,8 @@ model PasswordResetToken {
 }
 
 model CloudService {
-  id          String @id @default(uuid())
-  name        String @unique
+  id          String  @id @default(uuid())
+  name        String  @unique
   description String?
 
   costRecords CostRecord[]
@@ -201,7 +222,7 @@ model Budget {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   name   String
   amount Float
@@ -261,7 +282,7 @@ model Report {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   title   String
   summary String

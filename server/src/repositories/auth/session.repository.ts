@@ -138,6 +138,29 @@ export class SessionRepository {
   }
 
   /**
+   * Revoke every active session except the current one.
+   */
+  async revokeAllExcept(
+    userId: string,
+    currentSessionId: string,
+  ): Promise<number> {
+    const result = await prisma.session.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+        NOT: {
+          id: currentSessionId,
+        },
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    return result.count;
+  }
+
+  /**
    * Delete expired sessions.
    */
   async deleteExpired(): Promise<number> {

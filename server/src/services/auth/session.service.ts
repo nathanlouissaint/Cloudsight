@@ -48,13 +48,54 @@ export class SessionService {
   }
 
   /**
+   * Validate an authenticated access session.
+   */
+  async validateAccessSession(
+    sessionId: string,
+  ): Promise<Session> {
+    const session =
+      await sessionRepository.findById(
+        sessionId,
+      );
+
+    if (!session) {
+      throw new Error(
+        "SESSION_NOT_FOUND",
+      );
+    }
+
+    if (session.revokedAt) {
+      throw new Error(
+        "SESSION_REVOKED",
+      );
+    }
+
+    if (
+      session.expiresAt <
+      new Date()
+    ) {
+      throw new Error(
+        "SESSION_EXPIRED",
+      );
+    }
+
+    await this.touch(
+      session.id,
+    );
+
+    return session;
+  }
+
+  /**
    * Validate a refresh token.
    */
   async validateRefreshToken(
     refreshToken: string,
   ) {
     const hashed =
-      this.hashRefreshToken(refreshToken);
+      this.hashRefreshToken(
+        refreshToken,
+      );
 
     const session =
       await sessionRepository.findByRefreshTokenHash(
@@ -69,7 +110,10 @@ export class SessionService {
       return null;
     }
 
-    if (session.expiresAt < new Date()) {
+    if (
+      session.expiresAt <
+      new Date()
+    ) {
       return null;
     }
 
@@ -101,11 +145,14 @@ export class SessionService {
       newRefreshToken,
     );
 
-    await this.touch(session.id);
+    await this.touch(
+      session.id,
+    );
 
     return {
       session,
-      refreshToken: newRefreshToken,
+      refreshToken:
+        newRefreshToken,
     };
   }
 
@@ -174,7 +221,10 @@ export class SessionService {
       );
     }
 
-    if (session.userId !== userId) {
+    if (
+      session.userId !==
+      userId
+    ) {
       throw new Error(
         "SESSION_FORBIDDEN",
       );
@@ -232,6 +282,19 @@ export class SessionService {
   ): Promise<number> {
     return sessionRepository.revokeAllForUser(
       userId,
+    );
+  }
+
+  /**
+   * Revoke every active session except the current one.
+   */
+  async revokeOtherSessions(
+    userId: string,
+    currentSessionId: string,
+  ): Promise<number> {
+    return sessionRepository.revokeAllExcept(
+      userId,
+      currentSessionId,
     );
   }
 

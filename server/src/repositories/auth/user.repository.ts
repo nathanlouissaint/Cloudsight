@@ -1,27 +1,59 @@
 import { prisma } from "../../config/prisma";
 
 class UserRepository {
+  /**
+   * Return a user's public profile.
+   */
   async findById(id: string) {
     return prisma.user.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
       select: {
         id: true,
         email: true,
         name: true,
         avatarUrl: true,
         authProvider: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },
     });
   }
 
+  /**
+   * Return a user by email.
+   */
   async findByEmail(email: string) {
     return prisma.user.findUnique({
-      where: { email },
+      where: {
+        email,
+      },
     });
   }
 
+  /**
+   * Return the authentication fields required for
+   * authenticated account operations.
+   */
+  async findAuthUserById(userId: string) {
+    return prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        emailVerifiedAt: true,
+      },
+    });
+  }
+
+  /**
+   * Create a new user.
+   */
   async create(data: {
     email: string;
     passwordHash: string;
@@ -30,6 +62,40 @@ class UserRepository {
       data,
     });
   }
+
+  /**
+   * Update a user's password hash.
+   */
+  async updatePassword(
+    userId: string,
+    passwordHash: string,
+  ) {
+    return prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        passwordHash,
+      },
+    });
+  }
+
+  /**
+   * Mark a user's email address as verified.
+   */
+  async markEmailVerified(
+    userId: string,
+  ) {
+    return prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        emailVerifiedAt: new Date(),
+      },
+    });
+  }
 }
 
-export const userRepository = new UserRepository();
+export const userRepository =
+  new UserRepository();

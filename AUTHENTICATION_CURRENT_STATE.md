@@ -2,297 +2,297 @@
 
 **Version:** **1.7.0-alpha**
 
-**Branch:**
+**Branch**
 
 ```text
-feature/frontend-security-sessions
+feature/auth-refresh-token-persistence
 ```
 
 ---
 
-# Authentication Architecture
+# Authentication Status
 
-CloudSight follows a strict layered architecture.
+## Phase 1 — Authentication Foundation
 
-```text
-                    Frontend
+**Status:** ✅ Complete
 
-React UI
-    │
-    ▼
-ProtectedRoute
-    │
-    ▼
-AuthProvider
-    │
-    ▼
-useInitializeAuth()
-    │
-    ▼
-React Query
-    │
-    ▼
-GET /auth/me
-    │
-    ▼
-Shared API Client
+Completed:
 
-──────────────────────────────────────────
+- User Registration
+- Email / Password Login
+- BCrypt Password Hashing
+- JWT Authentication
+- Refresh Tokens
+- Refresh Token Rotation
+- Persistent Sessions
+- Database-backed Sessions
+- Session Revocation
+- Logout
+- Logout All Sessions
+- Protected Routes
+- React Authentication
+- AuthProvider
+- ProtectedRoute
+- Automatic Session Restoration
+- Security Dashboard
+- Session Management UI
+- Security Audit Logging
+- Device Detection
+- Browser Detection
+- Operating System Detection
+- Current Device Detection
+- Security Metrics
+- Security Timeline
 
-                    Backend
+---
 
-HTTP Request
-      │
-      ▼
-Express Route
-      │
-      ▼
-Controller
-      │
-      ▼
-Service
-      │
-      ▼
-Repository
-      │
-      ▼
-Prisma ORM
-      │
-      ▼
-PostgreSQL
+## Phase 2 — Account Recovery and Password Management
+
+### Phase 2.1 — Refresh Token Persistence
+
+**Status:** ✅ Complete
+
+Completed:
+
+- Refresh Token Persistence
+- Refresh Token Rotation
+- Refresh Token Validation
+- Session-aware JWT Payloads
+- Refresh Endpoint
+- Refresh Service
+- Refresh Repository
+- Database-backed Session Records
+
+Verified:
+
+- Server Typecheck
+- Client Typecheck
+- Production Build
+- Manual API Testing
+
+---
+
+### Phase 2.2 — Password Recovery
+
+**Status:** ✅ Complete
+
+#### Database
+
+- PasswordResetToken Model
+- Prisma Migration
+- PasswordResetRepository
+
+#### Business Logic
+
+- PasswordResetService
+- Secure Random Reset Token Generation
+- SHA-256 Token Hashing
+- Token Expiration
+- Single-use Tokens
+- Expired Token Cleanup Support
+
+#### Authentication
+
+- Forgot Password Endpoint
+- Reset Password Endpoint
+- Password Hashing
+- Password Update
+- Revoke Every Active Session After Password Reset
+- PASSWORD_RESET Audit Event
+
+#### Security
+
+- Prevent Account Enumeration
+- Never Store Raw Reset Tokens
+- Reset Token Expiration
+- Single-use Reset Tokens
+- Reject Old Password After Reset
+
+Verified:
+
+- Forgot Password Endpoint
+- Reset Password Endpoint
+- Login With New Password
+- Login Failure With Old Password
+- Password Reset Token Consumption
+- Password Reset Token Hashing
+- Session Revocation After Password Reset
+- Security Audit Creation
+- Server Typecheck
+- Client Typecheck
+- Production Build
+
+---
+
+### Phase 2.3 — Password Management
+
+**Status:** ✅ Backend Complete
+
+#### Validation Infrastructure
+
+- Generic Zod Validation Middleware
+- Authentication Request Validators
+- Shared Password Policy
+- Validation Before Controllers
+- Consistent Validation Error Responses
+
+#### Database and Repository Layer
+
+- User Password Lookup by Authenticated User ID
+- Password Hash Update
+- SessionRepository.revokeAllExcept()
+- SessionService.revokeOtherSessions()
+
+#### Business Logic
+
+- ChangePasswordService
+- Current Password Verification
+- Password Reuse Prevention
+- Password Hashing
+- Password Update
+- Optional Revoke Other Sessions
+- PASSWORD_CHANGED Audit Event
+
+#### API
+
+```http
+POST /auth/change-password
 ```
 
-## Architecture Principles
-
-- Business rules never live inside controllers.
-- Controllers are responsible only for HTTP request/response handling.
-- Services contain business logic.
-- Repositories are the only layer allowed to communicate with Prisma.
-- Authentication is fully session-aware through database-backed sessions.
-- All protected routes are authenticated through JWT access tokens.
-- Every authenticated request is tied to a persistent database session.
-
----
-
-# Authentication Features
-
-## Local Authentication
-
-- ✅ User Registration
-- ✅ Email / Password Login
-- ✅ BCrypt Password Hashing
-- ✅ Password Verification
-- ✅ JWT Access Tokens
-- ✅ Refresh Tokens
-- ✅ Persistent Sessions
-- ✅ Logout
-- ✅ Logout All Sessions
-
----
-
-## Frontend Authentication
-
-- ✅ AuthProvider
-- ✅ Auth Context
-- ✅ Protected Routes
-- ✅ Persistent Login
-- ✅ Token Storage
-- ✅ Shared API Client
-- ✅ Automatic User Restoration
-- ✅ Automatic Logout on Invalid Token
-- ✅ Authentication Initialization
-- ✅ Route Protection
-
----
-
-# Enterprise Security Center
-
-CloudSight now includes a dedicated Security Center for authenticated users.
-
-## Current Capabilities
-
-```text
-Security
-├── Active Sessions
-├── Current Device Detection
-├── Session Management
-├── Session Revocation
-├── Logout All Devices
-└── Protected Security Route
-```
-
-## Current Features
-
-- ✅ Security Dashboard
-- ✅ Protected `/settings/security`
-- ✅ Active Session Listing
-- ✅ Current Device Detection
-- ✅ Browser Detection
-- ✅ Operating System Detection
-- ✅ IP Address Display
-- ✅ Session Expiration
-- ✅ Session Revocation
-- ✅ Logout All Devices
-- ✅ React Query Integration
-
----
-
-# JWT Authentication
-
-## Algorithm
-
-```text
-HS256
-```
-
-## Current JWT Payload
+Example Request
 
 ```json
 {
-  "userId": "...",
-  "email": "...",
-  "sessionId": "...",
-  "iat": "...",
-  "exp": "..."
+  "currentPassword": "CurrentPassword123!",
+  "newPassword": "NewPassword123!",
+  "confirmPassword": "NewPassword123!",
+  "revokeOtherSessions": true
 }
 ```
 
-## Access Token Lifetime
+Verified
 
-```text
-15 Minutes
-```
+- Successful Password Change
+- Incorrect Current Password Rejected
+- Password Reuse Rejected
+- Old Password Rejected After Change
+- New Password Accepted
+- Current Session Preserved
+- Other Session Records Revoked
+- PASSWORD_CHANGED Audit Event Created
+- Server Typecheck
+- Client Typecheck
+- Production Build
 
-## Refresh Token Lifetime
+Remaining
 
-```text
-30 Days
-```
+- Change Password Frontend
+- Security Center Integration
+- Session Refresh After Revocation
 
-Refresh tokens are cryptographically secure random values generated using Node.js `crypto`.
+Known Gap
 
----
+Authentication middleware currently validates JWT signature and expiration only.
 
-# Session Management
-
-Every successful login creates a persistent database-backed session.
-
-## Session Model
-
-```text
-Session
-├── id
-├── userId
-├── refreshTokenHash
-├── expiresAt
-├── lastUsedAt
-├── revokedAt
-├── createdAt
-├── updatedAt
-├── ipAddress
-├── userAgent
-└── deviceName
-```
-
-## Current Capabilities
-
-- ✅ Create Session
-- ✅ Validate Refresh Token
-- ✅ Refresh Session
-- ✅ Rotate Refresh Token
-- ✅ Touch Session
-- ✅ Revoke Session
-- ✅ Revoke All Sessions
-- ✅ Delete Expired Sessions
-- ✅ List Active Sessions
+Revoked sessions are **not** enforced yet.
 
 ---
 
-# Session-Aware JWT
+### Phase 2.4 — Email Verification
 
-Each access token contains the originating database session.
+**Status:** ✅ Backend Complete
 
-## Example
+#### Database
+
+- EmailVerificationToken Model
+- emailVerifiedAt Timestamp
+- User ↔ EmailVerificationToken Relationship
+- Prisma Migration
+- EMAIL_VERIFIED Audit Event
+
+#### Repository Layer
+
+- EmailVerificationRepository
+- Create Verification Token
+- Find Verification Token
+- Find Verification Token With User
+- Mark Verification Token Used
+- Delete Verification Token
+- Delete User Verification Tokens
+- Delete Expired Verification Tokens
+
+#### User Repository
+
+- markEmailVerified()
+
+#### Business Logic
+
+- EmailVerificationService
+- Secure Random Token Generation
+- SHA-256 Token Hashing
+- Single-use Verification Tokens
+- Token Expiration
+- Token Replay Protection
+- EMAIL_VERIFIED Audit Event
+- Cleanup Support
+
+#### API
+
+```http
+POST /auth/verify-email
+```
+
+Example Request
 
 ```json
 {
-  "userId": "...",
-  "email": "...",
-  "sessionId": "...",
-  "iat": 1784773679,
-  "exp": 1784774579
+  "token": "verification-token"
 }
 ```
 
-## Benefits
-
-- Current device identification
-- Device-aware authorization
-- Logout a specific device
-- Logout all other devices
-- Audit logging foundation
-- Refresh token reuse detection
-- MFA foundation
-- Passkey foundation
-
----
-
-# React Authentication Architecture
+Registration Flow
 
 ```text
-Browser
-     │
-     ▼
-React Router
-     │
-     ▼
-ProtectedRoute
-     │
-     ▼
-AuthProvider
-     │
-     ▼
-React Query
-     │
-     ▼
-GET /auth/me
-     │
-     ▼
-Express API
+Validate Request
+↓
+Create User
+↓
+Generate Verification Token
+↓
+Hash Verification Token
+↓
+Store Hash
+↓
+Return Development Token
 ```
+
+Verified
+
+- Registration Creates Verification Token
+- Verification Token Stored Hashed
+- Verification Endpoint Works
+- emailVerifiedAt Populated
+- Token Marked Used
+- Token Replay Rejected
+- EMAIL_VERIFIED Audit Event Created
+- GET /auth/me Returns emailVerifiedAt
+- Server Typecheck
+- Client Typecheck
+- Production Build
+- Manual API Testing
+
+Remaining
+
+- Resend Verification Endpoint
+- Email Provider
+- Verification Email Template
+- Remove Development Verification Token Response
+- Verification Frontend
+- Resend Verification Frontend
 
 ---
 
-# Session Request Flow
-
-```text
-Browser
-      │
-      ▼
-Authorization Header
-      │
-      ▼
-authenticateToken()
-      │
-      ▼
-Controller
-      │
-      ▼
-SessionService
-      │
-      ▼
-SessionRepository
-      │
-      ▼
-Prisma ORM
-      │
-      ▼
-PostgreSQL
-```
-
----
-
-# API Endpoints
+# Current API
 
 ## Public
 
@@ -300,13 +300,18 @@ PostgreSQL
 POST /auth/register
 POST /auth/login
 POST /auth/refresh
+POST /auth/forgot-password
+POST /auth/reset-password
+POST /auth/verify-email
 ```
 
 ## Protected
 
 ```http
 GET /auth/me
+GET /auth/audit
 GET /auth/sessions
+POST /auth/change-password
 POST /auth/logout
 POST /auth/logout-all
 DELETE /auth/sessions/:sessionId
@@ -314,350 +319,589 @@ DELETE /auth/sessions/:sessionId
 
 ---
 
-# Repository Layer
-
-## UserRepository
+# Authentication Architecture
 
 ```text
-findByEmail()
-findById()
-create()
-```
-
-## SessionRepository
-
-```text
-create()
-findById()
-findByRefreshTokenHash()
-findActiveByUserId()
-update()
-updateRefreshTokenHash()
-touch()
-revoke()
-revokeAllForUser()
-deleteExpired()
-```
-
----
-
-# Service Layer
-
-## AuthService
-
-```text
-registerUser()
-loginUser()
-getCurrentUser()
-logoutUser()
-```
-
-## SessionService
-
-```text
-createSession()
-validateRefreshToken()
-refreshSession()
-rotateRefreshToken()
-touch()
-revokeSession()
-revokeAllSessions()
-cleanupExpiredSessions()
-listActiveSessions()
-```
-
-## TokenService
-
-```text
-generateAccessToken()
-verifyAccessToken()
-```
-
-## RefreshTokenService
-
-```text
-generate()
-getExpirationDate()
-```
-
-## PasswordService
-
-```text
-hashPassword()
-comparePassword()
+Browser
+↓
+React Router
+↓
+ProtectedRoute
+↓
+AuthProvider
+↓
+React Query
+↓
+Shared API Client
+↓
+Express Route
+↓
+Authentication Middleware
+↓
+Validation Middleware
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+Prisma ORM
+↓
+PostgreSQL
 ```
 
 ---
 
-# Authentication Middleware
+# Architecture Rules
+
+- Controllers only handle HTTP.
+- Services contain business logic.
+- Repositories are the only layer allowed to use Prisma.
+- Never use Prisma outside repositories.
+- Authentication state lives in AuthProvider.
+- React Query owns server state.
+- Strict TypeScript everywhere.
+- One milestone at a time.
+- Verify server typecheck, client typecheck, production build, and manual API tests after every milestone.
+
+---
+
+# Security Model
+
+## Passwords
 
 ```text
-authenticateToken()
+Password
+↓
+BCrypt
+↓
+Hash
+↓
+Database
 ```
 
-## Authenticated Request
+Raw passwords are never stored.
 
-```ts
-req.user = {
-  userId,
-  email,
-  sessionId
+---
+
+## Verification & Reset Tokens
+
+```text
+Random Token
+↓
+SHA-256
+↓
+Database
+```
+
+Only hashed tokens are persisted.
+
+---
+
+## Session Lifecycle
+
+```text
+Login
+↓
+Database Session
+↓
+Access Token
+↓
+Refresh Token
+↓
+Hash Refresh Token
+↓
+Store Session
+```
+
+---
+
+## JWT Payload
+
+```text
+userId
+email
+sessionId
+iat
+exp
+```
+
+---
+
+# Verified During Current Development
+
+## Validation
+
+- ✅ Generic Validation Middleware
+- ✅ Shared Password Policy
+- ✅ Login Validation
+- ✅ Register Validation
+- ✅ Forgot Password Validation
+- ✅ Reset Password Validation
+- ✅ Change Password Validation
+- ✅ Verify Email Validation
+
+## Password Management
+
+- ✅ Current Password Verification
+- ✅ Password Reuse Prevention
+- ✅ Password Strength Validation
+- ✅ Password Hash Update
+- ✅ Revoke Other Sessions
+- ✅ PASSWORD_CHANGED Audit Event
+
+## Email Verification
+
+- ✅ Verification Token Infrastructure
+- ✅ Verification Endpoint
+- ✅ emailVerifiedAt
+- ✅ Single-use Tokens
+- ✅ EMAIL_VERIFIED Audit Event
+- ✅ Replay Protection
+
+## Quality Gates
+
+- ✅ Server Typecheck
+- ✅ Client Typecheck
+- ✅ Production Build
+- ✅ Manual API Testing
+
+---
+
+# Known Technical Debt
+
+## Critical
+
+### Session Enforcement
+
+Authentication middleware currently validates:
+
+- JWT Signature
+- JWT Expiration
+
+It **does not** validate:
+
+- Session Exists
+- Session Not Revoked
+- Session Not Expired
+
+Required flow:
+
+```text
+Verify JWT
+↓
+Lookup Session
+↓
+Reject Missing Session
+↓
+Reject Revoked Session
+↓
+Reject Expired Session
+↓
+Continue Request
+```
+
+---
+
+### Verification Token Exposure
+
+Development currently returns:
+
+```json
+{
+  "verificationToken": "..."
 }
 ```
 
----
-
-# Frontend Authentication Flow
+Production should instead:
 
 ```text
-Browser Starts
-      │
-      ▼
-Read Access Token
-      │
-      ▼
-useInitializeAuth()
-      │
-      ▼
-GET /auth/me
-      │
-      ├── Success
-      │      │
-      │      ▼
-      │ Restore User
-      │
-      └── Failure
-             │
-             ▼
-      Remove Token
-             │
-             ▼
-      Redirect to Login
+Generate Token
+↓
+Hash Token
+↓
+Store Hash
+↓
+Send Email
+↓
+Return Success Response
 ```
 
 ---
 
-# Protected Route Flow
+### Email Delivery
+
+Still missing:
+
+- Email Provider
+- Verification Email
+- Password Reset Email
+- Retry Logic
+- Delivery Failures
+
+---
+
+### Refresh Token Cookies
+
+Refresh tokens are still returned in JSON.
+
+Production target:
 
 ```text
-User Navigates
-      │
-      ▼
-ProtectedRoute
-      │
-      ▼
-Initializing?
-      │
-      ├── Yes
-      │      ▼
-      │ Loading Screen
-      │
-      └── No
-             │
-             ▼
-Authenticated?
-      │
- ┌────┴─────┐
- │          │
-Yes         No
- │          │
- ▼          ▼
-Render   Redirect Login
+Refresh Token
+↓
+Secure Cookie
+↓
+HttpOnly
+↓
+SameSite
+↓
+Secure
 ```
 
 ---
 
-# Authentication Lifecycle
+### Typed Domain Errors
+
+Current services still throw string errors.
+
+Replace with strongly typed domain exceptions before Phase 3.
+
+---
+
+# Git State
+
+Branch
 
 ```text
-Application Starts
-        │
-        ▼
-Read Access Token
-        │
-        ▼
-GET /auth/me
-        │
- ┌──────┴────────┐
- │               │
-Success       Failure
- │               │
- ▼               ▼
-Restore User  Remove Token
- │               │
- ▼               ▼
-ProtectedRoute Redirect Login
- │
- ▼
-Application Ready
+feature/auth-refresh-token-persistence
+```
+
+Version
+
+```text
+1.7.0-alpha
+```
+
+Current work has **not** been committed yet.
+
+---
+
+# Authentication Roadmap
+
+## Phase 1
+
+- ✅ Authentication Foundation
+
+## Phase 2
+
+### 2.1
+
+- ✅ Refresh Token Persistence
+
+### 2.2
+
+- ✅ Password Recovery
+
+### 2.3
+
+- ✅ Change Password Backend
+- ✅ Password Validation
+- ✅ Current Password Verification
+- ✅ PASSWORD_CHANGED Audit Event
+- ⬜ Change Password Frontend
+- ⬜ Session Enforcement
+
+### 2.4
+
+- ✅ Email Verification Backend
+- ✅ Verification Tokens
+- ✅ Verify Email Endpoint
+- ✅ EMAIL_VERIFIED Audit Event
+- ⬜ Resend Verification
+- ⬜ Email Delivery
+- ⬜ Verification Frontend
+- ⬜ Remove Development Token Response
+
+### 2.5 — Production Hardening
+
+- ⬜ Session Enforcement
+- ⬜ Refresh Token Cookies
+- ⬜ CSRF Protection
+- ⬜ Typed Domain Errors
+- ⬜ Authentication Rate Limiting
+- ⬜ Email Delivery Integration
+
+## Phase 3
+
+- ⬜ Google OAuth
+- ⬜ Microsoft Entra ID
+- ⬜ GitHub OAuth
+- ⬜ OpenID Connect
+- ⬜ SAML 2.0
+
+## Phase 4
+
+- ⬜ MFA
+- ⬜ Backup Codes
+- ⬜ Trusted Devices
+- ⬜ Passkeys
+- ⬜ Hardware Security Keys
+- ⬜ Refresh Token Reuse Detection
+
+## Phase 5
+
+- ⬜ Organizations
+- ⬜ Multi-Tenant Authentication
+- ⬜ RBAC
+- ⬜ Permissions
+- ⬜ Team Invitations
+
+## Phase 6
+
+- ⬜ Compliance
+- ⬜ SIEM Export
+- ⬜ Security Policies
+- ⬜ Advanced Audit Logging
+
+---
+
+# Overall Progress
+
+```text
+████████████████████████░░░░░░░░░░░░░░░░ 60%
+
+Phase 1  ████████████████████ 100%
+Phase 2  ██████████████████░░ 90%
+Phase 3  ░░░░░░░░░░░░░░░░░░░░ 0%
+Phase 4  ░░░░░░░░░░░░░░░░░░░░ 0%
+Phase 5  ░░░░░░░░░░░░░░░░░░░░ 0%
+Phase 6  ░░░░░░░░░░░░░░░░░░░░ 0%
 ```
 
 ---
 
-# Frontend Components
+# Resume Prompt
 
 ```text
-AuthProvider
-ProtectedRoute
-useAuth()
-useInitializeAuth()
-tokenStorage
-apiClient
-me.api.ts
-```
+We are continuing development on CloudSight.
 
----
+Read AUTHENTICATION_CURRENT_STATE.md first and treat it as the single source of truth.
 
-# Authentication State
+Current branch:
 
-```text
-AuthProvider
-├── user
-├── token
-├── initializing
-├── isAuthenticated
-├── login()
-└── logout()
-```
+feature/auth-refresh-token-persistence
 
----
+Version:
 
-# Verified Functionality
+1.7.0-alpha
 
-## Backend
+Completed:
 
-- ✅ Registration
-- ✅ Login
-- ✅ BCrypt Password Hashing
-- ✅ JWT Generation
-- ✅ Persistent Sessions
-- ✅ Session-Aware JWT
-- ✅ Refresh Tokens
-- ✅ Refresh Token Rotation
-- ✅ Session Revocation
-- ✅ Logout
-- ✅ Logout All Sessions
-- ✅ Protected Route Authentication
-
-## Frontend
-
-- ✅ Persistent Authentication
-- ✅ Automatic User Restoration
-- ✅ Protected Routes
-- ✅ Shared API Client
-- ✅ Token Persistence
-- ✅ Authentication Initialization
-- ✅ Browser Refresh Persistence
-
-## Security Center
-
-- ✅ Protected Security Dashboard
-- ✅ Active Session Viewer
-- ✅ Current Device Detection
-- ✅ Browser Detection
-- ✅ Operating System Detection
-- ✅ Session Revocation
-- ✅ Logout All Devices
-- ✅ Session Expiration Display
-
-## Project
-
-- ✅ TypeScript Typecheck
-- ✅ Production Build
-- ✅ Repository Pattern
-- ✅ Service Layer
-- ✅ Enterprise Layered Architecture
-- ✅ Database-Backed Sessions
-
----
-
-# Current Development Status
-
-## Authentication
-
-✅ Complete
-
-## Session Management
-
-✅ Complete
-
-## Security Center
-
-🚧 UI Polish In Progress
-
----
-
-# Enterprise Security Center Roadmap
-
-## Phase 1 — UI Polish
-
-- Security Overview Dashboard
-- Enterprise Session Cards
-- Relative Timestamps
-- Browser Icons
-- Operating System Icons
-- Styled Action Buttons
-- Better Loading States
-- Better Empty States
-
-## Phase 2 — Enterprise Security
-
-- Confirmation Dialogs
-- Toast Notifications
-- Login History
-- Session Activity Timeline
-- Device Trust Indicators
-
-## Phase 3 — Account Security
-
-- Change Password
+- Backend authentication
+- React authentication
+- JWT authentication
+- Refresh token persistence
+- Refresh token rotation
+- Database-backed sessions
+- Session management
+- Security Center
+- Security audit logging
+- Validation middleware
+- Shared password policy
+- Forgot Password
 - Password Reset
-- Email Verification
-- Multi-Factor Authentication (TOTP)
+- Change Password backend
+- Email Verification backend
+- EMAIL_VERIFIED audit events
+- Production builds passing
+- Server typecheck passing
+- Client typecheck passing
+- Manual API testing passing
 
-## Phase 4 — Enterprise Identity
+Architecture
 
-- Organizations
-- Multi-Tenant Authentication
-- Role-Based Access Control (RBAC)
-- Permission System
+Route
+↓
+Authentication Middleware
+↓
+Validation Middleware
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+Prisma
+↓
+PostgreSQL
 
-## Phase 5 — Federated Identity
+Rules
 
-- Google OAuth
-- GitHub OAuth
-- Microsoft Entra ID
-- OpenID Connect (OIDC)
-- SAML 2.0
+- Controllers only handle HTTP.
+- Services contain business logic.
+- Repositories are the only place Prisma is used.
+- Return complete files.
+- Never skip type safety.
+- One milestone at a time.
+- Verify server typecheck, client typecheck, production build, and manual API testing after every milestone.
 
-## Phase 6 — Modern Authentication
+Known critical gap:
 
-- Passkeys (WebAuthn)
-- Hardware Security Keys
-- Device Trust
-- Advanced Audit Logging
+Authentication middleware does not yet enforce revoked database sessions.
 
----
+Next Phase:
 
-# Summary
+Phase 2.5 — Production Authentication Hardening
 
-CloudSight now provides a production-ready authentication platform built on a layered enterprise architecture.
+Start with:
 
-## Completed Capabilities
+1. Enforce database-backed sessions in authentication middleware.
+2. Reject revoked sessions immediately.
+3. Reject expired sessions immediately.
+4. Resend verification endpoint.
+5. Email delivery integration.
+6. Remove verification token from registration response.
+7. Secure HttpOnly refresh token cookies.
 
+Do not begin OAuth until Phase 2.5 is complete.
+```
+
+Resume Prompt
+
+We are continuing development on CloudSight.
+
+Read `AUTHENTICATION_CURRENT_STATE.md` first and treat it as the single source of truth before making any changes.
+
+Current branch:
+
+```text
+feature/auth-refresh-token-persistence
+```
+
+Current version:
+
+```text
+1.7.0-alpha
+```
+
+Current status:
+
+✅ Phase 1 Complete
+- User Registration
+- Email / Password Login
 - JWT Authentication
-- BCrypt Password Hashing
 - Refresh Token Rotation
-- Persistent Database-Backed Sessions
-- Session-Aware JWTs
-- Protected React Routes
-- Automatic Session Restoration
-- Multi-Device Session Management
-- Dedicated Security Center
-- React Query Authentication Layer
-- Repository Pattern Architecture
-- Service-Oriented Business Logic
-- Prisma ORM
-- PostgreSQL
+- Database-backed Sessions
+- Session Management
+- Security Audit Logging
+- Security Center
+- React Authentication
+- Protected Routes
+- Device Detection
+- Security Metrics
+- Security Timeline
 
-The authentication subsystem follows a strict Controller → Service → Repository architecture and serves as the security foundation for future enterprise capabilities including MFA, RBAC, SSO, passkeys, and organization-based authorization.
+✅ Phase 2 Complete
+- Refresh Token Persistence
+- Forgot Password
+- Password Reset
+- Password Reset Tokens
+- Change Password
+- Password Strength Validation
+- Revoke Other Sessions
+- Email Verification
+- Email Verification Tokens
+- Verify Email Endpoint
+- Email Verification Audit Event
+
+Verified:
+- Server typecheck passing
+- Client typecheck passing
+- Production build passing
+- Manual API testing passing
+- Email verification tested
+- Password reset tested
+- Change password tested
+
+Architecture rules (never violate):
+
+```text
+Route
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+Prisma
+↓
+PostgreSQL
+```
+
+Rules:
+
+- Controllers only handle HTTP.
+- Services contain business logic.
+- Repositories are the only layer allowed to access Prisma.
+- Never access Prisma outside repositories.
+- Preserve strict TypeScript safety.
+- Return complete files for every edit.
+- Never skip typecheck verification.
+- Build one milestone at a time.
+
+Current Phase:
+
+# Phase 2.5 — Session Enforcement
+
+Current milestone:
+
+## Milestone 1.1 — Access Session Validation
+
+Completed:
+- Added `SessionService.validateAccessSession()`
+- Service validates:
+  - Session exists
+  - Session is not revoked
+  - Session is not expired
+  - Updates `lastUsedAt`
+
+Next milestone:
+
+## Milestone 1.2 — Middleware Enforcement
+
+Update `src/middleware/auth.middleware.ts` so every authenticated request performs the following flow:
+
+```text
+Request
+↓
+Bearer Token
+↓
+verifyAccessToken()
+↓
+SessionService.validateAccessSession(sessionId)
+↓
+Session exists?
+↓
+Session revoked?
+↓
+Session expired?
+↓
+Touch lastUsedAt
+↓
+Attach req.user
+↓
+Continue request
+```
+
+Do not change repositories unless absolutely required.
+
+After Milestone 1.2:
+1. Run server typecheck.
+2. Run client typecheck.
+3. Run production build.
+4. Test revoked-session behavior with curl.
+5. Continue to the next Phase 2.5 milestone only after verification passes.
