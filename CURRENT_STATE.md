@@ -354,3 +354,14 @@ Next work:
 - Add HTTP tenant-isolation coverage for reports, service analytics, accounts, and cross-organization resource access.
 - Expand RBAC HTTP coverage beyond budgets.
 - Add organization/member management endpoints and permissions when that product surface is implemented.
+
+### HTTP Tenant Isolation Coverage
+
+Completed:
+
+- Budget organization boundary and RBAC coverage
+- Reports tenant isolation and report-note RBAC coverage
+- Service analytics tenant isolation coverage
+- Account analytics and account-trend tenant isolation coverage
+- Cross-organization resource access returns tenant-safe responses
+- Combined tenant HTTP regression suite passes 70/70 tests
