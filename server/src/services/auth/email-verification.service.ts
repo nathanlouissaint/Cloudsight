@@ -1,10 +1,6 @@
 import crypto from "crypto";
 
 import {
-  AuditEventType,
-} from "@prisma/client";
-
-import {
   emailVerificationRepository,
 } from "../../repositories/auth/email-verification.repository";
 
@@ -13,8 +9,11 @@ import {
 } from "../../repositories/auth/user.repository";
 
 import {
-  auditService,
-} from "./audit.service";
+  emailService,
+} from "../email/email.service";
+import {
+  AuthDomainError,
+} from "../../errors/auth.errors";
 
 const EMAIL_VERIFICATION_EXPIRATION_MINUTES =
   60;
@@ -42,29 +41,16 @@ export class EmailVerificationService {
   }
 
   /**
-   * Create an email verification request.
+   * Create and persist a new verification token.
    */
-  async createVerificationRequest(
-    email: string,
+  private async createVerificationToken(
+    userId: string,
   ): Promise<string> {
-    const user =
-      await userRepository.findByEmail(email);
-
-    if (!user) {
-      throw new Error(
-        "USER_NOT_FOUND",
-      );
-    }
-
-    await emailVerificationRepository.deleteForUser(
-      user.id,
-    );
-
     const token =
       this.generateToken();
 
     await emailVerificationRepository.create({
-      userId: user.id,
+      userId,
       tokenHash: this.hashToken(
         token,
       ),
@@ -80,6 +66,83 @@ export class EmailVerificationService {
   }
 
   /**
+   * Create an email verification request.
+   */
+  async createVerificationRequest(
+    email: string,
+  ): Promise<void> {
+    const user =
+      await userRepository.findByEmail(email);
+
+    if (!user) {
+      throw new AuthDomainError(
+        "USER_NOT_FOUND",
+        "Registration verification user was not found.",
+      );
+    }
+
+    await emailVerificationRepository.deleteForUser(
+      user.id,
+    );
+
+    const token =
+      await this.createVerificationToken(
+        user.id,
+      );
+
+    await emailService.sendVerificationEmail({
+      email: user.email,
+      token,
+    });
+  }
+
+  /**
+   * Resend verification for an authenticated user.
+   */
+  async resendVerification(
+    userId: string,
+  ) {
+    const user =
+      await userRepository.findAuthUserById(
+        userId,
+      );
+
+    if (!user) {
+      throw new AuthDomainError(
+        "USER_NOT_FOUND",
+        "Verification user was not found.",
+      );
+    }
+
+    const message =
+      "Email verification request processed successfully.";
+
+    if (user.emailVerifiedAt) {
+      return {
+        message,
+      };
+    }
+
+    await emailVerificationRepository.deleteUnusedForUser(
+      user.id,
+    );
+
+    const verificationToken =
+      await this.createVerificationToken(
+        user.id,
+      );
+
+    await emailService.sendVerificationEmail({
+      email: user.email,
+      token: verificationToken,
+    });
+
+    return {
+      message,
+    };
+  }
+
+  /**
    * Validate a verification token.
    */
   async validateToken(
@@ -91,14 +154,16 @@ export class EmailVerificationService {
       );
 
     if (!record) {
-      throw new Error(
+      throw new AuthDomainError(
         "INVALID_VERIFICATION_TOKEN",
+        "Verification token is invalid.",
       );
     }
 
     if (record.usedAt) {
-      throw new Error(
+      throw new AuthDomainError(
         "VERIFICATION_TOKEN_ALREADY_USED",
+        "Verification token has already been used.",
       );
     }
 
@@ -106,8 +171,9 @@ export class EmailVerificationService {
       record.expiresAt <
       new Date()
     ) {
-      throw new Error(
+      throw new AuthDomainError(
         "VERIFICATION_TOKEN_EXPIRED",
+        "Verification token has expired.",
       );
     }
 
@@ -120,24 +186,24 @@ export class EmailVerificationService {
   async verifyEmail(
     token: string,
   ) {
-    const record =
-      await this.validateToken(
-        token,
+    const result =
+      await emailVerificationRepository.consumeAndVerify(
+        this.hashToken(token),
       );
 
-    await userRepository.markEmailVerified(
-      record.userId,
-    );
+    if (result === "INVALID") {
+      throw new AuthDomainError(
+        "INVALID_VERIFICATION_TOKEN",
+        "Verification token is invalid.",
+      );
+    }
 
-    await emailVerificationRepository.markUsed(
-      record.id,
-    );
-
-    await auditService.recordEvent({
-      userId: record.userId,
-      eventType:
-     AuditEventType.EMAIL_VERIFIED,
-    });
+    if (result === "EXPIRED") {
+      throw new AuthDomainError(
+        "VERIFICATION_TOKEN_EXPIRED",
+        "Verification token has expired.",
+      );
+    }
 
     return {
       message:

@@ -20,6 +20,22 @@ import {
   passwordResetService,
 } from "../services/auth/password-reset.service";
 
+import {
+  authCookieService,
+} from "../services/auth/auth-cookie.service";
+import {
+  csrfService,
+} from "../services/auth/csrf.service";
+import type {
+  LoginCsrfResponse,
+} from "../types/auth/csrf.types";
+import {
+  isAuthDomainError,
+} from "../errors/auth.errors";
+import {
+  mapAuthDomainError,
+} from "../errors/auth-error-mapper";
+
 export async function register(
   req: Request,
   res: Response,
@@ -37,12 +53,17 @@ export async function register(
       .json(user);
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message === "USER_EXISTS"
+      isAuthDomainError(error) &&
+      error.code === "USER_EXISTS"
     ) {
-      return res.status(409).json({
-        message: "User already exists",
-      });
+      const response =
+        mapAuthDomainError(error);
+
+      return res
+        .status(response.status)
+        .json({
+          message: response.message,
+        });
     }
 
     console.error(error);
@@ -72,27 +93,55 @@ export async function login(
       },
     );
 
-    return res.json(result);
+    const {
+      refreshToken,
+      sessionExpiresAt,
+      ...response
+    } = result;
+
+    authCookieService.setRefreshToken(
+      res,
+      refreshToken,
+      sessionExpiresAt,
+    );
+
+    const csrfToken =
+      csrfService.issueRefreshBoundToken(
+        refreshToken,
+      );
+
+    authCookieService.setCsrfCookie(
+      res,
+      csrfToken.token,
+      csrfToken.expiresAt,
+    );
+
+    const csrfResponse: LoginCsrfResponse = {
+      csrfToken: csrfToken.token,
+      csrfExpiresAt:
+        csrfToken.expiresAt.toISOString(),
+    };
+
+    return res.json({
+      ...response,
+      ...csrfResponse,
+    });
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message ===
-        "INVALID_CREDENTIALS"
+      isAuthDomainError(error) &&
+      (error.code ===
+        "INVALID_CREDENTIALS" ||
+        error.code ===
+          "PASSWORD_LOGIN_UNAVAILABLE")
     ) {
-      return res.status(401).json({
-        message: "Invalid credentials",
-      });
-    }
+      const response =
+        mapAuthDomainError(error);
 
-    if (
-      error instanceof Error &&
-      error.message ===
-        "PASSWORD_LOGIN_UNAVAILABLE"
-    ) {
-      return res.status(400).json({
-        message:
-          "This account uses Google sign-in",
-      });
+      return res
+        .status(response.status)
+        .json({
+          message: response.message,
+        });
     }
 
     console.error(error);
@@ -152,25 +201,20 @@ export async function resetPasswordController(
     return res.status(200).json(result);
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message ===
-        "INVALID_RESET_TOKEN"
+      isAuthDomainError(error) &&
+      (error.code ===
+        "INVALID_RESET_TOKEN" ||
+        error.code ===
+          "RESET_TOKEN_EXPIRED")
     ) {
-      return res.status(400).json({
-        message:
-          "Invalid reset token.",
-      });
-    }
+      const response =
+        mapAuthDomainError(error);
 
-    if (
-      error instanceof Error &&
-      error.message ===
-        "RESET_TOKEN_EXPIRED"
-    ) {
-      return res.status(400).json({
-        message:
-          "Reset token has expired.",
-      });
+      return res
+        .status(response.status)
+        .json({
+          message: response.message,
+        });
     }
 
     console.error(error);
@@ -202,13 +246,17 @@ export async function me(
     return res.status(200).json(user);
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message ===
-        "USER_NOT_FOUND"
+      isAuthDomainError(error) &&
+      error.code === "USER_NOT_FOUND"
     ) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      const response =
+        mapAuthDomainError(error);
+
+      return res
+        .status(response.status)
+        .json({
+          message: response.message,
+        });
     }
 
     console.error(error);

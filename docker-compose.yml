@@ -21,6 +21,24 @@ services:
       timeout: 5s
       retries: 10
 
+  postgres-test:
+    image: postgres:16
+    profiles: ["test"]
+    container_name: cloudsight-postgres-test
+    environment:
+      POSTGRES_USER: cloudsight_test_user
+      POSTGRES_PASSWORD: cloudsight_test_password
+      POSTGRES_DB: cloudsight_test
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudsight_test_user -d cloudsight_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
   server:
     build:
       context: ./server
@@ -34,6 +52,7 @@ services:
       JWT_SECRET: supersecret
       PORT: 5001
       NODE_ENV: development
+      CORS_ORIGIN: http://localhost:3000
 
     ports:
       - "5001:5001"

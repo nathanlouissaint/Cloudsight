@@ -3,6 +3,12 @@ import type { Response } from "express";
 import type { AuthenticatedRequest } from "../../types/auth/request.types";
 
 import { changePasswordService } from "../../services/auth/change-password.service";
+import {
+  isAuthDomainError,
+} from "../../errors/auth.errors";
+import {
+  mapAuthDomainError,
+} from "../../errors/auth-error-mapper";
 
 export async function changePassword(
   req: AuthenticatedRequest,
@@ -38,47 +44,31 @@ export async function changePassword(
     return res.status(200).json(result);
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message === "USER_NOT_FOUND"
+      isAuthDomainError(error) &&
+      (error.code === "USER_NOT_FOUND" ||
+        error.code ===
+          "INVALID_CURRENT_PASSWORD" ||
+        error.code === "PASSWORD_REUSE" ||
+        error.code ===
+          "PASSWORD_LOGIN_UNAVAILABLE")
     ) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      const response =
+        mapAuthDomainError(
+          error,
+          error.code ===
+            "PASSWORD_LOGIN_UNAVAILABLE"
+            ? "Password login is not available for this account."
+            : undefined,
+        );
+
+      return res
+        .status(response.status)
+        .json({
+          message: response.message,
+        });
     }
 
-    if (
-      error instanceof Error &&
-      error.message ===
-        "INVALID_CURRENT_PASSWORD"
-    ) {
-      return res.status(400).json({
-        message: "Current password is incorrect.",
-      });
-    }
-
-    if (
-      error instanceof Error &&
-      error.message ===
-        "PASSWORD_REUSE"
-    ) {
-      return res.status(400).json({
-        message:
-          "New password must be different from the current password.",
-      });
-    }
-
-    if (
-      error instanceof Error &&
-      error.message ===
-        "PASSWORD_LOGIN_UNAVAILABLE"
-    ) {
-      return res.status(400).json({
-        message:
-          "Password login is not available for this account.",
-      });
-    }
-
-    console.error(error);
+    console.error("Password change failed");
 
     return res.status(500).json({
       message: "Internal server error",

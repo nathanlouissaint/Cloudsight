@@ -2,7 +2,11 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
-  authProvider: "LOCAL" | "GOOGLE";
+  authProvider:
+    | "LOCAL"
+    | "GOOGLE"
+    | "MICROSOFT"
+    | "GITHUB";
   avatarUrl: string | null;
 }
 

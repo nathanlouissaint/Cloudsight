@@ -1,8 +1,5 @@
-export interface RefreshRequest {
-  refreshToken: string;
-}
-
 export interface RefreshResponse {
   accessToken: string;
-  refreshToken: string;
+  csrfToken: string;
+  csrfExpiresAt: string;
 }

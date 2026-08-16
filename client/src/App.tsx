@@ -10,8 +10,13 @@ import {
 } from "react";
 
 import ProtectedRoute from "./auth/ProtectedRoute";
+
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import OAuthCompletePage from "./pages/OAuthCompletePage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
@@ -40,14 +45,9 @@ const ReportsPage = lazy(
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense
-        fallback={
-          <div>
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+          {/* Public authentication routes */}
           <Route
             path="/login"
             element={<LoginPage />}
@@ -58,6 +58,27 @@ export default function App() {
             element={<RegisterPage />}
           />
 
+          <Route
+            path="/forgot-password"
+            element={<ForgotPasswordPage />}
+          />
+
+          <Route
+            path="/reset-password"
+            element={<ResetPasswordPage />}
+          />
+
+          <Route
+            path="/verify-email"
+            element={<VerifyEmailPage />}
+          />
+
+          <Route
+            path="/auth/oauth/complete"
+            element={<OAuthCompletePage />}
+          />
+
+          {/* Protected application routes */}
           <Route
             path="/"
             element={

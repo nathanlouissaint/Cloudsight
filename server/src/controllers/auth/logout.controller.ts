@@ -1,34 +1,57 @@
 import type { Request, Response } from "express";
 
 import { logoutUser } from "../../services/auth/auth.service";
+import { authCookieService } from "../../services/auth/auth-cookie.service";
+import {
+  isAuthDomainError,
+} from "../../errors/auth.errors";
 
 export async function logout(
   req: Request,
   res: Response,
 ) {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken =
+      authCookieService.getRefreshToken(
+        req,
+      );
 
     if (!refreshToken) {
-      return res.status(400).json({
-        message: "Refresh token required",
-      });
+      authCookieService.clearRefreshToken(
+        res,
+      );
+      authCookieService.clearCsrfCookie(res);
+
+      return res.status(204).send();
     }
 
     await logoutUser(refreshToken);
 
+    authCookieService.clearRefreshToken(
+      res,
+    );
+    authCookieService.clearCsrfCookie(res);
+
     return res.status(204).send();
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message === "INVALID_REFRESH_TOKEN"
+      isAuthDomainError(error) &&
+      error.code === "INVALID_REFRESH_TOKEN"
     ) {
-      return res.status(401).json({
-        message: "Invalid refresh token",
-      });
+      authCookieService.clearRefreshToken(
+        res,
+      );
+      authCookieService.clearCsrfCookie(res);
+
+      return res.status(204).send();
     }
 
-    console.error(error);
+    authCookieService.clearRefreshToken(
+      res,
+    );
+    authCookieService.clearCsrfCookie(res);
+
+    console.error("Logout failed");
 
     return res.status(500).json({
       message: "Internal server error",

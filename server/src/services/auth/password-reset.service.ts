@@ -2,6 +2,10 @@ import crypto from "crypto";
 
 import { passwordResetRepository } from "../../repositories/auth/password-reset.repository";
 import { userRepository } from "../../repositories/auth/user.repository";
+import { emailService } from "../email/email.service";
+import {
+  AuthDomainError,
+} from "../../errors/auth.errors";
 
 const PASSWORD_RESET_EXPIRATION_MINUTES = 30;
 
@@ -33,7 +37,10 @@ export class PasswordResetService {
       await userRepository.findByEmail(email);
 
     if (!user) {
-      throw new Error("USER_NOT_FOUND");
+      throw new AuthDomainError(
+        "USER_NOT_FOUND",
+        "Password reset user was not found.",
+      );
     }
 
     await passwordResetRepository.deleteForUser(
@@ -56,6 +63,11 @@ export class PasswordResetService {
       ),
     });
 
+    await emailService.sendPasswordResetEmail({
+      email: user.email,
+      token,
+    });
+
     return token;
   }
 
@@ -71,8 +83,9 @@ export class PasswordResetService {
       );
 
     if (!record) {
-      throw new Error(
+      throw new AuthDomainError(
         "INVALID_RESET_TOKEN",
+        "Password reset token is invalid.",
       );
     }
 
@@ -80,8 +93,9 @@ export class PasswordResetService {
       record.expiresAt <
       new Date()
     ) {
-      throw new Error(
+      throw new AuthDomainError(
         "RESET_TOKEN_EXPIRED",
+        "Password reset token has expired.",
       );
     }
 

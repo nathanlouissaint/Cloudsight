@@ -4,13 +4,13 @@ import {
 } from "react";
 
 import { getCurrentUser } from "../services/me.api";
+import { refreshAccessToken } from "../services/refresh.api";
 
 import type {
   AuthUser,
 } from "../types";
 
 export function useInitializeAuth(
-  token: string | null,
   login: (
     token: string,
     user: AuthUser
@@ -24,16 +24,14 @@ export function useInitializeAuth(
 
   useEffect(() => {
     async function initialize() {
-      if (!token) {
-        setInitializing(false);
-        return;
-      }
-
       try {
+        const accessToken =
+          await refreshAccessToken();
+
         const user =
           await getCurrentUser();
 
-        login(token, user);
+        login(accessToken, user);
       } catch {
         logout();
       } finally {
@@ -43,7 +41,6 @@ export function useInitializeAuth(
 
     void initialize();
   }, [
-    token,
     login,
     logout,
   ]);

@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import SessionCard from "./SessionCard";
 import LogoutAllButton from "./LogoutAllButton";
 
@@ -10,8 +12,12 @@ import {
 import SkeletonCard from "../states/SkeletonCard";
 import EmptyState from "../states/EmptyState";
 import ErrorState from "../states/ErrorState";
+import { useAuth } from "../../auth/useAuth";
 
 export default function ActiveSessionsCard() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const {
     data: sessions = [],
     isLoading,
@@ -47,6 +53,9 @@ export default function ActiveSessionsCard() {
 
   async function handleLogoutAllSessions() {
     await logoutAll.mutateAsync();
+
+    logout();
+    navigate("/login");
   }
 
   return (

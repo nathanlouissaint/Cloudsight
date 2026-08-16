@@ -19,6 +19,10 @@ import {
 } from "./utils/tokenStorage";
 
 import { useInitializeAuth } from "./hooks/useInitializeAuth";
+import { clearCsrfToken } from "./services/csrf.api";
+import {
+  invalidateRefreshAccess,
+} from "./services/refresh.api";
 
 interface Props {
   children: ReactNode;
@@ -49,7 +53,9 @@ export function AuthProvider({
   );
 
   const logout = useCallback(() => {
+    invalidateRefreshAccess();
     clearTokens();
+    clearCsrfToken();
 
     setToken(null);
     setUser(null);
@@ -57,7 +63,6 @@ export function AuthProvider({
 
   const initializing =
     useInitializeAuth(
-      token,
       login,
       logout
     );

@@ -94,6 +94,24 @@ export class SessionRepository {
     });
   }
 
+  /** Atomically replace a refresh hash only if the presented hash is current. */
+  async compareAndSwapRefreshTokenHash(
+    id: string,
+    expectedRefreshTokenHash: string,
+    replacementRefreshTokenHash: string,
+  ): Promise<boolean> {
+    const result = await prisma.session.updateMany({
+      where: {
+        id,
+        refreshTokenHash: expectedRefreshTokenHash,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { refreshTokenHash: replacementRefreshTokenHash },
+    });
+    return result.count === 1;
+  }
+
   /**
    * Update the session's last activity timestamp.
    */

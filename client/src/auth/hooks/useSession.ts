@@ -3,6 +3,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
@@ -14,6 +15,10 @@ import {
 import type {
   Session,
 } from "../types/session";
+import { useAuth } from "../useAuth";
+import {
+  invalidateRefreshAccess,
+} from "../services/refresh.api";
 
 export const sessionQueryKeys = {
   all: ["auth", "sessions"] as const,
@@ -28,6 +33,8 @@ export function useSessions() {
 
 export function useDeleteSession() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   return useMutation({
     mutationFn: deleteSession,
@@ -51,12 +58,34 @@ export function useDeleteSession() {
           )
       );
 
+      const revokedCurrent =
+        previousSessions?.some(
+          (session) =>
+            session.id === sessionId &&
+            session.isCurrent
+        ) ?? false;
+
+      if (revokedCurrent) {
+        invalidateRefreshAccess();
+      }
+
       return {
         previousSessions,
+        revokedCurrent,
       };
     },
 
-    onSuccess() {
+    onSuccess(_, __, context) {
+      if (context.revokedCurrent) {
+        queryClient.removeQueries({
+          queryKey: sessionQueryKeys.all,
+        });
+
+        logout();
+        navigate("/login");
+        return;
+      }
+
       toast.success(
         "Session terminated successfully."
       );
@@ -77,7 +106,11 @@ export function useDeleteSession() {
       );
     },
 
-    onSettled: async () => {
+    onSettled: async (_, __, ___, context) => {
+      if (context?.revokedCurrent) {
+        return;
+      }
+
       await queryClient.invalidateQueries({
         queryKey: sessionQueryKeys.all,
       });
@@ -91,13 +124,13 @@ export function useLogoutAllSessions() {
   return useMutation({
     mutationFn: logoutAllSessions,
 
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
+    onSuccess: () => {
+      queryClient.removeQueries({
         queryKey: sessionQueryKeys.all,
       });
 
       toast.success(
-        "Signed out of all other devices."
+        "Signed out of all sessions."
       );
     },
 
@@ -105,7 +138,7 @@ export function useLogoutAllSessions() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Unable to sign out of other devices."
+          : "Unable to sign out of all sessions."
       );
     },
   });

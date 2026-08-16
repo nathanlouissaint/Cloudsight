@@ -24,20 +24,14 @@ import {
 } from "./password-reset.service";
 
 import {
-  refreshTokenService,
-} from "./refresh-token.service";
-
+  AuthDomainError,
+} from "../../errors/auth.errors";
 import {
-  sessionMetadataService,
-} from "./session-metadata.service";
-
+  sessionIssuanceService,
+} from "./session-issuance.service";
 import {
   sessionService,
 } from "./session.service";
-
-import {
-  generateAccessToken,
-} from "./token.service";
 
 export async function registerUser(
   email: string,
@@ -47,7 +41,10 @@ export async function registerUser(
     await userRepository.findByEmail(email);
 
   if (existingUser) {
-    throw new Error("USER_EXISTS");
+    throw new AuthDomainError(
+      "USER_EXISTS",
+      "A user with this email already exists.",
+    );
   }
 
   const passwordHash =
@@ -59,17 +56,13 @@ export async function registerUser(
       passwordHash,
     });
 
-  const verificationToken =
-    await emailVerificationService.createVerificationRequest(
-      user.email,
-    );
+  await emailVerificationService.createVerificationRequest(
+    user.email,
+  );
 
   return {
     id: user.id,
     email: user.email,
-
-    // Development only.
-    verificationToken,
   };
 }
 
@@ -85,14 +78,16 @@ export async function loginUser(
     await userRepository.findByEmail(email);
 
   if (!user) {
-    throw new Error(
+    throw new AuthDomainError(
       "INVALID_CREDENTIALS",
+      "Invalid credentials.",
     );
   }
 
   if (!user.passwordHash) {
-    throw new Error(
+    throw new AuthDomainError(
       "PASSWORD_LOGIN_UNAVAILABLE",
+      "Password login is unavailable for this account.",
     );
   }
 
@@ -103,35 +98,16 @@ export async function loginUser(
     );
 
   if (!validPassword) {
-    throw new Error(
+    throw new AuthDomainError(
       "INVALID_CREDENTIALS",
+      "Invalid credentials.",
     );
   }
 
-  const sessionMetadata =
-    sessionMetadataService.build(
-      metadata.userAgent,
-      metadata.ipAddress,
-    );
-
-  const refreshToken =
-    refreshTokenService.generate();
-
-  const session =
-    await sessionService.createSession(
-      {
-        userId: user.id,
-
-        expiresAt:
-          refreshTokenService.getExpirationDate(),
-
-        userAgent:
-          sessionMetadata.userAgent,
-
-        ipAddress:
-          sessionMetadata.ipAddress,
-      },
-      refreshToken,
+  const issuedSession =
+    await sessionIssuanceService.issue(
+      user,
+      metadata,
     );
 
   await auditService.recordEvent({
@@ -140,33 +116,18 @@ export async function loginUser(
     eventType:
       AuditEventType.LOGIN,
 
-    ipAddress:
-      sessionMetadata.ipAddress,
+    ipAddress: issuedSession.ipAddress,
 
-    userAgent:
-      sessionMetadata.userAgent,
+    userAgent: issuedSession.userAgent,
   });
 
-  const accessToken =
-    generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      sessionId: session.id,
-    });
-
   return {
-    accessToken,
-    refreshToken,
+    accessToken: issuedSession.accessToken,
+    refreshToken: issuedSession.refreshToken,
+    sessionExpiresAt:
+      issuedSession.sessionExpiresAt,
 
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatarUrl:
-        user.avatarUrl,
-      authProvider:
-        user.authProvider,
-    },
+    user: issuedSession.user,
   };
 }
 
@@ -179,8 +140,9 @@ export async function getCurrentUser(
     );
 
   if (!user) {
-    throw new Error(
+    throw new AuthDomainError(
       "USER_NOT_FOUND",
+      "Authenticated user was not found.",
     );
   }
 
@@ -196,8 +158,9 @@ export async function logoutUser(
     );
 
   if (!session) {
-    throw new Error(
+    throw new AuthDomainError(
       "INVALID_REFRESH_TOKEN",
+      "Refresh token is invalid.",
     );
   }
 

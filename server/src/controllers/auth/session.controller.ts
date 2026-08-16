@@ -3,6 +3,13 @@ import type { Response } from "express";
 import type { AuthenticatedRequest } from "../../types/auth/request.types";
 
 import { sessionService } from "../../services/auth/session.service";
+import { authCookieService } from "../../services/auth/auth-cookie.service";
+import {
+  isAuthDomainError,
+} from "../../errors/auth.errors";
+import {
+  mapAuthDomainError,
+} from "../../errors/auth-error-mapper";
 
 /**
  * Return every active session owned by the authenticated user.
@@ -29,7 +36,7 @@ export async function listSessions(
 
     return res.status(200).json(sessions);
   } catch (error) {
-    console.error(error);
+    console.error("Session listing failed");
 
     return res.status(500).json({
       message: "Internal server error",
@@ -46,8 +53,9 @@ export async function deleteSession(
 ) {
   try {
     const userId = req.user?.userId;
+    const currentSessionId = req.user?.sessionId;
 
-    if (!userId) {
+    if (!userId || !currentSessionId) {
       return res.status(401).json({
         message: "Unauthorized",
       });
@@ -66,27 +74,28 @@ export async function deleteSession(
       sessionId,
     );
 
+    if (sessionId === currentSessionId) {
+      authCookieService.clearRefreshToken(
+        res,
+      );
+      authCookieService.clearCsrfCookie(res);
+    }
+
     return res.status(204).send();
   } catch (error) {
     if (
-      error instanceof Error &&
-      error.message === "SESSION_NOT_FOUND"
+      isAuthDomainError(error) &&
+      (error.code === "SESSION_NOT_FOUND" ||
+        error.code === "SESSION_FORBIDDEN")
     ) {
-      return res.status(404).json({
-        message: "Session not found",
+      const response = mapAuthDomainError(error);
+
+      return res.status(response.status).json({
+        message: response.message,
       });
     }
 
-    if (
-      error instanceof Error &&
-      error.message === "SESSION_FORBIDDEN"
-    ) {
-      return res.status(403).json({
-        message: "Forbidden",
-      });
-    }
-
-    console.error(error);
+    console.error("Session revocation failed");
 
     return res.status(500).json({
       message: "Internal server error",
@@ -113,11 +122,16 @@ export async function logoutAllSessions(
     const revokedSessions =
       await sessionService.revokeAllSessions(userId);
 
+    authCookieService.clearRefreshToken(
+      res,
+    );
+    authCookieService.clearCsrfCookie(res);
+
     return res.status(200).json({
       revokedSessions,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Session logout-all failed");
 
     return res.status(500).json({
       message: "Internal server error",

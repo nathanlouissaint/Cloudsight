@@ -9,6 +9,9 @@ import type {
   CreateSessionInput,
   SessionResponse,
 } from "../../types/auth/session.types";
+import {
+  AuthDomainError,
+} from "../../errors/auth.errors";
 
 export class SessionService {
   /**
@@ -59,14 +62,16 @@ export class SessionService {
       );
 
     if (!session) {
-      throw new Error(
+      throw new AuthDomainError(
         "SESSION_NOT_FOUND",
+        "Session was not found.",
       );
     }
 
     if (session.revokedAt) {
-      throw new Error(
+      throw new AuthDomainError(
         "SESSION_REVOKED",
+        "Session has been revoked.",
       );
     }
 
@@ -74,8 +79,9 @@ export class SessionService {
       session.expiresAt <
       new Date()
     ) {
-      throw new Error(
+      throw new AuthDomainError(
         "SESSION_EXPIRED",
+        "Session has expired.",
       );
     }
 
@@ -132,18 +138,28 @@ export class SessionService {
       );
 
     if (!session) {
-      throw new Error(
+      throw new AuthDomainError(
         "INVALID_REFRESH_TOKEN",
+        "Refresh token is invalid.",
       );
     }
 
     const newRefreshToken =
       refreshTokenService.generate();
 
-    await this.rotateRefreshToken(
+    const rotated =
+      await sessionRepository.compareAndSwapRefreshTokenHash(
       session.id,
-      newRefreshToken,
+      this.hashRefreshToken(refreshToken),
+      this.hashRefreshToken(newRefreshToken),
     );
+
+    if (!rotated) {
+      throw new AuthDomainError(
+        "INVALID_REFRESH_TOKEN",
+        "Refresh token is invalid.",
+      );
+    }
 
     await this.touch(
       session.id,
@@ -216,8 +232,9 @@ export class SessionService {
       );
 
     if (!session) {
-      throw new Error(
+      throw new AuthDomainError(
         "SESSION_NOT_FOUND",
+        "Session was not found.",
       );
     }
 
@@ -225,8 +242,9 @@ export class SessionService {
       session.userId !==
       userId
     ) {
-      throw new Error(
+      throw new AuthDomainError(
         "SESSION_FORBIDDEN",
+        "Session access is forbidden.",
       );
     }
 

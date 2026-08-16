@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { register as registerRequest } from "../../auth/auth.api";
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] =
@@ -11,18 +13,27 @@ export default function RegisterForm() {
     confirmPassword,
     setConfirmPassword,
   ] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(
+  async function handleSubmit(
     e: React.FormEvent
   ) {
     e.preventDefault();
-
-    console.log({
-      name,
-      email,
-      password,
-      confirmPassword,
-    });
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+      await registerRequest({ email, password });
+      navigate("/login");
+    } catch {
+      setError("Unable to create your account.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -67,8 +78,10 @@ export default function RegisterForm() {
         }
       />
 
-      <button type="submit">
-        Create Account
+      {error && <p className="auth-error" role="alert">{error}</p>}
+
+      <button type="submit" disabled={loading}>
+        {loading ? "Creating Account..." : "Create Account"}
       </button>
 
       <p className="auth-footer">

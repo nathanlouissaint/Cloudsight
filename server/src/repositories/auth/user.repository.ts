@@ -34,6 +34,19 @@ class UserRepository {
   }
 
   /**
+   * Collision classification lookup only. This is not an authentication
+   * lookup and intentionally returns no credential or profile fields.
+   */
+  async findIdByNormalizedEmail(
+    normalizedEmail: string,
+  ): Promise<{ id: string } | null> {
+    return prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+  }
+
+  /**
    * Return the authentication fields required for
    * authenticated account operations.
    */

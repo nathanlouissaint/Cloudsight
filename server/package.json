@@ -3,9 +3,17 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/dev.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:db:up": "docker compose -f ../docker-compose.yml --profile test up -d postgres-test",
+    "test:db:down": "docker compose -f ../docker-compose.yml --profile test rm -sf postgres-test",
+    "test:db:migrate": "tsx scripts/migrate-test.ts",
+    "test:migration:auth-identity": "tsx scripts/verify-auth-identity-migration.ts",
+    "test:postgres": "tsx scripts/run-postgres-tests.ts",
+    "test:http:auth": "tsx scripts/run-http-tests.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -16,12 +24,15 @@
     "@prisma/client": "^6.10.1",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csv-stringify": "^6.8.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
+    "google-auth-library": "^10.3.0",
     "helmet": "^8.2.0",
+    "jose": "^6.2.8",
     "jsonwebtoken": "^9.0.3",
     "pino-http": "^11.0.0",
     "ua-parser-js": "^2.0.10",
@@ -30,14 +41,18 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.0",
+    "@types/supertest": "^7.2.1",
     "nodemon": "^3.1.14",
     "prisma": "^6.10.1",
+    "supertest": "^7.2.2",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

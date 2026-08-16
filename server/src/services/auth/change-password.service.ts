@@ -10,6 +10,9 @@ import {
   hashPassword,
 } from "./password.service";
 import { sessionService } from "./session.service";
+import {
+  AuthDomainError,
+} from "../../errors/auth.errors";
 
 export interface ChangePasswordInput {
   userId: string;
@@ -34,14 +37,16 @@ export class ChangePasswordService {
       );
 
     if (!user) {
-      throw new Error(
+      throw new AuthDomainError(
         "USER_NOT_FOUND",
+        "Authenticated user was not found.",
       );
     }
 
     if (!user.passwordHash) {
-      throw new Error(
+      throw new AuthDomainError(
         "PASSWORD_LOGIN_UNAVAILABLE",
+        "Password login is unavailable for this account.",
       );
     }
 
@@ -52,8 +57,9 @@ export class ChangePasswordService {
       );
 
     if (!validCurrentPassword) {
-      throw new Error(
+      throw new AuthDomainError(
         "INVALID_CURRENT_PASSWORD",
+        "The current password is invalid.",
       );
     }
 
@@ -64,8 +70,9 @@ export class ChangePasswordService {
       );
 
     if (isSamePassword) {
-      throw new Error(
+      throw new AuthDomainError(
         "PASSWORD_REUSE",
+        "The new password must differ from the current password.",
       );
     }
 

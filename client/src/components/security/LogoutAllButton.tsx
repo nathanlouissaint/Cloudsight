@@ -43,7 +43,7 @@ export default function LogoutAllButton({
       setIsModalOpen(false);
     } catch {
       setErrorMessage(
-        "Unable to sign out the other sessions. Please try again."
+        "Unable to sign out all sessions. Please try again."
       );
     }
   }
@@ -58,21 +58,20 @@ export default function LogoutAllButton({
       >
         {loading
           ? "Signing Out..."
-          : "Sign Out of All Other Devices"}
+          : "Sign Out of All Devices"}
       </button>
 
       <Modal
         isOpen={isModalOpen}
-        title="Sign Out of All Other Devices"
-        description="All other active sessions will immediately lose access to your account."
+        title="Sign Out of All Devices"
+        description="Every active session, including this device, will immediately lose access to your account."
         onClose={closeModal}
         isBusy={loading}
       >
         <p>
-          This action signs out every device
-          except the one you're currently
-          using. You'll remain signed in on
-          this device.
+          This action signs out every device,
+          including the one you're currently
+          using.
         </p>
 
         {errorMessage && (

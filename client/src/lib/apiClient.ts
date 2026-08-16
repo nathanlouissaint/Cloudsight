@@ -9,9 +9,6 @@ const API_URL =
   import.meta.env.VITE_API_URL ??
   "http://localhost:5001";
 
-let refreshPromise: Promise<string> | null =
-  null;
-
 export class ApiError extends Error {
   status: number;
 
@@ -89,19 +86,9 @@ function sendRequest(
         options,
         accessToken
       ),
+      credentials: "include",
     }
   );
-}
-
-async function getRefreshedAccessToken(): Promise<string> {
-  if (!refreshPromise) {
-    refreshPromise =
-      refreshAccessToken().finally(() => {
-        refreshPromise = null;
-      });
-  }
-
-  return refreshPromise;
 }
 
 async function parseResponse<T>(
@@ -141,7 +128,7 @@ async function executeRequest<T>(
 
   try {
     const accessToken =
-      await getRefreshedAccessToken();
+      await refreshAccessToken();
 
     const retryResponse =
       await sendRequest(
@@ -175,5 +162,20 @@ export function apiRequest<T>(
     path,
     options,
     true
+  );
+}
+
+/**
+ * Execute a request without replaying a state-changing operation after a
+ * 401 response. Destructive authentication mutations must not be retried.
+ */
+export function apiRequestWithoutRefresh<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  return executeRequest<T>(
+    path,
+    options,
+    false
   );
 }

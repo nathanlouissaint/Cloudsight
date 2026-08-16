@@ -1,10 +1,11 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import compression from "compression";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 
+import { httpSecurityConfig } from "./config/http-security.config";
 import authRoutes from "./routes/auth.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import costsRoutes from "./routes/costs.routes";
@@ -23,12 +24,37 @@ import {
   errorHandler,
   notFoundHandler,
 } from "./middleware/error.middleware";
+import { createRateLimiter } from "./middleware/rate-limit.middleware";
+import { RATE_LIMIT_POLICIES } from "./config/rate-limit.config";
+import {
+  sanitizeRequestForLogging,
+  sanitizeResponseForLogging,
+} from "./config/http-logging.config";
 
 const app = express();
 
-app.set("trust proxy", false);
+app.set(
+  "trust proxy",
+  httpSecurityConfig.trustProxy,
+);
 
-app.use(pinoHttp());
+app.use(
+  pinoHttp({
+    serializers: {
+      req: sanitizeRequestForLogging,
+      res: sanitizeResponseForLogging,
+    },
+    redact: {
+      paths: [
+        "req.headers.authorization",
+        "req.headers.cookie",
+        "req.headers[\"x-csrf-token\"]",
+        "res.headers[\"set-cookie\"]",
+      ],
+      censor: "[REDACTED]",
+    },
+  })
+);
 
 app.use(helmet());
 
@@ -36,10 +62,14 @@ app.use(compression());
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN ?? "*",
+    origin: httpSecurityConfig.trustedFrontendOrigin,
     credentials: true,
+    methods: [...httpSecurityConfig.corsMethods],
+    allowedHeaders: [...httpSecurityConfig.corsAllowedHeaders],
   })
 );
+
+app.use(cookieParser());
 
 app.use(
   express.json({
@@ -55,12 +85,9 @@ app.use(
 );
 
 app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
+  createRateLimiter(
+    RATE_LIMIT_POLICIES.global,
+  )
 );
 
 app.use("/health", healthRoutes);
