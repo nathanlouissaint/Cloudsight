@@ -365,3 +365,21 @@ Completed:
 - Account analytics and account-trend tenant isolation coverage
 - Cross-organization resource access returns tenant-safe responses
 - Combined tenant HTTP regression suite passes 70/70 tests
+
+### Organization & Member Management
+
+Completed:
+
+- Authenticated users can list organizations they belong to
+- Selected organization details are available through organization context
+- OWNER can rename the current organization
+- OWNER and ADMIN can list and manage organization members
+- Existing users can be added directly to an organization
+- Member roles can be changed between OWNER, ADMIN, MEMBER, and VIEWER
+- ADMIN cannot modify or remove an OWNER
+- Only OWNER can assign the OWNER role
+- The final OWNER cannot be demoted or removed
+- Membership mutations are scoped to the selected organization
+- Cross-organization membership IDs return tenant-safe 404 responses
+- Organization/member HTTP suite passes 31/31 tests
+- Combined tenant HTTP regression suite passes 101/101 tests
