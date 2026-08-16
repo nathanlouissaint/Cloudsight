@@ -5,9 +5,13 @@ import type {
 } from "../types/alert.types";
 
 export async function findRecentAlertHistory(
-  limit = 10
+  organizationId: string,
+  limit = 10,
 ) {
   return prisma.alertHistory.findMany({
+    where: {
+      organizationId,
+    },
     orderBy: {
       occurredAt: "desc",
     },
@@ -16,21 +20,26 @@ export async function findRecentAlertHistory(
 }
 
 export async function createAlertHistoryRecord(
-  alert: AlertModel
+  organizationId: string,
+  alert: AlertModel,
 ) {
   return prisma.alertHistory.create({
     data: {
+      organizationId,
       alertId: alert.id,
       type: alert.type,
       severity: alert.severity,
       status: alert.status,
       title: alert.title,
       description: alert.description,
-      recommendation: alert.recommendation,
+      recommendation:
+        alert.recommendation,
       metric: alert.metric,
-      currentValue: alert.currentValue,
+      currentValue:
+        alert.currentValue,
       threshold: alert.threshold,
-      occurredAt: new Date(alert.date),
+      occurredAt:
+        new Date(alert.date),
     },
   });
 }

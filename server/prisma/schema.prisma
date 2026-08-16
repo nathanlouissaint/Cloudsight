@@ -10,6 +10,16 @@ datasource db {
 enum AuthProvider {
   LOCAL
   GOOGLE
+  MICROSOFT
+  GITHUB
+}
+
+enum FederatedProviderKind {
+  GOOGLE
+  MICROSOFT
+  GITHUB
+  OIDC
+  SAML
 }
 
 enum AuditEventType {
@@ -20,6 +30,13 @@ enum AuditEventType {
   PASSWORD_CHANGED
   PASSWORD_RESET
   EMAIL_VERIFIED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
 
 model User {
@@ -43,17 +60,75 @@ model User {
 
   updatedAt DateTime @updatedAt
 
-  budgets Budget[]
-
-  reports Report[]
-
   sessions Session[]
+
+  authIdentities AuthIdentity[]
 
   securityAudits SecurityAudit[]
 
   passwordResetTokens PasswordResetToken[]
 
   emailVerificationTokens EmailVerificationToken[]
+
+  memberships OrganizationMember[]
+}
+
+model Organization {
+  id String @id @default(uuid())
+
+  name String
+  slug String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships   OrganizationMember[]
+  cloudAccounts CloudAccount[]
+  budgets       Budget[]
+  alertHistory  AlertHistory[]
+  reportNotes   ReportNote[]
+
+  @@index([createdAt])
+}
+
+model OrganizationMember {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role OrganizationRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([userId, organizationId])
+}
+
+model AuthIdentity {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  providerKind    FederatedProviderKind
+  issuer          String
+  providerSubject String
+
+  providerEmail         String?
+  providerEmailVerified Boolean?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([issuer, providerSubject])
+  @@index([userId])
 }
 
 model Session {
@@ -137,30 +212,11 @@ model EmailVerificationToken {
   @@index([expiresAt])
 }
 
-model CloudService {
-  id          String  @id @default(uuid())
-  name        String  @unique
-  description String?
-
-  costRecords CostRecord[]
-
-  createdAt DateTime @default(now())
-}
-
-model CostRecord {
-  id String @id @default(uuid())
-
-  serviceId String
-  service   CloudService @relation(fields: [serviceId], references: [id])
-
-  usageDate DateTime
-  cost      Float
-
-  createdAt DateTime @default(now())
-}
-
 model CloudAccount {
   id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   awsAccountId String @unique
   accountName  String
@@ -170,6 +226,8 @@ model CloudAccount {
 
   snapshots        CostSnapshot[]
   serviceSnapshots ServiceCostSnapshot[]
+
+  @@index([organizationId])
 }
 
 model CostSnapshot {
@@ -204,25 +262,11 @@ model ServiceCostSnapshot {
   @@index([serviceName])
 }
 
-model BudgetSnapshot {
-  id String @id @default(uuid())
-
-  budgetName   String
-  budgetAmount Float
-  actualSpend  Float
-
-  snapshotDate DateTime
-
-  createdAt DateTime @default(now())
-
-  @@index([snapshotDate])
-}
-
 model Budget {
   id String @id @default(uuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   name   String
   amount Float
@@ -231,19 +275,17 @@ model Budget {
   year  Int
 
   createdAt DateTime @default(now())
-}
+  updatedAt DateTime @updatedAt
 
-model Alert {
-  id          String @id @default(uuid())
-  title       String
-  description String
-  severity    String
-
-  createdAt DateTime @default(now())
+  @@unique([organizationId, year, month])
+  @@index([organizationId])
 }
 
 model AlertHistory {
   id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   alertId  String
   type     String
@@ -263,36 +305,18 @@ model AlertHistory {
 
   createdAt DateTime @default(now())
 
+  @@index([organizationId])
   @@index([alertId])
   @@index([severity])
   @@index([status])
   @@index([occurredAt])
 }
 
-model Forecast {
-  id String @id @default(uuid())
-
-  forecastDate  DateTime
-  projectedCost Float
-
-  createdAt DateTime @default(now())
-}
-
-model Report {
-  id String @id @default(uuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  title   String
-  summary String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model ReportNote {
   id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   title   String
   content String @db.Text
@@ -300,5 +324,6 @@ model ReportNote {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([organizationId])
   @@index([createdAt])
 }

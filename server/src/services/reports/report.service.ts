@@ -1,37 +1,66 @@
-import { PrismaClient } from "@prisma/client";
-import { stringify } from "csv-stringify/sync";
+import {
+  stringify,
+} from "csv-stringify/sync";
 
-const prisma = new PrismaClient();
+import {
+  prisma,
+} from "../../config/prisma";
 
-export async function generateReportCsv(): Promise<string> {
-  const records = await prisma.costRecord.findMany({
-    include: {
-      service: true,
-    },
-    orderBy: {
-      usageDate: "asc",
-    },
-  });
+export async function generateReportCsv(
+  organizationId: string,
+): Promise<string> {
+  const records =
+    await prisma.serviceCostSnapshot.findMany({
+      where: {
+        account: {
+          organizationId,
+        },
+      },
+      include: {
+        account: true,
+      },
+      orderBy: {
+        snapshotDate: "asc",
+      },
+    });
 
   return stringify(
-    records.map((record) => ({
-      Date: record.usageDate.toISOString().split("T")[0],
-      Service: record.service.name,
-      Cost: record.cost.toFixed(2),
-    })),
+    records.map(
+      (record) => ({
+        Date:
+          record.snapshotDate
+            .toISOString()
+            .split("T")[0],
+
+        Service:
+          record.serviceName,
+
+        Account:
+          record.account.accountName,
+
+        Cost:
+          record.cost.toFixed(2),
+      }),
+    ),
     {
       header: true,
       columns: [
         "Date",
         "Service",
+        "Account",
         "Cost",
       ],
-    }
+    },
   );
 }
 
-export async function getReportNotes() {
+export async function getReportNotes(
+  organizationId: string,
+) {
   return prisma.reportNote.findMany({
+    where: {
+      organizationId,
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -39,11 +68,13 @@ export async function getReportNotes() {
 }
 
 export async function createReportNote(
+  organizationId: string,
   title: string,
-  content: string
+  content: string,
 ) {
   return prisma.reportNote.create({
     data: {
+      organizationId,
       title,
       content,
     },
@@ -51,10 +82,26 @@ export async function createReportNote(
 }
 
 export async function updateReportNote(
+  organizationId: string,
   id: string,
   title: string,
-  content: string
+  content: string,
 ) {
+  const existing =
+    await prisma.reportNote.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+  if (!existing) {
+    return null;
+  }
+
   return prisma.reportNote.update({
     where: {
       id,
@@ -67,11 +114,29 @@ export async function updateReportNote(
 }
 
 export async function deleteReportNote(
-  id: string
+  organizationId: string,
+  id: string,
 ) {
-  return prisma.reportNote.delete({
+  const existing =
+    await prisma.reportNote.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+  if (!existing) {
+    return false;
+  }
+
+  await prisma.reportNote.delete({
     where: {
       id,
     },
   });
+
+  return true;
 }

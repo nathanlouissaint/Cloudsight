@@ -315,3 +315,42 @@ The remaining work is no longer infrastructure engineering.
 CloudSight is now in the final production deployment validation stage.
 
 Once application containers become healthy behind the ALB and Auto Scaling completes successfully, Phase 13 will be complete and CloudSight will have achieved its first fully automated immutable production deployment on AWS.
+
+## Phase 14 — Organization Tenancy and RBAC Progress
+
+Current state:
+
+- Business data is organization-owned rather than user-owned.
+- Organization membership is enforced through `X-Organization-Id`.
+- Request flow is:
+  `authenticateToken -> requireOrganizationContext -> requireOrganizationPermission(...) -> controller`.
+- Organization roles in use:
+  `OWNER`, `ADMIN`, `MEMBER`, `VIEWER`.
+- Explicit permission-based RBAC is implemented rather than relying on role ordering.
+- Tenant-facing routes now enforce both organization membership and permissions.
+- Budget, CloudAccount, CostSnapshot, ServiceCostSnapshot, AlertHistory, and ReportNote paths are tenant-scoped.
+- Service analytics was corrected to use organization-scoped snapshot queries.
+- Legacy global models and stale repository readers were removed from active runtime paths.
+- Unsafe global CostSnapshot and ServiceCostSnapshot readers were removed or replaced with organization-scoped variants.
+- AWS collection resolves CloudAccounts through the selected organization before writing snapshots.
+- Budget ownership is scoped by:
+  `organizationId + year + month`.
+- Budget HTTP authorization coverage is active against the dedicated test database.
+- Budget organization/RBAC suite passes 16/16 tests.
+
+RBAC policy currently enforced:
+
+- OWNER:
+  full current organization permissions
+- ADMIN:
+  operational write access including budgets and AWS collection
+- MEMBER:
+  read access plus report-note collaboration
+- VIEWER:
+  read-only access
+
+Next work:
+
+- Add HTTP tenant-isolation coverage for reports, service analytics, accounts, and cross-organization resource access.
+- Expand RBAC HTTP coverage beyond budgets.
+- Add organization/member management endpoints and permissions when that product surface is implemented.

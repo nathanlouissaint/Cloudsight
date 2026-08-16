@@ -11,15 +11,19 @@ export async function createServiceCostSnapshot(input: {
   });
 }
 
-export async function findServiceSnapshotsByDateRange(
+export async function findServiceSnapshotsByDateRangeForOrganization(
+  organizationId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ) {
   return prisma.serviceCostSnapshot.findMany({
     where: {
       snapshotDate: {
         gte: startDate,
         lte: endDate,
+      },
+      account: {
+        organizationId,
       },
     },
     include: {
@@ -31,10 +35,11 @@ export async function findServiceSnapshotsByDateRange(
   });
 }
 
-export async function findServiceSnapshotsByService(
+export async function findServiceSnapshotsByServiceForOrganization(
+  organizationId: string,
   serviceName: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ) {
   return prisma.serviceCostSnapshot.findMany({
     where: {
@@ -46,6 +51,9 @@ export async function findServiceSnapshotsByService(
         gte: startDate,
         lte: endDate,
       },
+      account: {
+        organizationId,
+      },
     },
     include: {
       account: true,
@@ -56,14 +64,15 @@ export async function findServiceSnapshotsByService(
   });
 }
 
-export async function findCurrentMonthServiceSnapshots() {
-
+export async function findCurrentMonthServiceSnapshotsForOrganization(
+  organizationId: string,
+) {
   const now = new Date();
 
   const monthStart = new Date(
     now.getFullYear(),
     now.getMonth(),
-    1
+    1,
   );
 
   return prisma.serviceCostSnapshot.findMany({
@@ -71,6 +80,9 @@ export async function findCurrentMonthServiceSnapshots() {
       snapshotDate: {
         gte: monthStart,
         lte: now,
+      },
+      account: {
+        organizationId,
       },
     },
     include: {
@@ -85,19 +97,18 @@ export async function findCurrentMonthServiceSnapshots() {
       },
     ],
   });
-
 }
 
-export async function findCurrentMonthServiceSnapshotsByService(
-  serviceName: string
+export async function findCurrentMonthServiceSnapshotsByServiceForOrganization(
+  organizationId: string,
+  serviceName: string,
 ) {
-
   const now = new Date();
 
   const monthStart = new Date(
     now.getFullYear(),
     now.getMonth(),
-    1
+    1,
   );
 
   return prisma.serviceCostSnapshot.findMany({
@@ -107,6 +118,9 @@ export async function findCurrentMonthServiceSnapshotsByService(
         gte: monthStart,
         lte: now,
       },
+      account: {
+        organizationId,
+      },
     },
     include: {
       account: true,
@@ -115,5 +129,4 @@ export async function findCurrentMonthServiceSnapshotsByService(
       snapshotDate: "asc",
     },
   });
-
 }

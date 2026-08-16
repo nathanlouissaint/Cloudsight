@@ -5,26 +5,53 @@ import {
   getTopServiceDrivers,
   getServiceTrends,
 } from "../controllers/service-analytics.controller";
-import { authenticateToken } from "../middleware/auth.middleware";
+
+import {
+  authenticateToken,
+} from "../middleware/auth.middleware";
+
+import {
+  requireOrganizationContext,
+} from "../middleware/organization-context.middleware";
+
+import {
+  requireOrganizationPermission,
+} from "../middleware/organization-role.middleware";
+
+import {
+  ORGANIZATION_PERMISSIONS,
+} from "../authz/organization.permissions";
 
 const router = Router();
 
 router.get(
   "/",
   authenticateToken,
-  getServices
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.COSTS_READ,
+  ),
+  getServices,
 );
 
 router.get(
   "/top-drivers",
   authenticateToken,
-  getTopServiceDrivers
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.COSTS_READ,
+  ),
+  getTopServiceDrivers,
 );
 
 router.get(
   "/:serviceName/trends",
   authenticateToken,
-  getServiceTrends
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.COSTS_READ,
+  ),
+  getServiceTrends,
 );
 
 export default router;

@@ -1,78 +1,95 @@
 import { prisma } from "../config/prisma";
 
+import {
+  budgetService,
+} from "./budget.service";
+
 import type {
   AlertModel,
 } from "../types/alert.types";
 
 export class ForecastRiskDetectionService {
-
-  async detectForecastRisk(): Promise<AlertModel[]> {
-
+  async detectForecastRisk(
+    organizationId: string,
+  ): Promise<AlertModel[]> {
     const now = new Date();
 
     const budget =
-      await prisma.budget.findFirst({
-        where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      await budgetService.getCurrentMonthlyBudget(
+        organizationId,
+        now,
+      );
 
     if (!budget) {
       return [];
     }
 
- const spend =
-  await prisma.costRecord.aggregate({
-    _sum: {
-      cost: true,
-    },
-    where: {
-      usageDate: {
-        gte: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          1
-        ),
-      },
-    },
-  });
+    const monthStart =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      );
 
-const currentSpend =
-  spend._sum.cost ?? 0;
+    const spend =
+      await prisma.costSnapshot.aggregate({
+        _sum: {
+          totalCost: true,
+        },
+        where: {
+          snapshotDate: {
+            gte: monthStart,
+            lte: now,
+          },
+          account: {
+            organizationId,
+          },
+        },
+      });
+
+    const currentSpend =
+      spend._sum.totalCost ?? 0;
 
     const elapsedDays =
-      Math.max(now.getDate(), 1);
+      Math.max(
+        now.getDate(),
+        1,
+      );
 
     const daysInMonth =
       new Date(
         now.getFullYear(),
         now.getMonth() + 1,
-        0
+        0,
       ).getDate();
 
     const projectedSpend =
-      (currentSpend / elapsedDays) *
+      (
+        currentSpend /
+        elapsedDays
+      ) *
       daysInMonth;
 
     if (
-      projectedSpend <= budget.amount
+      projectedSpend <=
+      budget.amount
     ) {
       return [];
     }
 
     return [
       {
-        id: "forecast-risk",
+        id:
+          "forecast-risk",
 
-        type: "forecast_risk",
+        type:
+          "forecast_risk",
 
-        severity: "critical",
+        severity:
+          "critical",
 
-        status: "active",
+        status:
+          "active",
 
         title:
           "Forecast Exceeds Budget",
@@ -91,7 +108,7 @@ const currentSpend =
 
         currentValue:
           Number(
-            projectedSpend.toFixed(2)
+            projectedSpend.toFixed(2),
           ),
 
         threshold:
@@ -103,9 +120,7 @@ const currentSpend =
             .split("T")[0],
       },
     ];
-
   }
-
 }
 
 export const forecastRiskDetectionService =

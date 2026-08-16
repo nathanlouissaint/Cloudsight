@@ -1,30 +1,14 @@
 import { prisma } from "../config/prisma";
 
-export async function findCostSnapshotsByAccount(
-  accountId: string
+export async function findCostSnapshotsByAccountForOrganization(
+  organizationId: string,
+  accountId: string,
 ) {
   return prisma.costSnapshot.findMany({
     where: {
       accountId,
-    },
-    include: {
-      account: true,
-    },
-    orderBy: {
-      snapshotDate: "asc",
-    },
-  });
-}
-
-export async function findCostSnapshotsByDateRange(
-  startDate: Date,
-  endDate: Date
-) {
-  return prisma.costSnapshot.findMany({
-    where: {
-      snapshotDate: {
-        gte: startDate,
-        lte: endDate,
+      account: {
+        organizationId,
       },
     },
     include: {
@@ -36,14 +20,39 @@ export async function findCostSnapshotsByDateRange(
   });
 }
 
-export async function findCurrentMonthCostSnapshots() {
+export async function findCostSnapshotsByDateRangeForOrganization(
+  organizationId: string,
+  startDate: Date,
+  endDate: Date,
+) {
+  return prisma.costSnapshot.findMany({
+    where: {
+      snapshotDate: {
+        gte: startDate,
+        lte: endDate,
+      },
+      account: {
+        organizationId,
+      },
+    },
+    include: {
+      account: true,
+    },
+    orderBy: {
+      snapshotDate: "asc",
+    },
+  });
+}
 
+export async function findCurrentMonthCostSnapshotsForOrganization(
+  organizationId: string,
+) {
   const now = new Date();
 
   const monthStart = new Date(
     now.getFullYear(),
     now.getMonth(),
-    1
+    1,
   );
 
   return prisma.costSnapshot.findMany({
@@ -52,6 +61,9 @@ export async function findCurrentMonthCostSnapshots() {
         gte: monthStart,
         lte: now,
       },
+      account: {
+        organizationId,
+      },
     },
     include: {
       account: true,
@@ -60,7 +72,6 @@ export async function findCurrentMonthCostSnapshots() {
       snapshotDate: "asc",
     },
   });
-
 }
 
 export async function createCostSnapshot(input: {

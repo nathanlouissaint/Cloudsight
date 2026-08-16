@@ -1,10 +1,18 @@
-import type { Request, Response } from "express";
-import { prisma } from "../config/prisma";
-import { DashboardContract } from "../contracts/dashboard.contract";
+import type { Response } from "express";
 
-type CloudServiceSummary = Awaited<
-  ReturnType<typeof prisma.cloudService.findMany>
->[number];
+import type {
+  OrganizationAuthenticatedRequest,
+} from "../types/organization/request.types";
+
+import { prisma } from "../config/prisma";
+
+import {
+  DashboardContract,
+} from "../contracts/dashboard.contract";
+
+import {
+  budgetService,
+} from "../services/budget.service";
 
 interface ServiceBreakdownItem {
   name: string;
@@ -13,113 +21,127 @@ interface ServiceBreakdownItem {
 }
 
 export async function getDashboardSummary(
-  _req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    req.organization?.id;
+
+  if (!organizationId) {
+    return res.status(400).json({
+      message:
+        "Organization context is required",
+    });
+  }
+
   try {
     const now = new Date();
 
-    const currentMonthStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    );
+    const currentMonthStart =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      );
 
-    const previousMonthStart = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      1
-    );
+    const previousMonthStart =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+      );
 
-    const previousMonthEnd = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      0,
-      23,
-      59,
-      59
-    );
+    const previousMonthEnd =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
 
     const currentMonthSpendResult =
-      await prisma.costRecord.aggregate({
+      await prisma.costSnapshot.aggregate({
         _sum: {
-          cost: true,
+          totalCost: true,
         },
         where: {
-          usageDate: {
+          snapshotDate: {
             gte: currentMonthStart,
+            lte: now,
+          },
+          account: {
+            organizationId,
           },
         },
       });
 
     const previousMonthSpendResult =
-      await prisma.costRecord.aggregate({
+      await prisma.costSnapshot.aggregate({
         _sum: {
-          cost: true,
+          totalCost: true,
         },
         where: {
-          usageDate: {
+          snapshotDate: {
             gte: previousMonthStart,
             lte: previousMonthEnd,
           },
+          account: {
+            organizationId,
+          },
         },
       });
 
-    const serviceCosts =
-      await prisma.costRecord.groupBy({
-        by: ["serviceId"],
-        _sum: {
-          cost: true,
-        },
+    const serviceRecords =
+      await prisma.serviceCostSnapshot.findMany({
         where: {
-          usageDate: {
+          snapshotDate: {
             gte: currentMonthStart,
+            lte: now,
           },
+          account: {
+            organizationId,
+          },
+        },
+      });
+
+    const accounts =
+      await prisma.cloudAccount.findMany({
+        where: {
+          organizationId,
         },
         orderBy: {
-          _sum: {
-            cost: "desc",
-          },
+          createdAt: "asc",
         },
       });
 
-   const serviceIds =
-  serviceCosts.map(
-    (item: (typeof serviceCosts)[number]) =>
-      item.serviceId
-  );
-
-    const services =
-      await prisma.cloudService.findMany({
-        where: {
-          id: {
-            in: serviceIds,
-          },
-        },
-      });
-
-    const serviceNameById = new Map(
-      services.map(
-        (service: CloudServiceSummary) => [
-          service.id,
-          service.name,
-        ]
-      )
-    );
+    const budget =
+      await budgetService.getCurrentMonthlyBudget(
+        organizationId,
+        now,
+      );
 
     const currentMonthSpend =
-      currentMonthSpendResult._sum.cost ?? 0;
+      currentMonthSpendResult
+        ._sum
+        .totalCost ?? 0;
 
     const previousMonthSpend =
-      previousMonthSpendResult._sum.cost ?? 0;
+      previousMonthSpendResult
+        ._sum
+        .totalCost ?? 0;
 
-    const today = now.getDate();
+    const today =
+      now.getDate();
 
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0
-    ).getDate();
+    const daysInMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+      ).getDate();
 
     const averageDailySpend =
       today > 0
@@ -127,84 +149,102 @@ export async function getDashboardSummary(
         : 0;
 
     const forecastedSpend =
-      averageDailySpend * daysInMonth;
-
-    const budget =
-      await prisma.budget.findFirst({
-        where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      averageDailySpend *
+      daysInMonth;
 
     const budgetAmount =
-      budget?.amount ?? 5000;
+      budget?.amount ?? 0;
 
     const budgetUsage =
       budgetAmount > 0
-        ? (currentMonthSpend / budgetAmount) * 100
+        ? (
+            currentMonthSpend /
+            budgetAmount
+          ) * 100
         : 0;
 
     const totalSavings = 1240;
 
-    const serviceBreakdown: ServiceBreakdownItem[] =
-  serviceCosts.map(
-    (item: (typeof serviceCosts)[number]) => {
-        const spend =
-          item._sum?.cost ?? 0;
+    const serviceTotals =
+      new Map<string, number>();
 
+    for (
+      const record of serviceRecords
+    ) {
+      serviceTotals.set(
+        record.serviceName,
+        (
+          serviceTotals.get(
+            record.serviceName,
+          ) ?? 0
+        ) + record.cost,
+      );
+    }
 
-
-        return {
-          name:
-            serviceNameById.get(item.serviceId) ??
-            "No dominant service",
-
-          spend: Number(
-            spend.toFixed(2)
-          ),
-
-          percentage:
-            currentMonthSpend > 0
-              ? Number(
-                  (
-                    (spend /
-                      currentMonthSpend) *
-                    100
-                  ).toFixed(1)
-                )
-              : 0,
-        };
-      });
+    const serviceBreakdown:
+      ServiceBreakdownItem[] =
+      Array.from(
+        serviceTotals.entries(),
+      )
+        .map(
+          ([name, spend]) => ({
+            name,
+            spend:
+              Number(
+                spend.toFixed(2),
+              ),
+            percentage:
+              currentMonthSpend > 0
+                ? Number(
+                    (
+                      (
+                        spend /
+                        currentMonthSpend
+                      ) *
+                      100
+                    ).toFixed(1),
+                  )
+                : 0,
+          }),
+        )
+        .sort(
+          (a, b) =>
+            b.spend - a.spend,
+        );
 
     const topService =
-  serviceBreakdown.length > 0
-    ? serviceBreakdown[0].name
-    : "No dominant cost driver";
+      serviceBreakdown.length > 0
+        ? serviceBreakdown[0].name
+        : "No dominant cost driver";
 
     const response =
       DashboardContract.parse({
         overview: {
-          forecast: Number(
-            forecastedSpend.toFixed(2)
-          ),
-          budgetUsage: Number(
-            budgetUsage.toFixed(1)
-          ),
+          forecast:
+            Number(
+              forecastedSpend.toFixed(
+                2,
+              ),
+            ),
+
+          budgetUsage:
+            Number(
+              budgetUsage.toFixed(1),
+            ),
+
           confidence: 92,
-          savings: totalSavings,
+
+          savings:
+            totalSavings,
         },
 
         summary: {
           content: [
             `Current month spend is $${currentMonthSpend.toFixed(
-              2
+              2,
             )}.`,
             `Forecasted spend is $${forecastedSpend.toFixed(
-              2
+              2,
             )}.`,
             `${topService} is the current top cost driver.`,
           ],
@@ -215,13 +255,17 @@ export async function getDashboardSummary(
             .slice(0, 3)
             .map(
               (
-                service: ServiceBreakdownItem
+                service:
+                  ServiceBreakdownItem,
               ) => ({
-                service: service.name,
+                service:
+                  service.name,
+
                 increase: 8,
+
                 reason:
                   "Current month spend concentration",
-              })
+              }),
             ),
 
         optimization: [
@@ -247,80 +291,95 @@ export async function getDashboardSummary(
 
         insights: [
           {
-            title: "Budget Status",
+            title:
+              "Budget Status",
+
             description:
-              budgetUsage < 80
-                ? "Current spend remains within budget thresholds."
-                : "Current spend is approaching budget threshold.",
+              budgetAmount <= 0
+                ? "No monthly budget has been configured."
+                : budgetUsage < 80
+                  ? "Current spend remains within budget thresholds."
+                  : "Current spend is approaching budget threshold.",
           },
           {
-            title: "Top Service",
-            description: `${topService} is currently driving the largest share of cloud spend.`,
+            title:
+              "Top Service",
+
+            description:
+              `${topService} is currently driving the largest share of cloud spend.`,
           },
         ],
 
         anomalies: [
-  {
-    service: topService,
-    impact:
-      previousMonthSpend > 0
-        ? `+${(
-            ((currentMonthSpend -
-              previousMonthSpend) /
-              previousMonthSpend) *
-            100
-          ).toFixed(1)}%`
-        : "No historical comparison",
-    severity:
-      currentMonthSpend >
-      previousMonthSpend
-        ? "warning"
-        : "healthy",
-  },
-],
+          {
+            service:
+              topService,
 
-        accounts: [
-          {
-            name: "Production",
-            status: "Healthy",
-          },
-          {
-            name: "Staging",
-            status: "Healthy",
-          },
-          {
-            name: "Development",
-            status:
-              budgetUsage > 80
-                ? "Warning"
-                : "Healthy",
+            impact:
+              previousMonthSpend > 0
+                ? `+${(
+                    (
+                      (
+                        currentMonthSpend -
+                        previousMonthSpend
+                      ) /
+                      previousMonthSpend
+                    ) *
+                    100
+                  ).toFixed(1)}%`
+                : "No historical comparison",
+
+            severity:
+              currentMonthSpend >
+              previousMonthSpend
+                ? "warning"
+                : "healthy",
           },
         ],
+
+        accounts:
+          accounts.map(
+            (account) => ({
+              name:
+                account.accountName,
+
+              status:
+                budgetUsage > 80
+                  ? "Warning"
+                  : "Healthy",
+            }),
+          ),
 
         forecastFactors: [
           {
             name:
               "Current Daily Run Rate",
-            impact: `$${averageDailySpend.toFixed(
-              2
-            )}/day`,
+
+            impact:
+              `$${averageDailySpend.toFixed(
+                2,
+              )}/day`,
           },
           {
             name:
               "Budget Utilization",
-            impact: `${budgetUsage.toFixed(
-              1
-            )}%`,
+
+            impact:
+              `${budgetUsage.toFixed(
+                1,
+              )}%`,
           },
           {
             name:
               "Days Remaining",
-            impact: `${daysInMonth - today}`,
+
+            impact:
+              `${
+                daysInMonth -
+                today
+              }`,
           },
         ],
-
-        services:
-          serviceBreakdown,
       });
 
     return res
@@ -329,7 +388,7 @@ export async function getDashboardSummary(
   } catch (error) {
     console.error(
       "Dashboard summary error:",
-      error
+      error,
     );
 
     return res.status(500).json({

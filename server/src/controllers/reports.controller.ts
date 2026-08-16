@@ -1,5 +1,19 @@
-import type { Request, Response } from "express";
-import { prisma } from "../config/prisma";
+import type {
+  Response,
+} from "express";
+
+import type {
+  OrganizationAuthenticatedRequest,
+} from "../types/organization/request.types";
+
+import {
+  prisma,
+} from "../config/prisma";
+
+import {
+  budgetService,
+} from "../services/budget.service";
+
 import {
   createReportNote,
   deleteReportNote,
@@ -8,184 +22,248 @@ import {
   updateReportNote,
 } from "../services/reports/report.service";
 
+function requireOrganizationId(
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
+): string | null {
+  const organizationId =
+    req.organization?.id;
+
+  if (!organizationId) {
+    res.status(400).json({
+      message:
+        "Organization context is required",
+    });
+
+    return null;
+  }
+
+  return organizationId;
+}
+
 export async function getExecutiveReport(
-  _req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    requireOrganizationId(
+      req,
+      res,
+    );
+
+  if (!organizationId) {
+    return;
+  }
+
   try {
     const now = new Date();
 
-    const currentMonthStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    );
+    const currentMonthStart =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      );
 
     const spendResult =
-      await prisma.costRecord.aggregate({
+      await prisma.costSnapshot.aggregate({
         _sum: {
-          cost: true,
+          totalCost: true,
         },
         where: {
-          usageDate: {
+          snapshotDate: {
             gte: currentMonthStart,
+            lte: now,
+          },
+          account: {
+            organizationId,
           },
         },
       });
 
     const totalSpend =
-      spendResult._sum.cost ?? 0;
+      spendResult
+        ._sum
+        .totalCost ?? 0;
 
     const elapsedDays =
-      now.getDate();
+      Math.max(
+        now.getDate(),
+        1,
+      );
 
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0
-    ).getDate();
+    const daysInMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+      ).getDate();
 
     const forecastedSpend =
-      (totalSpend / elapsedDays) *
+      (
+        totalSpend /
+        elapsedDays
+      ) *
       daysInMonth;
 
     const budget =
-      await prisma.budget.findFirst({
-        where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      await budgetService.getCurrentMonthlyBudget(
+        organizationId,
+        now,
+      );
 
     const budgetAmount =
       budget?.amount ?? 0;
 
     const usagePercent =
       budgetAmount > 0
-        ? (totalSpend / budgetAmount) * 100
+        ? (
+            totalSpend /
+            budgetAmount
+          ) * 100
         : 0;
 
-    let budgetStatus = "healthy";
+    let budgetStatus =
+      "healthy";
 
-    if (usagePercent >= 100) {
-      budgetStatus = "exceeded";
-    } else if (usagePercent >= 85) {
-      budgetStatus = "critical";
-    } else if (usagePercent >= 70) {
-      budgetStatus = "warning";
+    if (
+      usagePercent >= 100
+    ) {
+      budgetStatus =
+        "exceeded";
+    } else if (
+      usagePercent >= 85
+    ) {
+      budgetStatus =
+        "critical";
+    } else if (
+      usagePercent >= 70
+    ) {
+      budgetStatus =
+        "warning";
     }
 
     const serviceRecords =
-      await prisma.costRecord.findMany({
+      await prisma.serviceCostSnapshot.findMany({
         where: {
-          usageDate: {
+          snapshotDate: {
             gte: currentMonthStart,
+            lte: now,
           },
-        },
-        include: {
-          service: true,
+          account: {
+            organizationId,
+          },
         },
       });
 
-    const serviceTotals = new Map<
-      string,
-      number
-    >();
+    const serviceTotals =
+      new Map<
+        string,
+        number
+      >();
 
-    for (const record of serviceRecords) {
+    for (
+      const record of serviceRecords
+    ) {
       const current =
         serviceTotals.get(
-          record.service.name
+          record.serviceName,
         ) ?? 0;
 
       serviceTotals.set(
-        record.service.name,
-        current + record.cost
+        record.serviceName,
+        current +
+          record.cost,
       );
     }
 
-    const sortedServices = Array.from(
-      serviceTotals.entries()
-    ).sort(
-      (a, b) => b[1] - a[1]
-    );
+    const sortedServices =
+      Array.from(
+        serviceTotals.entries(),
+      ).sort(
+        (a, b) =>
+          b[1] - a[1],
+      );
 
     const topService =
       sortedServices[0]?.[0] ??
       "No dominant service";
 
     const topServiceSpend =
-      sortedServices[0]?.[1] ?? 0;
+      sortedServices[0]?.[1] ??
+      0;
 
     const topServicePercent =
       totalSpend > 0
         ? (
-            (topServiceSpend /
-              totalSpend) *
+            (
+              topServiceSpend /
+              totalSpend
+            ) *
             100
           ).toFixed(1)
         : "0";
 
     const monthName =
-      now.toLocaleString("en-US", {
-        month: "long",
-      });
+      now.toLocaleString(
+        "en-US",
+        {
+          month: "long",
+        },
+      );
 
     const summary =
-  budgetAmount > 0
-    ? `Cloud spend remains ${
-        forecastedSpend <= budgetAmount
-          ? "below"
-          : "above"
-      } the approved monthly budget. ${topService} accounts for ${topServicePercent}% of total spend and continues to be the primary cost driver. Based on the current run rate, projected month-end spend is $${forecastedSpend.toFixed(
-        2
-      )}.`
-    : `No monthly budget has been configured. ${topService} is currently the largest cost driver, representing ${topServicePercent}% of spend. Projected month-end spend is $${forecastedSpend.toFixed(
-        2
-      )}.`;
-      
-const budgetVariance =
-  budgetAmount - totalSpend;
-
-const variancePercent =
-  budgetAmount > 0
-    ? (budgetVariance / budgetAmount) * 100
-    : 0;
-
-const reportStatus =
-  budgetStatus === "healthy"
-    ? "Final"
-    : "Action Required";
-
-const generatedAt =
-  now.toISOString();
-
+      budgetAmount > 0
+        ? `Cloud spend remains ${
+            forecastedSpend <=
+            budgetAmount
+              ? "below"
+              : "above"
+          } the approved monthly budget. ${topService} accounts for ${topServicePercent}% of total spend and continues to be the primary cost driver. Based on the current run rate, projected month-end spend is $${forecastedSpend.toFixed(
+            2,
+          )}.`
+        : `No monthly budget has been configured. ${topService} is currently the largest cost driver, representing ${topServicePercent}% of spend. Projected month-end spend is $${forecastedSpend.toFixed(
+            2,
+          )}.`;
 
     return res.status(200).json({
-      period: `${monthName} ${now.getFullYear()}`,
-      totalSpend: Number(
-        totalSpend.toFixed(2)
-      ),
-      budget: Number(
-        budgetAmount.toFixed(2)
-      ),
-      forecastedSpend: Number(
-        forecastedSpend.toFixed(2)
-      ),
+      period:
+        `${monthName} ${now.getFullYear()}`,
+
+      totalSpend:
+        Number(
+          totalSpend.toFixed(2),
+        ),
+
+      budget:
+        Number(
+          budgetAmount.toFixed(2),
+        ),
+
+      forecastedSpend:
+        Number(
+          forecastedSpend.toFixed(
+            2,
+          ),
+        ),
+
       topService,
-      topServiceSpend: Number(
-        topServiceSpend.toFixed(2)
-      ),
+
+      topServiceSpend:
+        Number(
+          topServiceSpend.toFixed(
+            2,
+          ),
+        ),
+
       budgetStatus,
+
       summary,
     });
   } catch (error) {
     console.error(
       "Executive report error:",
-      error
+      error,
     );
 
     return res.status(500).json({
@@ -196,28 +274,42 @@ const generatedAt =
 }
 
 export async function exportCsv(
-  _req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    requireOrganizationId(
+      req,
+      res,
+    );
+
+  if (!organizationId) {
+    return;
+  }
+
   try {
     const csv =
-      await generateReportCsv();
+      await generateReportCsv(
+        organizationId,
+      );
 
     res.setHeader(
       "Content-Type",
-      "text/csv"
+      "text/csv",
     );
 
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="cloud-cost-report.csv"'
+      'attachment; filename="cloud-cost-report.csv"',
     );
 
-    return res.status(200).send(csv);
+    return res
+      .status(200)
+      .send(csv);
   } catch (error) {
     console.error(
       "CSV export error:",
-      error
+      error,
     );
 
     return res.status(500).json({
@@ -228,20 +320,32 @@ export async function exportCsv(
 }
 
 export async function getNotes(
-  _req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    requireOrganizationId(
+      req,
+      res,
+    );
+
+  if (!organizationId) {
+    return;
+  }
+
   try {
     const notes =
-      await getReportNotes();
+      await getReportNotes(
+        organizationId,
+      );
 
-    return res.status(200).json(
-      notes
-    );
+    return res
+      .status(200)
+      .json(notes);
   } catch (error) {
     console.error(
       "Get notes error:",
-      error
+      error,
     );
 
     return res.status(500).json({
@@ -252,28 +356,49 @@ export async function getNotes(
 }
 
 export async function createNote(
-  req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
-  try {
-   const {
-  title,
-  content,
-} = req.body;
-
-const note =
-  await createReportNote(
-    title,
-    content
-  );
-
-    return res.status(201).json(
-      note
+  const organizationId =
+    requireOrganizationId(
+      req,
+      res,
     );
+
+  if (!organizationId) {
+    return;
+  }
+
+  try {
+    const {
+      title,
+      content,
+    } = req.body ?? {};
+
+    if (
+      typeof title !== "string" ||
+      typeof content !== "string"
+    ) {
+      return res.status(400).json({
+        message:
+          "title and content are required",
+      });
+    }
+
+    const note =
+      await createReportNote(
+        organizationId,
+        title,
+        content,
+      );
+
+    return res
+      .status(201)
+      .json(note);
   } catch (error) {
     console.error(
       "Create note error:",
-      error
+      error,
     );
 
     return res.status(500).json({
@@ -282,56 +407,138 @@ const note =
     });
   }
 }
+
 export async function updateNote(
-  req: Request<{ id: string }>,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    requireOrganizationId(
+      req,
+      res,
+    );
+
+  if (!organizationId) {
+    return;
+  }
+
   try {
-    const { id } = req.params;
+    const rawId =
+      req.params.id;
+
+    const id =
+      Array.isArray(rawId)
+        ? rawId[0]
+        : rawId;
+
+    if (!id) {
+      return res.status(400).json({
+        message:
+          "Report note ID is required",
+      });
+    }
 
     const {
       title,
       content,
-    } = req.body;
+    } = req.body ?? {};
+
+    if (
+      typeof title !== "string" ||
+      typeof content !== "string"
+    ) {
+      return res.status(400).json({
+        message:
+          "title and content are required",
+      });
+    }
 
     const note =
       await updateReportNote(
+        organizationId,
         id,
         title,
-        content
+        content,
       );
 
-    return res.status(200).json(note);
+    if (!note) {
+      return res.status(404).json({
+        message:
+          "Report note not found",
+      });
+    }
+
+    return res
+      .status(200)
+      .json(note);
   } catch (error) {
     console.error(
       "Update note error:",
-      error
+      error,
     );
 
     return res.status(500).json({
-      message: "Failed to update note.",
+      message:
+        "Failed to update note.",
     });
   }
 }
 
 export async function removeNote(
-  req: Request<{ id: string }>,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    requireOrganizationId(
+      req,
+      res,
+    );
+
+  if (!organizationId) {
+    return;
+  }
+
   try {
-    const { id } = req.params;
+    const rawId =
+      req.params.id;
 
-    await deleteReportNote(id);
+    const id =
+      Array.isArray(rawId)
+        ? rawId[0]
+        : rawId;
 
-    return res.status(204).send();
+    if (!id) {
+      return res.status(400).json({
+        message:
+          "Report note ID is required",
+      });
+    }
+
+    const deleted =
+      await deleteReportNote(
+        organizationId,
+        id,
+      );
+
+    if (!deleted) {
+      return res.status(404).json({
+        message:
+          "Report note not found",
+      });
+    }
+
+    return res
+      .status(204)
+      .send();
   } catch (error) {
     console.error(
       "Delete note error:",
-      error
+      error,
     );
 
     return res.status(500).json({
-      message: "Failed to delete note.",
+      message:
+        "Failed to delete note.",
     });
   }
 }

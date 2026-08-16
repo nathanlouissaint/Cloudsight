@@ -1,21 +1,26 @@
 import { prisma } from "../config/prisma";
 
-export async function findAllCloudAccounts() {
+export async function findAllCloudAccountsForOrganization(
+  organizationId: string,
+) {
   return prisma.cloudAccount.findMany({
+    where: {
+      organizationId,
+    },
     orderBy: {
       createdAt: "asc",
     },
   });
 }
 
-export async function findCloudAccountById(id: string) {
-  return prisma.cloudAccount.findUnique({
-    where: { id },
-  });
-}
-
-export async function findCloudAccountByAwsAccountId(awsAccountId: string) {
-  return prisma.cloudAccount.findUnique({
-    where: { awsAccountId },
+export async function findCloudAccountByIdForOrganization(
+  organizationId: string,
+  accountId: string,
+) {
+  return prisma.cloudAccount.findFirst({
+    where: {
+      id: accountId,
+      organizationId,
+    },
   });
 }

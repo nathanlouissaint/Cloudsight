@@ -1,7 +1,10 @@
 import type {
-  Request,
   Response,
 } from "express";
+
+import type {
+  OrganizationAuthenticatedRequest,
+} from "../types/organization/request.types";
 
 import {
   getServiceBreakdown,
@@ -9,7 +12,9 @@ import {
   getTopDrivers,
 } from "../services/service-analytics.service";
 
-function getDates(req: Request) {
+function getDates(
+  req: OrganizationAuthenticatedRequest,
+) {
   const endDate = req.query.endDate
     ? new Date(String(req.query.endDate))
     : new Date();
@@ -22,24 +27,42 @@ function getDates(req: Request) {
             24 *
             60 *
             60 *
-            1000
+            1000,
       );
 
-  return { startDate, endDate };
+  return {
+    startDate,
+    endDate,
+  };
 }
 
 export async function getServices(
-  req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
   try {
-    const { startDate, endDate } =
-      getDates(req);
+    const organizationId =
+      req.organization?.id;
+
+    if (!organizationId) {
+      res.status(400).json({
+        message:
+          "Organization context is required",
+      });
+
+      return;
+    }
+
+    const {
+      startDate,
+      endDate,
+    } = getDates(req);
 
     const result =
       await getServiceBreakdown(
+        organizationId,
         startDate,
-        endDate
+        endDate,
       );
 
     res.status(200).json(result);
@@ -52,17 +75,32 @@ export async function getServices(
 }
 
 export async function getTopServiceDrivers(
-  req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
   try {
-    const { startDate, endDate } =
-      getDates(req);
+    const organizationId =
+      req.organization?.id;
+
+    if (!organizationId) {
+      res.status(400).json({
+        message:
+          "Organization context is required",
+      });
+
+      return;
+    }
+
+    const {
+      startDate,
+      endDate,
+    } = getDates(req);
 
     const result =
       await getTopDrivers(
+        organizationId,
         startDate,
-        endDate
+        endDate,
       );
 
     res.status(200).json(result);
@@ -75,20 +113,50 @@ export async function getTopServiceDrivers(
 }
 
 export async function getServiceTrends(
-  req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
   try {
-    const { startDate, endDate } =
-      getDates(req);
+    const organizationId =
+      req.organization?.id;
+
+    if (!organizationId) {
+      res.status(400).json({
+        message:
+          "Organization context is required",
+      });
+
+      return;
+    }
+
+    const rawServiceName =
+      req.params.serviceName;
+
+    const serviceName =
+      Array.isArray(rawServiceName)
+        ? rawServiceName[0]
+        : rawServiceName;
+
+    if (!serviceName) {
+      res.status(400).json({
+        message:
+          "Service name is required",
+      });
+
+      return;
+    }
+
+    const {
+      startDate,
+      endDate,
+    } = getDates(req);
 
     const result =
       await getServiceTrend(
-        String(
-          req.params.serviceName
-        ),
+        organizationId,
+        serviceName,
         startDate,
-        endDate
+        endDate,
       );
 
     res.status(200).json(result);

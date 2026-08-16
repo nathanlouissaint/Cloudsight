@@ -1,66 +1,78 @@
 import { prisma } from "../config/prisma";
 
+import {
+  budgetService,
+} from "./budget.service";
+
 import type {
   AlertModel,
 } from "../types/alert.types";
 
 export class BudgetBreachDetectionService {
-
-  async detectBudgetBreach(): Promise<AlertModel[]> {
-
+  async detectBudgetBreach(
+    organizationId: string,
+  ): Promise<AlertModel[]> {
     const now = new Date();
 
     const budget =
-      await prisma.budget.findFirst({
-        where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      await budgetService.getCurrentMonthlyBudget(
+        organizationId,
+        now,
+      );
 
     if (!budget) {
       return [];
     }
 
-  const spend =
-  await prisma.costRecord.aggregate({
-    _sum: {
-      cost: true,
-    },
-    where: {
-      usageDate: {
-        gte: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          1
-        ),
-      },
-    },
-  });
+    const monthStart =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      );
 
-const currentSpend =
-  spend._sum.cost ?? 0;
+    const spend =
+      await prisma.costSnapshot.aggregate({
+        _sum: {
+          totalCost: true,
+        },
+        where: {
+          snapshotDate: {
+            gte: monthStart,
+            lte: now,
+          },
+          account: {
+            organizationId,
+          },
+        },
+      });
+
+    const currentSpend =
+      spend._sum.totalCost ?? 0;
 
     if (
-      currentSpend <= budget.amount
+      currentSpend <=
+      budget.amount
     ) {
       return [];
     }
 
     return [
       {
-        id: "budget-breach",
+        id:
+          "budget-breach",
 
-        type: "budget_risk",
+        type:
+          "budget_risk",
 
-        severity: "critical",
+        severity:
+          "critical",
 
-        status: "active",
+        status:
+          "active",
 
-        title: "Budget Exceeded",
+        title:
+          "Budget Exceeded",
 
         description:
           `Current spend exceeds budget by $${(
@@ -71,11 +83,12 @@ const currentSpend =
         recommendation:
           "Investigate high-cost services and reduce discretionary cloud spend immediately.",
 
-        metric: "Monthly Spend",
+        metric:
+          "Monthly Spend",
 
         currentValue:
           Number(
-            currentSpend.toFixed(2)
+            currentSpend.toFixed(2),
           ),
 
         threshold:
@@ -87,9 +100,7 @@ const currentSpend =
             .split("T")[0],
       },
     ];
-
   }
-
 }
 
 export const budgetBreachDetectionService =

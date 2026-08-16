@@ -1,6 +1,6 @@
 import {
-  findServiceSnapshotsByDateRange,
-  findServiceSnapshotsByService,
+  findServiceSnapshotsByDateRangeForOrganization,
+  findServiceSnapshotsByServiceForOrganization,
 } from "../repositories/service-cost-snapshot.repository";
 
 interface ServiceSnapshot {
@@ -16,33 +16,36 @@ interface ServiceBreakdownItem {
 }
 
 export async function getServiceBreakdown(
+  organizationId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<ServiceBreakdownItem[]> {
   const snapshots =
-    await findServiceSnapshotsByDateRange(
+    await findServiceSnapshotsByDateRangeForOrganization(
+      organizationId,
       startDate,
-      endDate
+      endDate,
     ) as ServiceSnapshot[];
 
-  const grouped = snapshots.reduce(
-    (
-      acc: Record<string, number>,
-      row: ServiceSnapshot
-    ) => {
-      acc[row.serviceName] =
-        (acc[row.serviceName] || 0) +
-        row.cost;
+  const grouped =
+    snapshots.reduce(
+      (
+        acc: Record<string, number>,
+        row: ServiceSnapshot,
+      ) => {
+        acc[row.serviceName] =
+          (acc[row.serviceName] || 0) +
+          row.cost;
 
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
   const entries =
     Object.entries(grouped) as [
       string,
-      number
+      number,
     ][];
 
   return entries
@@ -50,79 +53,99 @@ export async function getServiceBreakdown(
       ([serviceName, totalCost]) => ({
         serviceName,
         totalCost,
-      })
+      }),
     )
     .sort(
       (
         a: ServiceBreakdownItem,
-        b: ServiceBreakdownItem
-      ) => b.totalCost - a.totalCost
+        b: ServiceBreakdownItem,
+      ) =>
+        b.totalCost -
+        a.totalCost,
     );
 }
 
 export async function getTopDrivers(
+  organizationId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ) {
   const services =
     await getServiceBreakdown(
+      organizationId,
       startDate,
-      endDate
+      endDate,
     );
 
   const totalSpend =
     services.reduce(
       (
         sum: number,
-        service: ServiceBreakdownItem
-      ) => sum + service.totalCost,
-      0
+        service: ServiceBreakdownItem,
+      ) =>
+        sum +
+        service.totalCost,
+      0,
     );
 
   return services.map(
-    (service: ServiceBreakdownItem) => ({
-      serviceName: service.serviceName,
+    (
+      service: ServiceBreakdownItem,
+    ) => ({
+      serviceName:
+        service.serviceName,
 
       totalCost:
         Number(
-          service.totalCost.toFixed(2)
+          service.totalCost.toFixed(2),
         ),
 
       percentOfSpend:
         totalSpend > 0
           ? Number(
               (
-                (service.totalCost /
-                  totalSpend) *
+                (
+                  service.totalCost /
+                  totalSpend
+                ) *
                 100
-              ).toFixed(2)
+              ).toFixed(2),
             )
           : 0,
-    })
+    }),
   );
 }
 
 export async function getServiceTrend(
+  organizationId: string,
   serviceName: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ) {
   const snapshots =
-    await findServiceSnapshotsByService(
+    await findServiceSnapshotsByServiceForOrganization(
+      organizationId,
       serviceName,
       startDate,
-      endDate
+      endDate,
     ) as ServiceSnapshot[];
 
   return {
     serviceName,
 
     trend: snapshots.map(
-      (row: ServiceSnapshot) => ({
-        date: row.snapshotDate,
-        cost: row.cost,
-        accountId: row.accountId,
-      })
+      (
+        row: ServiceSnapshot,
+      ) => ({
+        date:
+          row.snapshotDate,
+
+        cost:
+          row.cost,
+
+        accountId:
+          row.accountId,
+      }),
     ),
   };
 }

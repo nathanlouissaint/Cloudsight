@@ -1,12 +1,16 @@
 import {
-  findCurrentMonthServiceSnapshots,
+  findCurrentMonthServiceSnapshotsForOrganization,
 } from "../repositories/service-cost-snapshot.repository";
 
 import {
-  findCurrentMonthCostSnapshots,
+  findCurrentMonthCostSnapshotsForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 import { prisma } from "../config/prisma";
+
+import {
+  budgetService,
+} from "./budget.service";
 
 import { forecastConfidenceService } from "./forecast-confidence.service";
 import { forecastProjectionService } from "./forecast-projection.service";
@@ -45,67 +49,72 @@ interface AccountGroup {
 }
 
 export class ForecastService {
-  async getForecast(): Promise<ForecastModel> {
+  async getForecast(
+    organizationId: string,
+  ): Promise<ForecastModel> {
     const now = new Date();
 
-    const elapsedDays = now.getDate();
+    const elapsedDays =
+      now.getDate();
 
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0
-    ).getDate();
+    const daysInMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+      ).getDate();
 
     const remainingDays =
       daysInMonth - elapsedDays;
 
+    const currentMonthStart =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      );
+
     const historicalTrends =
       await historicalTrendService.getDailyTrend(
-        new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          1
-        ),
-        now
+        organizationId,
+        currentMonthStart,
+        now,
       );
 
     const budget =
-      await prisma.budget.findFirst({
-        where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
+      await budgetService.getCurrentMonthlyBudget(
+        organizationId,
+        now,
+      );
+
+    const serviceSnapshots =
+      await findCurrentMonthServiceSnapshotsForOrganization(
+        organizationId,
+      ) as ServiceSnapshot[];
+
+    const accountSnapshots =
+      await findCurrentMonthCostSnapshotsForOrganization(
+        organizationId,
+      ) as AccountSnapshot[];
+
+    const spend =
+      await prisma.costSnapshot.aggregate({
+        _sum: {
+          totalCost: true,
         },
-        orderBy: {
-          createdAt: "desc",
+        where: {
+          snapshotDate: {
+            gte: currentMonthStart,
+            lte: now,
+          },
+          account: {
+            organizationId,
+          },
         },
       });
 
-const serviceSnapshots =
-  await findCurrentMonthServiceSnapshots() as ServiceSnapshot[];
-
-const accountSnapshots =
-  await findCurrentMonthCostSnapshots() as AccountSnapshot[];
-
-const currentMonthStart = new Date(
-  now.getFullYear(),
-  now.getMonth(),
-  1
-);
-
-const spend =
-  await prisma.costRecord.aggregate({
-    _sum: {
-      cost: true,
-    },
-    where: {
-      usageDate: {
-        gte: currentMonthStart,
-      },
-    },
-  });
-
-const currentSpend =
-  spend._sum.cost ?? 0;
+    const currentSpend =
+      spend._sum.totalCost ?? 0;
 
     const averageDailySpend =
       currentSpend /
@@ -118,12 +127,12 @@ const currentSpend =
     const summary: ForecastSummary = {
       currentSpend:
         Number(
-          currentSpend.toFixed(2)
+          currentSpend.toFixed(2),
         ),
 
       averageDailySpend:
         Number(
-          averageDailySpend.toFixed(2)
+          averageDailySpend.toFixed(2),
         ),
 
       elapsedDays,
@@ -132,7 +141,7 @@ const currentSpend =
 
       projectedSpend:
         Number(
-          projectedSpend.toFixed(2)
+          projectedSpend.toFixed(2),
         ),
 
       budget:
@@ -143,7 +152,7 @@ const currentSpend =
           (
             (budget?.amount ?? 0) -
             projectedSpend
-          ).toFixed(2)
+          ).toFixed(2),
         ),
 
       onTrack:
@@ -154,8 +163,11 @@ const currentSpend =
     const serviceGroups =
       serviceSnapshots.reduce(
         (
-          acc: Record<string, ServiceGroup>,
-          row: ServiceSnapshot
+          acc: Record<
+            string,
+            ServiceGroup
+          >,
+          row: ServiceSnapshot,
         ) => {
           if (!acc[row.serviceName]) {
             acc[row.serviceName] = {
@@ -168,13 +180,18 @@ const currentSpend =
 
           return acc;
         },
-        {} as Record<string, ServiceGroup>
+        {} as Record<
+          string,
+          ServiceGroup
+        >,
       );
 
     const serviceEntries =
-      Object.entries(serviceGroups) as [
+      Object.entries(
+        serviceGroups,
+      ) as [
         string,
-        ServiceGroup
+        ServiceGroup,
       ][];
 
     const serviceForecasts:
@@ -187,30 +204,35 @@ const currentSpend =
             projectedSpend:
               Number(
                 (
-                  (value.total /
+                  (
+                    value.total /
                     Math.max(
                       elapsedDays,
-                      1
-                    )) *
+                      1,
+                    )
+                  ) *
                   daysInMonth
-                ).toFixed(2)
+                ).toFixed(2),
               ),
-          })
+          }),
         )
         .sort(
           (
             a: ServiceForecast,
-            b: ServiceForecast
+            b: ServiceForecast,
           ) =>
             b.projectedSpend -
-            a.projectedSpend
+            a.projectedSpend,
         );
 
     const accountGroups =
       accountSnapshots.reduce(
         (
-          acc: Record<string, AccountGroup>,
-          row: AccountSnapshot
+          acc: Record<
+            string,
+            AccountGroup
+          >,
+          row: AccountSnapshot,
         ) => {
           if (!acc[row.accountId]) {
             acc[row.accountId] = {
@@ -225,40 +247,50 @@ const currentSpend =
 
           return acc;
         },
-        {} as Record<string, AccountGroup>
+        {} as Record<
+          string,
+          AccountGroup
+        >,
       );
 
     const accountValues =
-      Object.values(accountGroups) as AccountGroup[];
+      Object.values(
+        accountGroups,
+      ) as AccountGroup[];
 
     const accountForecasts:
       AccountForecast[] =
       accountValues
         .map(
-          (account: AccountGroup) => ({
+          (
+            account:
+              AccountGroup,
+          ) => ({
             account:
               account.name,
 
             projectedSpend:
               Number(
                 (
-                  (account.total /
+                  (
+                    account.total /
                     Math.max(
                       elapsedDays,
-                      1
-                    )) *
+                      1,
+                    )
+                  ) *
                   daysInMonth
-                ).toFixed(2)
+                ).toFixed(2),
               ),
-          })
+          }),
         )
         .sort(
           (
             a: AccountForecast,
-            b: AccountForecast
+            b: AccountForecast,
           ) =>
             b.projectedSpend -
-            a.projectedSpend
+            a.projectedSpend,
         );
 
     return {
@@ -267,29 +299,29 @@ const currentSpend =
       confidence:
         forecastConfidenceService.calculate(
           summary,
-          historicalTrends
+          historicalTrends,
         ),
 
       projection:
         forecastProjectionService.build(
           summary,
-          historicalTrends
+          historicalTrends,
         ),
 
       growthDrivers:
         forecastGrowthDriverService.build(
-          serviceForecasts
+          serviceForecasts,
         ),
 
       explanation:
         forecastExplanationService.build(
-          summary
+          summary,
         ),
 
       insights:
         forecastInsightService.build(
           summary,
-          serviceForecasts
+          serviceForecasts,
         ),
 
       serviceForecasts,
