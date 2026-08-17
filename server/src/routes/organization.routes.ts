@@ -2,7 +2,9 @@ import {
   Router,
 } from "express";
 
+
 import {
+  createNewOrganization,
   getOrganizations,
   getCurrentOrganization,
   getOrganizationMembers,
@@ -12,23 +14,29 @@ import {
   deleteOrganizationMember,
 } from "../controllers/organization/organization.controller";
 
+
 import {
   authenticateToken,
 } from "../middleware/auth.middleware";
+
 
 import {
   requireOrganizationContext,
 } from "../middleware/organization-context.middleware";
 
+
 import {
   requireOrganizationPermission,
 } from "../middleware/organization-role.middleware";
+
 
 import {
   ORGANIZATION_PERMISSIONS,
 } from "../authz/organization.permissions";
 
+
 const router = Router();
+
 
 router.get(
   "/",
@@ -36,12 +44,21 @@ router.get(
   getOrganizations,
 );
 
+
+router.post(
+  "/",
+  authenticateToken,
+  createNewOrganization,
+);
+
+
 router.get(
   "/current",
   authenticateToken,
   requireOrganizationContext,
   getCurrentOrganization,
 );
+
 
 router.get(
   "/current/members",
@@ -52,6 +69,7 @@ router.get(
   ),
   getOrganizationMembers,
 );
+
 
 router.patch(
   "/current",
@@ -63,6 +81,7 @@ router.patch(
   updateCurrentOrganization,
 );
 
+
 router.post(
   "/current/members",
   authenticateToken,
@@ -72,6 +91,7 @@ router.post(
   ),
   createOrganizationMember,
 );
+
 
 router.patch(
   "/current/members/:membershipId",
@@ -83,6 +103,7 @@ router.patch(
   updateOrganizationMemberRole,
 );
 
+
 router.delete(
   "/current/members/:membershipId",
   authenticateToken,
@@ -92,5 +113,6 @@ router.delete(
   ),
   deleteOrganizationMember,
 );
+
 
 export default router;

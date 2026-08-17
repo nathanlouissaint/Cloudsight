@@ -451,6 +451,213 @@ httpDescribe(
     );
 
     it(
+      "rejects unauthenticated organization creation",
+      async () => {
+        await request(app)
+          .post("/organizations")
+          .send({
+            name: `${PREFIX} Workspace`,
+          })
+          .expect(401);
+      },
+    );
+
+    it(
+      "creates an organization without requiring organization context",
+      async () => {
+        const name =
+          `${PREFIX} Created Workspace`;
+
+        const response =
+          await ownerAuth.agent
+            .post("/organizations")
+            .set(
+              "Authorization",
+              `Bearer ${ownerAuth.accessToken}`,
+            )
+            .send({
+              name,
+            })
+            .expect(201);
+
+        expect(
+          response.body.organization,
+        ).toMatchObject({
+          name,
+          role: "OWNER",
+        });
+
+        expect(
+          response.body.organization.id,
+        ).toEqual(expect.any(String));
+
+        expect(
+          response.body.organization.slug,
+        ).toEqual(expect.any(String));
+
+        expect(
+          response.body.organization
+            .membershipId,
+        ).toEqual(expect.any(String));
+
+        const storedMembership =
+          await prisma.organizationMember
+            .findUniqueOrThrow({
+              where: {
+                organizationId_userId: {
+                  organizationId:
+                    response.body.organization.id,
+                  userId: ownerId,
+                },
+              },
+            });
+
+        expect(
+          storedMembership.role,
+        ).toBe("OWNER");
+      },
+    );
+
+    it(
+      "trims organization names during creation",
+      async () => {
+        const name =
+          `${PREFIX} Trimmed Workspace`;
+
+        const response =
+          await ownerAuth.agent
+            .post("/organizations")
+            .set(
+              "Authorization",
+              `Bearer ${ownerAuth.accessToken}`,
+            )
+            .send({
+              name: `   ${name}   `,
+            })
+            .expect(201);
+
+        expect(
+          response.body.organization.name,
+        ).toBe(name);
+      },
+    );
+
+    it(
+      "rejects an empty organization name during creation",
+      async () => {
+        await ownerAuth.agent
+          .post("/organizations")
+          .set(
+            "Authorization",
+            `Bearer ${ownerAuth.accessToken}`,
+          )
+          .send({
+            name: "   ",
+          })
+          .expect(400);
+      },
+    );
+
+    it(
+      "rejects organization names longer than 120 characters",
+      async () => {
+        await ownerAuth.agent
+          .post("/organizations")
+          .set(
+            "Authorization",
+            `Bearer ${ownerAuth.accessToken}`,
+          )
+          .send({
+            name: "x".repeat(121),
+          })
+          .expect(400);
+      },
+    );
+
+    it(
+      "creates unique slugs for organizations with the same name",
+      async () => {
+        const name =
+          `${PREFIX} Duplicate Name`;
+
+        const first =
+          await ownerAuth.agent
+            .post("/organizations")
+            .set(
+              "Authorization",
+              `Bearer ${ownerAuth.accessToken}`,
+            )
+            .send({
+              name,
+            })
+            .expect(201);
+
+        const second =
+          await ownerAuth.agent
+            .post("/organizations")
+            .set(
+              "Authorization",
+              `Bearer ${ownerAuth.accessToken}`,
+            )
+            .send({
+              name,
+            })
+            .expect(201);
+
+        expect(
+          first.body.organization.slug,
+        ).not.toBe(
+          second.body.organization.slug,
+        );
+      },
+    );
+
+    it(
+      "includes a newly created organization in organization listing",
+      async () => {
+        const name =
+          `${PREFIX} Listed Workspace`;
+
+        const created =
+          await ownerAuth.agent
+            .post("/organizations")
+            .set(
+              "Authorization",
+              `Bearer ${ownerAuth.accessToken}`,
+            )
+            .send({
+              name,
+            })
+            .expect(201);
+
+        const listing =
+          await ownerAuth.agent
+            .get("/organizations")
+            .set(
+              "Authorization",
+              `Bearer ${ownerAuth.accessToken}`,
+            )
+            .expect(200);
+
+        expect(
+          listing.body.organizations,
+        ).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id:
+                created.body.organization.id,
+              name,
+              role: "OWNER",
+              membershipId:
+                created.body.organization
+                  .membershipId,
+            }),
+          ]),
+        );
+      },
+    );
+
+    it(
       "rejects current organization access without organization context",
       async () => {
         await ownerAuth.agent

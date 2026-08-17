@@ -4,6 +4,7 @@ import type {
 
 import { prisma } from "../config/prisma";
 
+
 export class OrganizationRepository {
   async findMembership(
     userId: string,
@@ -22,6 +23,7 @@ export class OrganizationRepository {
     });
   }
 
+
   async findOrganizationsForUser(
     userId: string,
   ) {
@@ -38,6 +40,7 @@ export class OrganizationRepository {
     });
   }
 
+
   async findOrganizationById(
     organizationId: string,
   ) {
@@ -47,6 +50,7 @@ export class OrganizationRepository {
       },
     });
   }
+
 
   async findMembersForOrganization(
     organizationId: string,
@@ -71,6 +75,7 @@ export class OrganizationRepository {
     });
   }
 
+
   async findMembershipByIdForOrganization(
     organizationId: string,
     membershipId: string,
@@ -93,6 +98,7 @@ export class OrganizationRepository {
     });
   }
 
+
   async findUserByEmail(
     email: string,
   ) {
@@ -108,6 +114,7 @@ export class OrganizationRepository {
       },
     });
   }
+
 
   async createMembership(
     organizationId: string,
@@ -132,6 +139,41 @@ export class OrganizationRepository {
       },
     });
   }
+
+
+  async createOrganizationWithOwner(
+    userId: string,
+    name: string,
+    slug: string,
+  ) {
+    return prisma.$transaction(
+      async (transaction) => {
+        const organization =
+          await transaction.organization.create({
+            data: {
+              name,
+              slug,
+            },
+          });
+
+        const membership =
+          await transaction.organizationMember.create({
+            data: {
+              organizationId:
+                organization.id,
+              userId,
+              role: "OWNER",
+            },
+          });
+
+        return {
+          organization,
+          membership,
+        };
+      },
+    );
+  }
+
 
   async updateMembershipRole(
     organizationId: string,
@@ -159,6 +201,7 @@ export class OrganizationRepository {
     });
   }
 
+
   async deleteMembership(
     organizationId: string,
     membershipId: string,
@@ -171,6 +214,7 @@ export class OrganizationRepository {
     });
   }
 
+
   async countOwners(
     organizationId: string,
   ) {
@@ -181,6 +225,7 @@ export class OrganizationRepository {
       },
     });
   }
+
 
   async updateOrganizationName(
     organizationId: string,
@@ -196,6 +241,7 @@ export class OrganizationRepository {
     });
   }
 }
+
 
 export const organizationRepository =
   new OrganizationRepository();

@@ -15,11 +15,17 @@ import {
 } from "../../repositories/organization.repository";
 
 import {
+  createOrganization,
+  OrganizationError,
+} from "../../services/organization/organization.service";
+
+import {
   addOrganizationMember,
   changeOrganizationMemberRole,
   removeOrganizationMember,
   OrganizationMemberError,
 } from "../../services/organization/organization-member.service";
+
 
 function handleOrganizationMemberError(
   error: unknown,
@@ -45,6 +51,7 @@ function handleOrganizationMemberError(
     message: fallbackMessage,
   });
 }
+
 
 export async function getOrganizations(
   req: AuthenticatedRequest,
@@ -97,6 +104,67 @@ export async function getOrganizations(
   }
 }
 
+
+export async function createNewOrganization(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        message: "Unauthorized",
+      });
+      return;
+    }
+
+    const result =
+      await createOrganization(
+        req.user.userId,
+        req.body?.name,
+      );
+
+    res.status(201).json({
+      organization: {
+        id:
+          result.organization.id,
+
+        name:
+          result.organization.name,
+
+        slug:
+          result.organization.slug,
+
+        role:
+          result.membership.role,
+
+        membershipId:
+          result.membership.id,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof
+      OrganizationError
+    ) {
+      res.status(error.statusCode).json({
+        message: error.message,
+      });
+      return;
+    }
+
+    console.error(
+      "Failed to create organization:",
+      error,
+    );
+
+    res.status(500).json({
+      message:
+        "Failed to create organization",
+    });
+  }
+}
+
+
 export async function getCurrentOrganization(
   req: OrganizationAuthenticatedRequest,
   res: Response,
@@ -126,6 +194,7 @@ export async function getCurrentOrganization(
     res.status(200).json({
       organization: {
         ...organization,
+
         role:
           req.organization.role,
 
@@ -145,6 +214,7 @@ export async function getCurrentOrganization(
     });
   }
 }
+
 
 export async function getOrganizationMembers(
   req: OrganizationAuthenticatedRequest,
@@ -194,6 +264,7 @@ export async function getOrganizationMembers(
     });
   }
 }
+
 
 export async function updateCurrentOrganization(
   req: OrganizationAuthenticatedRequest,
@@ -251,6 +322,7 @@ export async function updateCurrentOrganization(
   }
 }
 
+
 export async function createOrganizationMember(
   req: OrganizationAuthenticatedRequest,
   res: Response,
@@ -294,6 +366,7 @@ export async function createOrganizationMember(
   }
 }
 
+
 export async function updateOrganizationMemberRole(
   req: OrganizationAuthenticatedRequest,
   res: Response,
@@ -334,6 +407,7 @@ export async function updateOrganizationMemberRole(
     );
   }
 }
+
 
 export async function deleteOrganizationMember(
   req: OrganizationAuthenticatedRequest,
