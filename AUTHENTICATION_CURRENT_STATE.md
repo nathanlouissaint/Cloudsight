@@ -4,7 +4,7 @@
 
 **Branch:** `feature/auth-refresh-token-persistence`
 
-**Last Updated:** 2026-08-14
+**Last Updated:** 2026-08-24
 
 ---
 
@@ -2414,3 +2414,210 @@ proceed with **Phase 5.0 — Organization / Multi-Tenancy Architecture Audit**. 
 OIDC (Phase 3.4), SAML (Phase 3.5), and advanced authentication security (Phase 4)
 remain deferred until a concrete customer, compliance, or enterprise requirement
 justifies the implementation cost.
+
+---
+
+# 2026-08-24 Development Checkpoint
+
+## Authentication Status
+
+Core authentication remains complete and stable:
+
+- Email/password authentication
+- Database-backed sessions
+- HttpOnly refresh-token cookies
+- Refresh-token hashing and rotation
+- Session revocation
+- CSRF and trusted-origin protection
+- Google authentication
+- Microsoft Entra ID authentication
+- GitHub authentication
+- OAuth state, PKCE, nonce, issuer, and signature validation
+
+Authentication-specific development is paused at this checkpoint.
+
+## Repository Stabilization and Cleanup Completed
+
+Completed today:
+
+- Dashboard service-breakdown response fix
+- Entra OIDC validation-test stabilization
+- Organization-scoped monthly budget service and tests
+- Removal of obsolete budget snapshot repository code
+- Recovery of the required historical monthly-budget migration
+- Organization-scoped analytics and alert backend paths
+- Frontend organization-aware query isolation
+- Tenant-aware reports and historical trends
+- Removal of obsolete CSS backup files
+- Docker and CI hardening
+- Terraform ALB/X-Forwarded-For validation
+- Terraform variable ignore hardening
+- Removal of generated Prisma seed JavaScript artifacts
+- Product roadmap documentation refresh
+
+## Multi-Tenancy and RBAC
+
+Completed:
+
+- Organization and membership model
+- OWNER, ADMIN, MEMBER, and VIEWER roles
+- Server-side organization context
+- Server-side RBAC enforcement
+- Tenant-safe organization membership resolution
+- Organization-scoped accounts
+- Organization-scoped analytics
+- Organization-scoped forecasts
+- Organization-scoped alerts
+- Organization-scoped budgets
+- `X-Organization-Id` propagation
+- Tenant-aware React Query cache keys
+- Active workspace persistence
+- Workspace switching
+- Cross-organization membership isolation
+
+The backend remains authoritative for authorization. Client-provided organization IDs and frontend role checks are not security boundaries.
+
+## Workspace Onboarding and Frontend Organization Context
+
+Completed:
+
+- Organization creation
+- Workspace onboarding
+- Active organization persistence
+- Workspace switcher
+- `OrganizationProvider`
+- Organization context hook
+- Tenant-aware query execution
+- Protected routes requiring valid workspace context
+
+## Organization Settings
+
+Completed:
+
+- Protected `/settings/organization` route
+- Current workspace name, slug, and role display
+- OWNER-only organization rename controls
+- Organization-name validation
+- Organization context refresh after successful rename
+- Server-side `ORGANIZATION_MANAGE` permission enforcement
+- Read-only behavior for unauthorized roles
+
+## Team and Member Management
+
+Completed:
+
+- Protected `/settings/team` route
+- Organization member listing
+- Existing-user member addition
+- OWNER and ADMIN management flows
+- Role assignment
+- Role changes
+- Member removal
+- OWNER-specific ability to assign OWNER
+- ADMIN restrictions against assigning or modifying OWNER
+- Final-owner protection
+- Cross-organization membership protection
+- Member API types and frontend API functions
+
+Frontend RBAC checks are UX controls only. Server-side authorization remains authoritative.
+
+## Authentication and Session Guarantees Preserved
+
+Today's tenancy, deployment, and UI work preserves:
+
+- Database-backed sessions
+- HttpOnly refresh cookies
+- Refresh-token hashing and rotation
+- Session revocation
+- Access-token JWT validation
+- CSRF protection
+- Trusted-origin validation
+- Credentialed CORS
+- Google authentication
+- Microsoft Entra ID authentication
+- GitHub authentication
+- OAuth state / PKCE / nonce protections
+- Federated identity issuer validation
+- Logout and logout-all semantics
+
+## Docker / CI / Production Runtime Hardening
+
+Completed:
+
+- Root Docker build contexts
+- `.dockerignore`
+- Production client API build configuration
+- Microsoft and GitHub frontend auth build flags
+- Required production `CSRF_SECRET`
+- Required production `CORS_ORIGIN`
+- OAuth provider runtime configuration support
+- Production port normalized to port 80
+- CI Docker validation environment
+- Updated production smoke tests
+- Hardened SSM runtime environment generation
+- Required and optional SSM parameter handling
+- Runtime environment escaping
+
+## Proxy / Infrastructure Hardening
+
+Completed:
+
+- Fixed Docker proxy subnet
+- Nginx X-Forwarded-For chain preservation
+- ALB `xff_header_processing_mode = "append"`
+- Terraform production variable example updates
+- Terraform initialization and validation
+- Terraform local variable files ignored while preserving the checked-in example
+
+## Verification Completed
+
+```text
+BudgetService:
+24 tests passed
+
+Entra OIDC provider:
+14 tests passed
+
+Server TypeScript:
+PASS
+
+Client TypeScript:
+PASS
+
+Client production build:
+PASS
+
+Docker development Compose:
+PASS
+
+Docker production Compose:
+PASS
+
+Terraform fmt -check -recursive:
+PASS
+
+Terraform validate:
+PASS
+
+git diff --check:
+PASS
+```
+
+
+## Major Commits Completed
+
+```text
+49d2620 fix(dashboard): include service breakdown in summary
+6cfcd1a test(auth): stabilize Entra OIDC validation
+0cdf1d4 refactor(budget): use organization-scoped monthly budgets
+70f81c8 refactor(tenancy): scope analytics and alerts by organization
+0b11d6b feat(tenancy): add organization-aware frontend context
+eb65926 refactor(client): route reports and trends through tenant context
+644cf7c style(client): update auth styles and remove backups
+f4d8205 ci(docker): harden container builds and production runtime
+2d09f92 infra(terraform): preserve ALB client IP forwarding
+21dc5f6 chore(repo): ignore local Terraform vars and remove generated Prisma artifacts
+653c978 docs: update CloudSight implementation roadmap
+a6c3423 feat(settings): add organization settings page
+eec6885 feat(settings): add team member management
+```
