@@ -51,9 +51,13 @@ tfplan
 tfplan.json
 terraform/terraform.tfvars
 terraform/environments/*/terraform.tfvars
+infrastructure/terraform/terraform.tfvars
+infrastructure/terraform/*.auto.tfvars
+infrastructure/terraform/*.auto.tfvars.json
 
 # Keep Terraform templates
 !terraform/terraform.tfvars.example
+!infrastructure/terraform/terraform.tfvars.example
 
 # ----------------------------------------------------------
 # IDE
