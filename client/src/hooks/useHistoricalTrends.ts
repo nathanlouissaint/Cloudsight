@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../lib/apiClient";
+import { useOrganization } from "../organizations/useOrganization";
+import { queryKeys } from "../queries/queryKeys";
 
 export interface HistoricalTrend {
   date: string;
@@ -11,8 +13,14 @@ interface TrendsResponse {
 }
 
 export function useHistoricalTrends() {
+  const {
+    currentOrganizationId,
+  } = useOrganization();
+
   return useQuery({
-    queryKey: ["historical-trends"],
+    queryKey: queryKeys.historicalTrends(
+      currentOrganizationId,
+    ),
 
     queryFn: async (): Promise<HistoricalTrend[]> => {
       const response =
@@ -31,6 +39,8 @@ export function useHistoricalTrends() {
         spend: trend.spend,
       }));
     },
+
+    enabled: currentOrganizationId !== null,
 
     staleTime: 1000 * 60 * 5,
   });
