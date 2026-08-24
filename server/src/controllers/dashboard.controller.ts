@@ -380,6 +380,9 @@ export async function getDashboardSummary(
               }`,
           },
         ],
+
+        services:
+          serviceBreakdown,
       });
 
     return res
