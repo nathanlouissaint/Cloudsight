@@ -65,6 +65,38 @@ print(quote(sys.argv[1], safe=""))
 ' "$1"
 }
 
+get_parameter() {
+    local name="$1"
+    local required="$2"
+    local decrypt="${3:-false}"
+    local args=(ssm get-parameter --name "${name}" --query "Parameter.Value" --output text)
+
+    if [[ "${decrypt}" == "true" ]]; then
+        args+=(--with-decryption)
+    fi
+
+    local value
+    if ! value="$(aws "${args[@]}" 2>/dev/null)"; then
+        [[ "${required}" == "true" ]] \
+            && fail "Required production parameter is unavailable: ${name}"
+        printf ''
+        return
+    fi
+
+    if [[ "${value}" == *$'\n'* || "${value}" == *$'\r'* ]]; then
+        fail "Production parameter contains an unsupported line break: ${name}"
+    fi
+
+    printf '%s' "${value}"
+}
+
+append_env() {
+    local name="$1"
+    local value="$2"
+    local escaped="${value//\'/\'\\\'\'}"
+    printf "%s='%s'\n" "${name}" "${escaped}" >> "${ENV_FILE}"
+}
+
 main() {
 
     log "Starting CloudSight asset staging"
@@ -98,28 +130,25 @@ main() {
 
     log "Generating runtime environment from AWS SSM Parameter Store"
 
-    GHCR_USERNAME="$(aws ssm get-parameter \
-        --name "/cloudsight/production/ghcr/username" \
-        --query "Parameter.Value" \
-        --output text)"
+    GHCR_USERNAME="$(get_parameter "/cloudsight/production/ghcr/username" true)"
+    GHCR_TOKEN="$(get_parameter "/cloudsight/production/ghcr/token" true true)"
+    POSTGRES_PASSWORD="$(get_parameter "/cloudsight/production/postgres/password" true true)"
+    JWT_SECRET="$(get_parameter "/cloudsight/production/jwt/secret" true true)"
+    CSRF_SECRET="$(get_parameter "/cloudsight/production/csrf/secret" true true)"
+    CORS_ORIGIN="$(get_parameter "/cloudsight/production/http/cors-origin" true)"
 
-    GHCR_TOKEN="$(aws ssm get-parameter \
-        --name "/cloudsight/production/ghcr/token" \
-        --with-decryption \
-        --query "Parameter.Value" \
-        --output text)"
-
-    POSTGRES_PASSWORD="$(aws ssm get-parameter \
-        --name "/cloudsight/production/postgres/password" \
-        --with-decryption \
-        --query "Parameter.Value" \
-        --output text)"
-
-    JWT_SECRET="$(aws ssm get-parameter \
-        --name "/cloudsight/production/jwt/secret" \
-        --with-decryption \
-        --query "Parameter.Value" \
-        --output text)"
+    FRONTEND_AUTH_COMPLETE_URL="$(get_parameter "/cloudsight/production/oauth/frontend-complete-url" false)"
+    GOOGLE_CLIENT_ID="$(get_parameter "/cloudsight/production/oauth/google/client-id" false)"
+    GOOGLE_CLIENT_SECRET="$(get_parameter "/cloudsight/production/oauth/google/client-secret" false true)"
+    GOOGLE_REDIRECT_URI="$(get_parameter "/cloudsight/production/oauth/google/redirect-uri" false)"
+    ENTRA_CLIENT_ID="$(get_parameter "/cloudsight/production/oauth/entra/client-id" false)"
+    ENTRA_CLIENT_SECRET="$(get_parameter "/cloudsight/production/oauth/entra/client-secret" false true)"
+    ENTRA_AUTHORITY="$(get_parameter "/cloudsight/production/oauth/entra/authority" false)"
+    ENTRA_REDIRECT_URI="$(get_parameter "/cloudsight/production/oauth/entra/redirect-uri" false)"
+    ENTRA_ALLOWED_TENANT_IDS="$(get_parameter "/cloudsight/production/oauth/entra/allowed-tenant-ids" false)"
+    GITHUB_CLIENT_ID="$(get_parameter "/cloudsight/production/oauth/github/client-id" false)"
+    GITHUB_CLIENT_SECRET="$(get_parameter "/cloudsight/production/oauth/github/client-secret" false true)"
+    GITHUB_REDIRECT_URI="$(get_parameter "/cloudsight/production/oauth/github/redirect-uri" false)"
 
     log "Generating runtime environment"
 
@@ -130,7 +159,7 @@ main() {
 
     # Preserve immutable deployment configuration while removing
     # placeholder values that will be regenerated from AWS SSM.
-    grep -vE '^(GHCR_USERNAME|GHCR_TOKEN|POSTGRES_PASSWORD|JWT_SECRET|DATABASE_URL)=' \
+    grep -vE '^(GHCR_USERNAME|GHCR_TOKEN|POSTGRES_PASSWORD|JWT_SECRET|CSRF_SECRET|CORS_ORIGIN|DATABASE_URL|FRONTEND_AUTH_COMPLETE_URL|GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|GOOGLE_REDIRECT_URI|ENTRA_CLIENT_ID|ENTRA_CLIENT_SECRET|ENTRA_AUTHORITY|ENTRA_REDIRECT_URI|ENTRA_ALLOWED_TENANT_IDS|GITHUB_CLIENT_ID|GITHUB_CLIENT_SECRET|GITHUB_REDIRECT_URI)=' \
         "${TEMPLATE_FILE}" > "${ENV_FILE}"
 
     POSTGRES_USER="${POSTGRES_USER:-cloudsight}"
@@ -141,13 +170,25 @@ main() {
 
     DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_DB}"
 
-    cat >> "${ENV_FILE}" <<EOF
-GHCR_USERNAME=${GHCR_USERNAME}
-GHCR_TOKEN=${GHCR_TOKEN}
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-DATABASE_URL=${DATABASE_URL}
-JWT_SECRET=${JWT_SECRET}
-EOF
+    append_env GHCR_USERNAME "${GHCR_USERNAME}"
+    append_env GHCR_TOKEN "${GHCR_TOKEN}"
+    append_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
+    append_env DATABASE_URL "${DATABASE_URL}"
+    append_env JWT_SECRET "${JWT_SECRET}"
+    append_env CSRF_SECRET "${CSRF_SECRET}"
+    append_env CORS_ORIGIN "${CORS_ORIGIN}"
+    append_env FRONTEND_AUTH_COMPLETE_URL "${FRONTEND_AUTH_COMPLETE_URL}"
+    append_env GOOGLE_CLIENT_ID "${GOOGLE_CLIENT_ID}"
+    append_env GOOGLE_CLIENT_SECRET "${GOOGLE_CLIENT_SECRET}"
+    append_env GOOGLE_REDIRECT_URI "${GOOGLE_REDIRECT_URI}"
+    append_env ENTRA_CLIENT_ID "${ENTRA_CLIENT_ID}"
+    append_env ENTRA_CLIENT_SECRET "${ENTRA_CLIENT_SECRET}"
+    append_env ENTRA_AUTHORITY "${ENTRA_AUTHORITY}"
+    append_env ENTRA_REDIRECT_URI "${ENTRA_REDIRECT_URI}"
+    append_env ENTRA_ALLOWED_TENANT_IDS "${ENTRA_ALLOWED_TENANT_IDS}"
+    append_env GITHUB_CLIENT_ID "${GITHUB_CLIENT_ID}"
+    append_env GITHUB_CLIENT_SECRET "${GITHUB_CLIENT_SECRET}"
+    append_env GITHUB_REDIRECT_URI "${GITHUB_REDIRECT_URI}"
 
     grep -q '^DATABASE_URL=' "${ENV_FILE}" \
         || fail "DATABASE_URL missing from runtime environment"
@@ -181,6 +222,12 @@ EOF
 
     grep -q '^JWT_SECRET=' "${ENV_FILE}" \
         || fail "JWT_SECRET missing from runtime environment"
+
+    grep -q '^CSRF_SECRET=' "${ENV_FILE}" \
+        || fail "CSRF_SECRET missing from runtime environment"
+
+    grep -q '^CORS_ORIGIN=' "${ENV_FILE}" \
+        || fail "CORS_ORIGIN missing from runtime environment"
 
     log "Runtime environment generated successfully"
 

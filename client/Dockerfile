@@ -14,7 +14,14 @@ RUN npm ci --include=dev
 
 COPY client ./client
 
-RUN npm run build --workspace=client
+ARG PUBLIC_API_URL=/api
+ARG PUBLIC_MICROSOFT_LOGIN_ENABLED=false
+ARG PUBLIC_GITHUB_LOGIN_ENABLED=false
+
+RUN VITE_API_URL="${PUBLIC_API_URL}" \
+    VITE_MICROSOFT_AUTH_ENABLED="${PUBLIC_MICROSOFT_LOGIN_ENABLED}" \
+    VITE_GITHUB_AUTH_ENABLED="${PUBLIC_GITHUB_LOGIN_ENABLED}" \
+    npm run build --workspace=client
 
 ############################
 # Production Stage

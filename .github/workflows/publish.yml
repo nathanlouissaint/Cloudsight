@@ -68,7 +68,7 @@ jobs:
       - name: Build and Push Server
         uses: docker/build-push-action@v6
         with:
-          context: ./server
+          context: .
           file: ./server/Dockerfile
           push: true
           tags: ${{ steps.server-meta.outputs.tags }}
@@ -79,10 +79,14 @@ jobs:
       - name: Build and Push Client
         uses: docker/build-push-action@v6
         with:
-          context: ./client
+          context: .
           file: ./client/Dockerfile
           push: true
           tags: ${{ steps.client-meta.outputs.tags }}
           labels: ${{ steps.client-meta.outputs.labels }}
+          build-args: |
+            PUBLIC_API_URL=/api
+            PUBLIC_MICROSOFT_LOGIN_ENABLED=${{ vars.VITE_MICROSOFT_AUTH_ENABLED || 'false' }}
+            PUBLIC_GITHUB_LOGIN_ENABLED=${{ vars.VITE_GITHUB_AUTH_ENABLED || 'false' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

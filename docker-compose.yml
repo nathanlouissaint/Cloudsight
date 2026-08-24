@@ -41,8 +41,8 @@ services:
 
   server:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
 
     container_name: cloudsight-server
     restart: unless-stopped
@@ -69,8 +69,8 @@ services:
 
   client:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: client/Dockerfile
 
     container_name: cloudsight-client
     restart: unless-stopped

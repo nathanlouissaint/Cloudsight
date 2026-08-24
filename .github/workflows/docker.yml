@@ -24,6 +24,15 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env:
+      SERVER_IMAGE: cloudsight-server:ci
+      CLIENT_IMAGE: cloudsight-client:ci
+      POSTGRES_PASSWORD: docker-validation-password
+      DATABASE_URL: postgresql://cloudsight:docker-validation-password@postgres:5432/cloudsight
+      JWT_SECRET: docker-validation-jwt-secret-material-32-bytes
+      CSRF_SECRET: docker-validation-csrf-secret-material-32-bytes
+      CORS_ORIGIN: http://localhost
+
     timeout-minutes: 30
 
     steps:
@@ -39,7 +48,7 @@ jobs:
       - name: Build Server Image
         uses: docker/build-push-action@v6
         with:
-          context: ./server
+          context: .
           file: ./server/Dockerfile
           push: false
           tags: cloudsight-server:ci
@@ -49,9 +58,13 @@ jobs:
       - name: Build Client Image
         uses: docker/build-push-action@v6
         with:
-          context: ./client
+          context: .
           file: ./client/Dockerfile
           push: false
           tags: cloudsight-client:ci
+          build-args: |
+            PUBLIC_API_URL=/api
+            PUBLIC_MICROSOFT_LOGIN_ENABLED=${{ vars.VITE_MICROSOFT_AUTH_ENABLED || 'false' }}
+            PUBLIC_GITHUB_LOGIN_ENABLED=${{ vars.VITE_GITHUB_AUTH_ENABLED || 'false' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

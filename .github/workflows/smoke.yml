@@ -24,15 +24,28 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env:
+      SERVER_IMAGE: cloudsight-server:smoke
+      CLIENT_IMAGE: cloudsight-client:smoke
+      POSTGRES_PASSWORD: smoke-only-postgres-password
+      DATABASE_URL: postgresql://cloudsight:smoke-only-postgres-password@postgres:5432/cloudsight
+      JWT_SECRET: smoke-only-jwt-secret-material-32-bytes
+      CSRF_SECRET: smoke-only-csrf-secret-material-32-bytes
+      CORS_ORIGIN: http://localhost
+
     timeout-minutes: 30
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Start Production Stack
+      - name: Build Production Images
         run: |
-          docker compose -f docker-compose.prod.yml up -d --build
+          docker build -f server/Dockerfile -t cloudsight-server:smoke .
+          docker build -f client/Dockerfile -t cloudsight-client:smoke .
+
+      - name: Start Production Stack
+        run: docker compose -f docker-compose.prod.yml up -d
 
       - name: Wait for Containers
         run: |
@@ -48,15 +61,15 @@ jobs:
 
       - name: Smoke Test - Health
         run: |
-          curl --fail http://localhost:3000/health
+          curl --fail http://localhost/health
 
       - name: Smoke Test - API
         run: |
-          curl --fail http://localhost:3000/api/health
+          curl --fail http://localhost/api/health
 
       - name: Smoke Test - React
         run: |
-          curl --fail http://localhost:3000/
+          curl --fail http://localhost/
 
       - name: Container Status
         if: failure()
