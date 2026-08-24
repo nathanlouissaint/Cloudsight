@@ -1,5 +1,5 @@
 import {
-  findCostSnapshotsByDateRange,
+  findCostSnapshotsByDateRangeForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 export interface HistoricalTrendPoint {
@@ -8,23 +8,22 @@ export interface HistoricalTrendPoint {
 }
 
 export class HistoricalTrendService {
-
   async getDailyTrend(
+    organizationId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<HistoricalTrendPoint[]> {
-
     const snapshots =
-      await findCostSnapshotsByDateRange(
+      await findCostSnapshotsByDateRangeForOrganization(
+        organizationId,
         startDate,
-        endDate
+        endDate,
       );
 
     const grouped =
       new Map<string, number>();
 
     for (const snapshot of snapshots) {
-
       const day =
         snapshot.snapshotDate
           .toISOString()
@@ -33,31 +32,26 @@ export class HistoricalTrendService {
       grouped.set(
         day,
         (grouped.get(day) ?? 0) +
-        snapshot.totalCost
+          snapshot.totalCost,
       );
-
     }
 
     return Array.from(
-      grouped.entries()
+      grouped.entries(),
     )
-      .map(
-        ([date, spend]) => ({
-          date,
-          spend: Number(
-            spend.toFixed(2)
-          ),
-        })
-      )
+      .map(([date, spend]) => ({
+        date,
+        spend: Number(
+          spend.toFixed(2),
+        ),
+      }))
       .sort(
         (a, b) =>
           a.date.localeCompare(
-            b.date
-          )
+            b.date,
+          ),
       );
-
   }
-
 }
 
 export const historicalTrendService =

@@ -1,15 +1,19 @@
-import type { AlertModel } from "../types/alert.types";
+import type {
+  AlertModel,
+} from "../types/alert.types";
 
 import {
-  findCurrentMonthCostSnapshots,
+  findCurrentMonthCostSnapshotsForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 export class AnomalyDetectionService {
-
-  async detectCostSpike(): Promise<AlertModel[]> {
-
+  async detectCostSpike(
+    organizationId: string,
+  ): Promise<AlertModel[]> {
     const snapshots =
-      await findCurrentMonthCostSnapshots();
+      await findCurrentMonthCostSnapshotsForOrganization(
+        organizationId,
+      );
 
     if (snapshots.length < 8) {
       return [];
@@ -19,7 +23,6 @@ export class AnomalyDetectionService {
       new Map<string, number>();
 
     for (const snapshot of snapshots) {
-
       const date =
         snapshot.snapshotDate
           .toISOString()
@@ -28,17 +31,19 @@ export class AnomalyDetectionService {
       dailyTotals.set(
         date,
         (dailyTotals.get(date) ?? 0) +
-        snapshot.totalCost
+          snapshot.totalCost,
       );
-
     }
 
     const days =
-      Array.from(dailyTotals.entries())
-        .map(([date, cost]) => ({
+      Array.from(
+        dailyTotals.entries(),
+      ).map(
+        ([date, cost]) => ({
           date,
           cost,
-        }));
+        }),
+      );
 
     if (days.length < 8) {
       return [];
@@ -50,29 +55,41 @@ export class AnomalyDetectionService {
     const previous =
       days.slice(
         days.length - 8,
-        days.length - 1
+        days.length - 1,
       );
 
     const average =
       previous.reduce(
-        (sum, day) => sum + day.cost,
-        0
+        (
+          sum,
+          day,
+        ) =>
+          sum + day.cost,
+        0,
       ) / previous.length;
+
+    if (average <= 0) {
+      return [];
+    }
 
     const ratio =
       latest.cost / average;
 
     const buildAlert = (
-      severity: AlertModel["severity"],
-      title: string
+      severity:
+        AlertModel["severity"],
+      title: string,
     ): AlertModel => ({
-      id: `cost-spike-${latest.date}`,
+      id:
+        `cost-spike-${latest.date}`,
 
-      type: "cost_spike",
+      type:
+        "cost_spike",
 
       severity,
 
-      status: "active",
+      status:
+        "active",
 
       title,
 
@@ -89,12 +106,12 @@ export class AnomalyDetectionService {
 
       currentValue:
         Number(
-          latest.cost.toFixed(2)
+          latest.cost.toFixed(2),
         ),
 
       threshold:
         Number(
-          average.toFixed(2)
+          average.toFixed(2),
         ),
 
       date:
@@ -105,7 +122,7 @@ export class AnomalyDetectionService {
       return [
         buildAlert(
           "critical",
-          "Major Cost Spike"
+          "Major Cost Spike",
         ),
       ];
     }
@@ -114,7 +131,7 @@ export class AnomalyDetectionService {
       return [
         buildAlert(
           "warning",
-          "Unusual Cost Increase"
+          "Unusual Cost Increase",
         ),
       ];
     }
@@ -123,15 +140,13 @@ export class AnomalyDetectionService {
       return [
         buildAlert(
           "info",
-          "Cost Increase Detected"
+          "Cost Increase Detected",
         ),
       ];
     }
 
     return [];
-
   }
-
 }
 
 export const anomalyDetectionService =

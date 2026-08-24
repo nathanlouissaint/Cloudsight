@@ -8,25 +8,27 @@ import type {
 } from "../types/alert.types";
 
 export class AlertHistoryService {
-
   async getRecentHistory(
-    limit = 10
+    organizationId: string,
+    limit = 10,
   ) {
     return findRecentAlertHistory(
-      limit
+      organizationId,
+      limit,
     );
   }
 
   async recordAlerts(
-    alerts: AlertModel[]
+    organizationId: string,
+    alerts: AlertModel[],
   ) {
     for (const alert of alerts) {
       await createAlertHistoryRecord(
-        alert
+        organizationId,
+        alert,
       );
     }
   }
-
 }
 
 export const alertHistoryService =

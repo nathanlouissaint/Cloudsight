@@ -1,12 +1,12 @@
-import { findCostSnapshotsByDateRange } from "../repositories/cost-snapshot.repository";
+import {
+  findCostSnapshotsByDateRangeForOrganization,
+} from "../repositories/cost-snapshot.repository";
 
-interface CostSnapshotWithAccount {
-  accountId: string;
-  totalCost: number;
-  account: {
-  accountName: string;
-  };
-}
+type CostSnapshotWithAccount = Awaited<
+  ReturnType<
+    typeof findCostSnapshotsByDateRangeForOrganization
+  >
+>[number];
 
 interface AccountSummary {
   accountId: string;
@@ -15,35 +15,39 @@ interface AccountSummary {
 }
 
 export async function getAccountSummary(
+  organizationId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<AccountSummary[]> {
   const snapshots =
-    await findCostSnapshotsByDateRange(
+    await findCostSnapshotsByDateRangeForOrganization(
+      organizationId,
       startDate,
-      endDate
-    ) as CostSnapshotWithAccount[];
+      endDate,
+    );
 
   const accounts = snapshots.reduce(
     (
       acc: Record<string, AccountSummary>,
-      snapshot: CostSnapshotWithAccount
+      snapshot: CostSnapshotWithAccount,
     ) => {
       const id = snapshot.accountId;
 
       if (!acc[id]) {
         acc[id] = {
-  accountId: id,
-  accountName: snapshot.account.accountName,
-  totalCost: 0,
-};
+          accountId: id,
+          accountName:
+            snapshot.account.accountName,
+          totalCost: 0,
+        };
       }
 
-      acc[id].totalCost += snapshot.totalCost;
+      acc[id].totalCost +=
+        snapshot.totalCost;
 
       return acc;
     },
-    {} as Record<string, AccountSummary>
+    {},
   );
 
   return Object.values(accounts);

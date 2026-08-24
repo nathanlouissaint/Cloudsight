@@ -1,7 +1,10 @@
 import type {
-  Request,
   Response,
 } from "express";
+
+import type {
+  OrganizationAuthenticatedRequest,
+} from "../types/organization/request.types";
 
 import {
   ForecastContract,
@@ -12,29 +15,37 @@ import {
 } from "../services/forecast.service";
 
 export async function getForecast(
-  _req: Request,
-  res: Response
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
 ) {
+  const organizationId =
+    req.organization?.id;
+
+  if (!organizationId) {
+    return res.status(400).json({
+      message:
+        "Organization context is required",
+    });
+  }
 
   try {
-
     const forecast =
-      await forecastService.getForecast();
+      await forecastService.getForecast(
+        organizationId,
+      );
 
     const response =
       ForecastContract.parse(
-        forecast
+        forecast,
       );
 
     return res
       .status(200)
       .json(response);
-
   } catch (error) {
-
     console.error(
       "Forecast error:",
-      error
+      error,
     );
 
     return res
@@ -43,7 +54,5 @@ export async function getForecast(
         message:
           "Failed to load forecast",
       });
-
   }
-
 }
