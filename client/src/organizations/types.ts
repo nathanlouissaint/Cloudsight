@@ -12,6 +12,24 @@ export interface OrganizationSummary {
   membershipId: string;
 }
 
+export interface OrganizationMemberUser {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
+
+export interface OrganizationMember {
+  id: string;
+  role: OrganizationRole;
+  createdAt: string;
+  user: OrganizationMemberUser;
+}
+
+export interface OrganizationMembersResponse {
+  members: OrganizationMember[];
+}
+
 export interface OrganizationsResponse {
   organizations: OrganizationSummary[];
 }

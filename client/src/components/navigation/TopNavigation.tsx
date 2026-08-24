@@ -42,6 +42,10 @@ const navItems = [
     label: "Organization",
     path: "/settings/organization",
   },
+  {
+    label: "Team",
+    path: "/settings/team",
+  },
 ];
 
 export default function TopNavigation() {

@@ -3,6 +3,9 @@ import {
 } from "../lib/apiClient";
 
 import type {
+  OrganizationMember,
+  OrganizationMembersResponse,
+  OrganizationRole,
   OrganizationSummary,
   OrganizationsResponse,
 } from "./types";
@@ -26,6 +29,10 @@ interface UpdateOrganizationResponse {
     CurrentOrganization,
     "role" | "membershipId"
   >;
+}
+
+interface OrganizationMemberResponse {
+  member: OrganizationMember;
 }
 
 export function getOrganizations():
@@ -66,6 +73,55 @@ export function updateCurrentOrganization(
       body: JSON.stringify({
         name,
       }),
+    },
+  );
+}
+
+export function getOrganizationMembers():
+  Promise<OrganizationMembersResponse> {
+  return apiRequest<OrganizationMembersResponse>(
+    "/organizations/current/members",
+  );
+}
+
+export function addOrganizationMember(
+  email: string,
+  role: OrganizationRole,
+): Promise<OrganizationMemberResponse> {
+  return apiRequest<OrganizationMemberResponse>(
+    "/organizations/current/members",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        role,
+      }),
+    },
+  );
+}
+
+export function updateOrganizationMemberRole(
+  membershipId: string,
+  role: OrganizationRole,
+): Promise<OrganizationMemberResponse> {
+  return apiRequest<OrganizationMemberResponse>(
+    `/organizations/current/members/${membershipId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        role,
+      }),
+    },
+  );
+}
+
+export function removeOrganizationMember(
+  membershipId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/organizations/current/members/${membershipId}`,
+    {
+      method: "DELETE",
     },
   );
 }
