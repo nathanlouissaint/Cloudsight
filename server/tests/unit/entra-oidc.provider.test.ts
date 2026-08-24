@@ -18,10 +18,15 @@ function response(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
 }
 
-async function signedToken(overrides: Record<string, unknown> = {}) {
+async function signedToken(
+  overrides: Record<string, unknown> = {},
+  existingKeys?: Awaited<ReturnType<typeof import("jose")["generateKeyPair"]>>,
+) {
   const jose = await import("jose");
-  const { privateKey, publicKey } = await jose.generateKeyPair("RS256");
+  const keys = existingKeys ?? await jose.generateKeyPair("RS256");
+  const { privateKey, publicKey } = keys;
   const jwk = await jose.exportJWK(publicKey);
+
   const token = await new jose.SignJWT({
     tid: tenant,
     iss: `https://login.microsoftonline.com/${tenant}/v2.0`,
@@ -31,8 +36,27 @@ async function signedToken(overrides: Record<string, unknown> = {}) {
     email: "person@example.test",
     name: "Person",
     ...overrides,
-  }).setProtectedHeader({ alg: "RS256", kid: "entra-test" }).setIssuedAt().setExpirationTime("5m").sign(privateKey);
-  return { token, jwks: { keys: [{ ...jwk, kid: "entra-test", alg: "RS256", use: "sig", issuer: "https://login.microsoftonline.com/{tenantid}/v2.0" }] } };
+  })
+    .setProtectedHeader({ alg: "RS256", kid: "entra-test" })
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(privateKey);
+
+  return {
+    token,
+    keys,
+    jwks: {
+      keys: [
+        {
+          ...jwk,
+          kid: "entra-test",
+          alg: "RS256",
+          use: "sig",
+          issuer: "https://login.microsoftonline.com/{tenantid}/v2.0",
+        },
+      ],
+    },
+  };
 }
 
 const discovery = {
@@ -97,13 +121,15 @@ describe("Entra OIDC provider boundary", () => {
 
   it("rejects invalid signature, audience, nonce, tenant, and issuer", async () => {
     const valid = await signedToken();
+
     const cases = [
       { token: `${valid.token}x`, label: "signature" },
-      { token: (await signedToken({ aud: "other" })).token, label: "audience" },
-      { token: (await signedToken({ nonce: "wrong" })).token, label: "nonce" },
-      { token: (await signedToken({ tid: "22222222-2222-4222-8222-222222222222" })).token, label: "tenant" },
-      { token: (await signedToken({ iss: `https://login.microsoftonline.com/${tenant}/v2.0/other` })).token, label: "issuer" },
+      { token: (await signedToken({ aud: "other" }, valid.keys)).token, label: "audience" },
+      { token: (await signedToken({ nonce: "wrong" }, valid.keys)).token, label: "nonce" },
+      { token: (await signedToken({ tid: "22222222-2222-4222-8222-222222222222" }, valid.keys)).token, label: "tenant" },
+      { token: (await signedToken({ iss: `https://login.microsoftonline.com/${tenant}/v2.0/other` }, valid.keys)).token, label: "issuer" },
     ];
+
     for (const item of cases) {
       const provider = providerFor(valid);
       await expect(provider.verifyIdentity(item.token, "nonce-1")).rejects.toMatchObject({ code: "FEDERATED_PROVIDER_RESPONSE_INVALID" });
@@ -126,7 +152,12 @@ describe("Entra OIDC provider boundary", () => {
     const noSubject = await signedToken({ sub: undefined });
     const provider = providerFor(noSubject);
     await expect(provider.verifyIdentity(noSubject.token, "nonce-1")).rejects.toBeInstanceOf(Error);
-    const preferred = await signedToken({ email: undefined, preferred_username: "Preferred@Example.test" });
+
+    const preferred = await signedToken({
+      email: undefined,
+      preferred_username: "Preferred@Example.test",
+    });
+
     const identity = await providerFor(preferred).verifyIdentity(preferred.token, "nonce-1");
     expect(identity).toMatchObject({ email: "preferred@example.test", emailVerified: true });
   });
@@ -137,9 +168,15 @@ describe("Entra OIDC provider boundary", () => {
       preferred_username: "preferred@example.test",
       upn: "upn@example.test",
     });
+
     await expect(providerFor(material).verifyIdentity(material.token, "nonce-1")).resolves.toMatchObject({ email: "primary@example.test" });
 
-    const unusable = await signedToken({ email: undefined, preferred_username: "phone-or-handle", upn: undefined });
+    const unusable = await signedToken({
+      email: undefined,
+      preferred_username: "phone-or-handle",
+      upn: undefined,
+    });
+
     const identity = await providerFor(unusable).verifyIdentity(unusable.token, "nonce-1");
     expect(identity.email).toBeUndefined();
     expect(identity.emailVerified).toBeUndefined();
@@ -156,11 +193,16 @@ describe("Entra OIDC provider boundary", () => {
     }
 
     const material = await signedToken();
+
     const wrongKeyIssuer = {
       jwks: {
-        keys: material.jwks.keys.map((key) => ({ ...key, issuer: "https://login.microsoftonline.com/22222222-2222-4222-8222-222222222222/v2.0" })),
+        keys: material.jwks.keys.map((key) => ({
+          ...key,
+          issuer: "https://login.microsoftonline.com/22222222-2222-4222-8222-222222222222/v2.0",
+        })),
       },
     };
+
     await expect(providerFor(wrongKeyIssuer).verifyIdentity(material.token, "nonce-1")).rejects.toMatchObject({ code: "FEDERATED_PROVIDER_RESPONSE_INVALID" });
   });
 });
