@@ -38,6 +38,10 @@ const navItems = [
     label: "Security",
     path: "/settings/security",
   },
+  {
+    label: "Organization",
+    path: "/settings/organization",
+  },
 ];
 
 export default function TopNavigation() {

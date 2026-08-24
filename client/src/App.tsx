@@ -27,6 +27,13 @@ const SecurityPage = lazy(
   () => import("./pages/settings/SecurityPage")
 );
 
+const OrganizationSettingsPage = lazy(
+  () =>
+    import(
+      "./pages/settings/OrganizationSettingsPage"
+    )
+);
+
 const CostsPage = lazy(
   () => import("./pages/CostsPage")
 );
@@ -132,6 +139,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/organization"
+            element={
+              <ProtectedRoute>
+                <OrganizationSettingsPage />
               </ProtectedRoute>
             }
           />
