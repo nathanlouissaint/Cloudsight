@@ -18,3 +18,15 @@ availability_zones = [
   "us-east-1a",
   "us-east-1b"
 ]
+
+# Do not put secrets in this file or in terraform.tfvars. Supply required
+# sensitive inputs at runtime from a secret manager or CI secret store:
+#
+#   TF_VAR_password
+#   TF_VAR_jwt_secret
+#   TF_VAR_container_registry_password
+#
+# Registry identity can be injected alongside the token when deployment
+# automation owns both values:
+#
+#   TF_VAR_container_registry_username

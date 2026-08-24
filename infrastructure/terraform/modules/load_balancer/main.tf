@@ -14,6 +14,10 @@ resource "aws_lb" "this" {
 
   idle_timeout = var.idle_timeout
 
+  # Nginx passes this chain unchanged and the server trusts only its fixed
+  # Docker proxy subnet, so the right-most entry remains the ALB-observed IP.
+  xff_header_processing_mode = "append"
+
   tags = merge(
     local.tags,
     {
