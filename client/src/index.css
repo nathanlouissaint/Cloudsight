@@ -264,6 +264,24 @@ button {
   background: rgba(255, 255, 255, 0.06);
 }
 
+select.account-switcher {
+  min-width: 160px;
+  max-width: 220px;
+  cursor: pointer;
+  font: inherit;
+}
+
+select.account-switcher:disabled {
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+}
+
+select.account-switcher option {
+  color: #111827;
+  background: #ffffff;
+}
+
 kbd {
   padding: 4px 6px;
 
@@ -1837,32 +1855,75 @@ kbd {
   color: white;
 }
 
-/* GOOGLE BUTTON (FOR NEXT PHASE) */
+/* GOOGLE BUTTON */
 
-.google-button {
+.google-login-button {
   width: 100%;
+  min-height: 52px;
 
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 
-  gap: 12px;
-
-  padding: 14px;
+  padding: 14px 16px;
 
   border-radius: 14px;
 
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid rgba(148,163,184,.26);
 
-  background: rgba(255,255,255,.03);
+  background: #111c2f;
 
   color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
 
-  transition: all .2s ease;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease,
+    opacity .18s ease;
 }
 
-.google-button:hover {
-  background: rgba(255,255,255,.06);
+.google-login-button:hover:not(:disabled) {
+  background: #182740;
+  border-color: rgba(148,163,184,.42);
+  box-shadow: 0 8px 20px rgba(2,8,23,.22);
+}
+
+.google-login-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.google-login-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.google-login-button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.google-login-icon {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  left: 16px;
+  flex: 0 0 20px;
+}
+
+.provider-login-icon {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  left: 16px;
+}
+
+.github-login-icon {
+  color: #f8fafc;
 }
 
 /* DIVIDER */
@@ -1873,7 +1934,12 @@ kbd {
 
   gap: 16px;
 
-  margin: 8px 0;
+  margin: 2px 0;
+
+  color: var(--text-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
 }
 
 .auth-divider::before,
@@ -1885,16 +1951,6 @@ kbd {
   height: 1px;
 
   background: rgba(255,255,255,.08);
-}
-
-.auth-divider span {
-  color: var(--text-muted);
-
-  font-size: 13px;
-
-  text-transform: uppercase;
-
-  letter-spacing: .08em;
 }
 
 /* LOGOUT */
@@ -2691,4 +2747,70 @@ kbd {
   .modal__secondary {
     width: 100%;
   }
+}
+
+/* ========================================
+   WORKSPACE ONBOARDING
+======================================== */
+
+.workspace-onboarding {
+  width: 100%;
+  max-width: 460px;
+}
+
+.workspace-onboarding__eyebrow {
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.workspace-onboarding h1 {
+  margin: 0 0 16px;
+}
+
+.workspace-onboarding__description {
+  margin: 0 0 28px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.workspace-onboarding .auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.workspace-onboarding .auth-form label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workspace-onboarding .auth-form input {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.workspace-onboarding .auth-form button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.workspace-onboarding .auth-form button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.workspace-onboarding .auth-error {
+  margin: 0;
 }
