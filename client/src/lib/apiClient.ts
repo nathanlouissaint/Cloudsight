@@ -5,6 +5,10 @@ import {
   getAccessToken,
 } from "../auth/utils/tokenStorage";
 
+import {
+  getStoredOrganizationId,
+} from "../organizations/organizationStorage";
+
 const API_URL =
   import.meta.env.VITE_API_URL ??
   "http://localhost:5001";
@@ -14,7 +18,7 @@ export class ApiError extends Error {
 
   constructor(
     message: string,
-    status: number
+    status: number,
   ) {
     super(message);
     this.name = "ApiError";
@@ -23,10 +27,12 @@ export class ApiError extends Error {
 }
 
 async function getResponseMessage(
-  response: Response
+  response: Response,
 ): Promise<string> {
   try {
-    const body = await response.json();
+    const body = await response
+      .clone()
+      .json();
 
     if (
       typeof body?.message === "string"
@@ -43,12 +49,41 @@ async function getResponseMessage(
   );
 }
 
+function getRequestPathname(
+  path: string,
+): string {
+  return path.split("?")[0];
+}
+
+function shouldAttachOrganizationContext(
+  path: string,
+): boolean {
+  const pathname =
+    getRequestPathname(path);
+
+  if (
+    pathname === "/organizations"
+  ) {
+    return false;
+  }
+
+  if (
+    pathname === "/auth" ||
+    pathname.startsWith("/auth/")
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function createHeaders(
+  path: string,
   options: RequestInit,
-  accessToken: string | null
+  accessToken: string | null,
 ): Headers {
   const headers = new Headers(
-    options.headers
+    options.headers,
   );
 
   if (
@@ -57,17 +92,41 @@ function createHeaders(
   ) {
     headers.set(
       "Content-Type",
-      "application/json"
+      "application/json",
     );
   }
 
   if (accessToken) {
     headers.set(
       "Authorization",
-      `Bearer ${accessToken}`
+      `Bearer ${accessToken}`,
     );
   } else {
     headers.delete("Authorization");
+  }
+
+  if (
+    shouldAttachOrganizationContext(
+      path,
+    )
+  ) {
+    const organizationId =
+      getStoredOrganizationId();
+
+    if (organizationId) {
+      headers.set(
+        "X-Organization-Id",
+        organizationId,
+      );
+    } else {
+      headers.delete(
+        "X-Organization-Id",
+      );
+    }
+  } else {
+    headers.delete(
+      "X-Organization-Id",
+    );
   }
 
   return headers;
@@ -76,54 +135,47 @@ function createHeaders(
 function sendRequest(
   path: string,
   options: RequestInit,
-  accessToken: string | null
+  accessToken: string | null,
 ): Promise<Response> {
   return fetch(
     `${API_URL}${path}`,
     {
       ...options,
       headers: createHeaders(
+        path,
         options,
-        accessToken
+        accessToken,
       ),
       credentials: "include",
-    }
+    },
   );
 }
 
-async function parseResponse<T>(
-  response: Response
-): Promise<T> {
-  if (!response.ok) {
-    throw new ApiError(
-      await getResponseMessage(response),
-      response.status
-    );
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
-}
-
-async function executeRequest<T>(
+async function executeResponseRequest(
   path: string,
   options: RequestInit,
-  allowRefresh: boolean
-): Promise<T> {
+  allowRefresh: boolean,
+): Promise<Response> {
   const response = await sendRequest(
     path,
     options,
-    getAccessToken()
+    getAccessToken(),
   );
 
   if (
     response.status !== 401 ||
     !allowRefresh
   ) {
-    return parseResponse<T>(response);
+    if (!response.ok) {
+      throw new ApiError(
+        await getResponseMessage(
+          response,
+        ),
+        response.status,
+      );
+    }
+
+    return response;
   }
 
   try {
@@ -134,12 +186,19 @@ async function executeRequest<T>(
       await sendRequest(
         path,
         options,
-        accessToken
+        accessToken,
       );
 
-    return parseResponse<T>(
-      retryResponse
-    );
+    if (!retryResponse.ok) {
+      throw new ApiError(
+        await getResponseMessage(
+          retryResponse,
+        ),
+        retryResponse.status,
+      );
+    }
+
+    return retryResponse;
   } catch (error) {
     clearTokens();
 
@@ -148,20 +207,60 @@ async function executeRequest<T>(
     }
 
     throw new ApiError(
-      await getResponseMessage(response),
-      response.status
+      await getResponseMessage(
+        response,
+      ),
+      response.status,
     );
   }
 }
 
+async function parseResponse<T>(
+  response: Response,
+): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function executeRequest<T>(
+  path: string,
+  options: RequestInit,
+  allowRefresh: boolean,
+): Promise<T> {
+  const response =
+    await executeResponseRequest(
+      path,
+      options,
+      allowRefresh,
+    );
+
+  return parseResponse<T>(response);
+}
+
 export function apiRequest<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   return executeRequest<T>(
     path,
     options,
-    true
+    true,
+  );
+}
+
+export function apiBlobRequest(
+  path: string,
+  options: RequestInit = {},
+): Promise<Blob> {
+  return executeResponseRequest(
+    path,
+    options,
+    true,
+  ).then(
+    (response) => response.blob(),
   );
 }
 
@@ -171,11 +270,11 @@ export function apiRequest<T>(
  */
 export function apiRequestWithoutRefresh<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   return executeRequest<T>(
     path,
     options,
-    false
+    false,
   );
 }

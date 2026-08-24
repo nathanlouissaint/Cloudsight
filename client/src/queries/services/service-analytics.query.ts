@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiRequest } from "../../lib/apiClient";
+import { useOrganization } from "../../organizations/useOrganization";
 import { queryKeys } from "../queryKeys";
 
 import type {
@@ -14,9 +15,16 @@ async function fetchServiceAnalytics(): Promise<ServiceBreakdownItem[]> {
 }
 
 export function useServiceAnalyticsQuery() {
+  const {
+    currentOrganizationId,
+  } = useOrganization();
+
   return useQuery({
-    queryKey: queryKeys.serviceAnalytics,
+    queryKey: queryKeys.serviceAnalytics(
+      currentOrganizationId,
+    ),
     queryFn: fetchServiceAnalytics,
+    enabled: currentOrganizationId !== null,
     staleTime: 1000 * 60 * 5,
   });
 }

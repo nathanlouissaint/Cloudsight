@@ -1,26 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiRequest } from "../../lib/apiClient";
-import { USE_MOCK_DATA } from "../../config/features";
-import { dashboardMock } from "../../mocks/dashboard.mock";
-import { queryKeys } from "../queryKeys";
 
-import type { DashboardResponse } from "../../types/dashboard";
+import {
+  useOrganization,
+} from "../../organizations/useOrganization";
 
-async function fetchDashboard(): Promise<DashboardResponse> {
+import {
+  USE_MOCK_DATA,
+} from "../../config/features";
+
+import {
+  dashboardMock,
+} from "../../mocks/dashboard.mock";
+
+import {
+  queryKeys,
+} from "../queryKeys";
+
+import type {
+  DashboardResponse,
+} from "../../types/dashboard";
+
+async function fetchDashboard():
+  Promise<DashboardResponse> {
   if (USE_MOCK_DATA) {
     return dashboardMock;
   }
 
   return apiRequest<DashboardResponse>(
-    "/dashboard"
+    "/dashboard",
   );
 }
 
 export function useDashboardQuery() {
+  const {
+    currentOrganizationId,
+  } = useOrganization();
+
   return useQuery({
-    queryKey: queryKeys.dashboard,
+    queryKey:
+      queryKeys.dashboard(
+        currentOrganizationId,
+      ),
+
     queryFn: fetchDashboard,
-    staleTime: 1000 * 60 * 5,
+
+    enabled:
+      currentOrganizationId !== null,
+
+    staleTime:
+      1000 * 60 * 5,
   });
 }

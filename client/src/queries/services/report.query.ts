@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiRequest } from "../../lib/apiClient";
+import { useOrganization } from "../../organizations/useOrganization";
 import { USE_MOCK_DATA } from "../../config/features";
 import { reportMock } from "../../mocks/reports.mock";
 import { queryKeys } from "../queryKeys";
@@ -18,9 +19,16 @@ async function fetchReport(): Promise<ReportResponse> {
 }
 
 export function useReportQuery() {
+  const {
+    currentOrganizationId,
+  } = useOrganization();
+
   return useQuery({
-    queryKey: queryKeys.reports,
+    queryKey: queryKeys.reports(
+      currentOrganizationId,
+    ),
     queryFn: fetchReport,
+    enabled: currentOrganizationId !== null,
     staleTime: 1000 * 60 * 5,
   });
 }

@@ -1,6 +1,5 @@
 import {
   Bell,
-  ChevronDown,
   Search,
 } from "lucide-react";
 
@@ -9,6 +8,10 @@ import { motion } from "framer-motion";
 import {
   NavLink,
 } from "react-router-dom";
+
+import {
+  useOrganization,
+} from "../../organizations/useOrganization";
 
 const navItems = [
   {
@@ -38,6 +41,25 @@ const navItems = [
 ];
 
 export default function TopNavigation() {
+  const {
+    organizations,
+    currentOrganizationId,
+    loading,
+    selectOrganization,
+  } = useOrganization();
+
+  const handleOrganizationChange = (
+    organizationId: string,
+  ) => {
+    if (!organizationId) {
+      return;
+    }
+
+    void selectOrganization(
+      organizationId,
+    );
+  };
+
   return (
     <motion.header
       initial={{
@@ -100,14 +122,47 @@ export default function TopNavigation() {
           <Bell size={18} />
         </button>
 
-        <button
-          type="button"
+        <select
           className="account-switcher"
-          aria-label="Switch environment"
+          aria-label="Switch workspace"
+          value={
+            currentOrganizationId ?? ""
+          }
+          disabled={
+            loading ||
+            organizations.length === 0
+          }
+          onChange={(event) =>
+            handleOrganizationChange(
+              event.target.value,
+            )
+          }
         >
-          Production
-          <ChevronDown size={14} />
-        </button>
+          {loading && (
+            <option value="">
+              Loading workspaces...
+            </option>
+          )}
+
+          {!loading &&
+            organizations.length === 0 && (
+              <option value="">
+                No workspace
+              </option>
+            )}
+
+          {!loading &&
+            organizations.map(
+              (organization) => (
+                <option
+                  key={organization.id}
+                  value={organization.id}
+                >
+                  {organization.name}
+                </option>
+              ),
+            )}
+        </select>
       </div>
     </motion.header>
   );

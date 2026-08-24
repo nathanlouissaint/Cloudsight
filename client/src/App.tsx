@@ -17,6 +17,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import OAuthCompletePage from "./pages/OAuthCompletePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import WorkspaceOnboardingPage from "./pages/WorkspaceOnboardingPage";
 
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
@@ -76,6 +77,17 @@ export default function App() {
           <Route
             path="/auth/oauth/complete"
             element={<OAuthCompletePage />}
+          />
+
+          <Route
+            path="/onboarding/workspace"
+            element={
+              <ProtectedRoute
+                requireOrganization={false}
+              >
+                <WorkspaceOnboardingPage />
+              </ProtectedRoute>
+            }
           />
 
           {/* Protected application routes */}
