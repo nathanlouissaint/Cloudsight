@@ -11,6 +11,12 @@ export interface SendTokenEmailInput {
   token: string;
 }
 
+export interface SendOrganizationInvitationEmailInput {
+  email: string;
+  token: string;
+  organizationName: string;
+}
+
 export class EmailService {
   constructor(
     private readonly provider: EmailProvider,
@@ -35,6 +41,18 @@ export class EmailService {
       subject: "Reset your CloudSight password",
       text:
         `Use this password reset token: ${input.token}`,
+    });
+  }
+
+  async sendOrganizationInvitationEmail(
+    input: SendOrganizationInvitationEmailInput,
+  ): Promise<void> {
+    await this.provider.send({
+      to: input.email,
+      subject:
+        `You're invited to ${input.organizationName} on CloudSight`,
+      text:
+        `Use this organization invitation token: ${input.token}`,
     });
   }
 }

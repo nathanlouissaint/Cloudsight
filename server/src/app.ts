@@ -17,6 +17,7 @@ import awsRoutes from "./routes/aws.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import accountRoutes from "./routes/account.routes";
 import organizationRoutes from "./routes/organization.routes";
+import organizationInvitationRoutes from "./routes/organization-invitation.routes";
 import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
 import healthRoutes from "./routes/health.routes";
 
@@ -94,6 +95,10 @@ app.use("/health", healthRoutes);
 
 app.use("/auth", authRoutes);
 app.use("/organizations", organizationRoutes);
+app.use(
+  "/organization-invitations",
+  organizationInvitationRoutes,
+);
 app.use("/dashboard", dashboardRoutes);
 app.use("/costs", costsRoutes);
 app.use("/budget", budgetRoutes);

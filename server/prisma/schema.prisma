@@ -71,6 +71,8 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
 
   memberships OrganizationMember[]
+
+  organizationInvitationsSent OrganizationInvitation[] @relation("OrganizationInvitationInvitedBy")
 }
 
 model Organization {
@@ -83,6 +85,7 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   memberships   OrganizationMember[]
+  invitations   OrganizationInvitation[]
   cloudAccounts CloudAccount[]
   budgets       Budget[]
   alertHistory  AlertHistory[]
@@ -109,6 +112,33 @@ model OrganizationMember {
   @@index([organizationId])
   @@index([userId])
   @@index([userId, organizationId])
+}
+
+model OrganizationInvitation {
+  id String @id @default(uuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email String
+  role  OrganizationRole @default(MEMBER)
+
+  tokenHash String @unique
+
+  invitedByUserId String
+  invitedByUser   User   @relation("OrganizationInvitationInvitedBy", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([expiresAt])
+  @@index([invitedByUserId])
 }
 
 model AuthIdentity {

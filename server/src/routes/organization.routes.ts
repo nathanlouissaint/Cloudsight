@@ -16,6 +16,13 @@ import {
 
 
 import {
+  createOrganizationInvitation,
+  getOrganizationInvitations,
+  deleteOrganizationInvitation,
+} from "../controllers/organization/organization-invitation.controller";
+
+
+import {
   authenticateToken,
 } from "../middleware/auth.middleware";
 
@@ -113,6 +120,39 @@ router.delete(
   ),
   deleteOrganizationMember,
 );
+
+router.get(
+  "/current/invitations",
+  authenticateToken,
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.MEMBERS_MANAGE,
+  ),
+  getOrganizationInvitations,
+);
+
+
+router.post(
+  "/current/invitations",
+  authenticateToken,
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.MEMBERS_MANAGE,
+  ),
+  createOrganizationInvitation,
+);
+
+
+router.delete(
+  "/current/invitations/:invitationId",
+  authenticateToken,
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.MEMBERS_MANAGE,
+  ),
+  deleteOrganizationInvitation,
+);
+
 
 
 export default router;
