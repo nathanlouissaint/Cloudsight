@@ -77,6 +77,7 @@ export interface OrganizationContextType {
   currentOrganization: OrganizationSummary | null;
   currentOrganizationId: string | null;
   loading: boolean;
+  isSwitchingOrganization: boolean;
   initialized: boolean;
   error: string | null;
   selectOrganization: (

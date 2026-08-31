@@ -53,6 +53,7 @@ export default function TopNavigation() {
     organizations,
     currentOrganizationId,
     loading,
+    isSwitchingOrganization,
     selectOrganization,
   } = useOrganization();
 
@@ -138,6 +139,7 @@ export default function TopNavigation() {
           }
           disabled={
             loading ||
+            isSwitchingOrganization ||
             organizations.length === 0
           }
           onChange={(event) =>

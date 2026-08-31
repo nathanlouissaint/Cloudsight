@@ -75,6 +75,11 @@ export function OrganizationProvider({
   ] = useState(false);
 
   const [
+    isSwitchingOrganization,
+    setIsSwitchingOrganization,
+  ] = useState(false);
+
+  const [
     loadedForToken,
     setLoadedForToken,
   ] = useState<string | null>(null);
@@ -227,7 +232,8 @@ export function OrganizationProvider({
         if (
           !organizationExists ||
           organizationId ===
-            currentOrganizationId
+            currentOrganizationId ||
+          isSwitchingOrganization
         ) {
           return;
         }
@@ -235,33 +241,40 @@ export function OrganizationProvider({
         const previousOrganizationId =
           currentOrganizationId;
 
-        if (previousOrganizationId) {
-          await queryClient.cancelQueries({
-            queryKey:
-              queryKeys.tenant(
-                previousOrganizationId,
-              ),
-          });
+        setIsSwitchingOrganization(true);
 
-          queryClient.removeQueries({
-            queryKey:
-              queryKeys.tenant(
-                previousOrganizationId,
-              ),
-          });
+        try {
+          if (previousOrganizationId) {
+            await queryClient.cancelQueries({
+              queryKey:
+                queryKeys.tenant(
+                  previousOrganizationId,
+                ),
+            });
+
+            queryClient.removeQueries({
+              queryKey:
+                queryKeys.tenant(
+                  previousOrganizationId,
+                ),
+            });
+          }
+
+          setStoredOrganizationId(
+            organizationId,
+          );
+
+          setCurrentOrganizationId(
+            organizationId,
+          );
+        } finally {
+          setIsSwitchingOrganization(false);
         }
-
-        setStoredOrganizationId(
-          organizationId,
-        );
-
-        setCurrentOrganizationId(
-          organizationId,
-        );
       },
       [
         organizations,
         currentOrganizationId,
+        isSwitchingOrganization,
         queryClient,
       ],
     );
@@ -294,6 +307,7 @@ export function OrganizationProvider({
         currentOrganization,
         currentOrganizationId,
         loading,
+        isSwitchingOrganization,
         initialized,
         error,
         selectOrganization,
@@ -304,6 +318,7 @@ export function OrganizationProvider({
         currentOrganization,
         currentOrganizationId,
         loading,
+        isSwitchingOrganization,
         initialized,
         error,
         selectOrganization,
