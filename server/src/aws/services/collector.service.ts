@@ -11,7 +11,7 @@ import {
 } from "../../repositories/service-cost-snapshot.repository";
 
 import {
-  findAllCloudAccountsForOrganization,
+  findActiveCloudAccountsForOrganization,
 } from "../../repositories/cloud-account.repository";
 
 export async function collectCosts(
@@ -24,7 +24,7 @@ export async function collectCosts(
     await provider.getCostSummary();
 
   const accounts =
-    await findAllCloudAccountsForOrganization(
+    await findActiveCloudAccountsForOrganization(
       organizationId,
     );
 

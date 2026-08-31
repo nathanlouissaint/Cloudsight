@@ -16,6 +16,7 @@ import reportsRoutes from "./routes/reports.routes";
 import awsRoutes from "./routes/aws.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import accountRoutes from "./routes/account.routes";
+import cloudAccountRoutes from "./routes/cloud-account.routes";
 import organizationRoutes from "./routes/organization.routes";
 import organizationInvitationRoutes from "./routes/organization-invitation.routes";
 import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
@@ -108,6 +109,7 @@ app.use("/reports", reportsRoutes);
 app.use("/aws", awsRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/analytics/accounts", accountRoutes);
+app.use("/cloud-accounts", cloudAccountRoutes);
 app.use("/analytics/services", serviceAnalyticsRoutes);
 
 app.use(notFoundHandler);

@@ -251,6 +251,9 @@ model CloudAccount {
   awsAccountId String @unique
   accountName  String
 
+  isActive       Boolean   @default(true)
+  disconnectedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
