@@ -8,24 +8,39 @@ import {
   beginSessionRevocation,
   endSessionRevocation,
 } from "./services/refresh.api";
+import {
+  setOAuthReturnTo,
+} from "./utils/oauthReturnTo";
 
 const API_URL =
   import.meta.env?.VITE_API_URL ??
   "http://localhost:5001";
 
-export function startGoogleLogin(): void {
+export function startGoogleLogin(
+  returnTo = "/",
+): void {
+  setOAuthReturnTo(returnTo);
+
   window.location.assign(
     `${API_URL}/auth/oauth/google/start`,
   );
 }
 
-export function startMicrosoftLogin(): void {
+export function startMicrosoftLogin(
+  returnTo = "/",
+): void {
+  setOAuthReturnTo(returnTo);
+
   window.location.assign(
     `${API_URL}/auth/oauth/microsoft/start`,
   );
 }
 
-export function startGitHubLogin(): void {
+export function startGitHubLogin(
+  returnTo = "/",
+): void {
+  setOAuthReturnTo(returnTo);
+
   window.location.assign(
     `${API_URL}/auth/oauth/github/start`,
   );

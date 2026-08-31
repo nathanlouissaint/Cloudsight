@@ -3,6 +3,9 @@ import {
 } from "../lib/apiClient";
 
 import type {
+  OrganizationInvitation,
+  OrganizationInvitationPreviewResponse,
+  OrganizationInvitationsResponse,
   OrganizationMember,
   OrganizationMembersResponse,
   OrganizationRole,
@@ -33,6 +36,14 @@ interface UpdateOrganizationResponse {
 
 interface OrganizationMemberResponse {
   member: OrganizationMember;
+}
+
+interface OrganizationInvitationResponse {
+  invitation: OrganizationInvitation;
+}
+
+interface AcceptOrganizationInvitationResponse {
+  message: string;
 }
 
 export function getOrganizations():
@@ -122,6 +133,60 @@ export function removeOrganizationMember(
     `/organizations/current/members/${membershipId}`,
     {
       method: "DELETE",
+    },
+  );
+}
+
+
+export function getOrganizationInvitations():
+  Promise<OrganizationInvitationsResponse> {
+  return apiRequest<OrganizationInvitationsResponse>(
+    "/organizations/current/invitations",
+  );
+}
+
+export function createOrganizationInvitation(
+  email: string,
+  role: OrganizationRole,
+): Promise<OrganizationInvitationResponse> {
+  return apiRequest<OrganizationInvitationResponse>(
+    "/organizations/current/invitations",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        role,
+      }),
+    },
+  );
+}
+
+export function revokeOrganizationInvitation(
+  invitationId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/organizations/current/invitations/${invitationId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export function getOrganizationInvitationPreview(
+  token: string,
+): Promise<OrganizationInvitationPreviewResponse> {
+  return apiRequest<OrganizationInvitationPreviewResponse>(
+    `/organization-invitations/${encodeURIComponent(token)}`,
+  );
+}
+
+export function acceptOrganizationInvitation(
+  token: string,
+): Promise<AcceptOrganizationInvitationResponse> {
+  return apiRequest<AcceptOrganizationInvitationResponse>(
+    `/organization-invitations/${encodeURIComponent(token)}/accept`,
+    {
+      method: "POST",
     },
   );
 }

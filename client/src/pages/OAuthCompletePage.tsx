@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getCurrentUser } from "../auth/services/me.api";
 import { refreshAccessToken } from "../auth/services/refresh.api";
+import {
+  consumeOAuthReturnTo,
+} from "../auth/utils/oauthReturnTo";
 
 export default function OAuthCompletePage() {
   const navigate = useNavigate();
@@ -22,7 +25,16 @@ export default function OAuthCompletePage() {
 
         if (active) {
           login(accessToken, user);
-          navigate("/", { replace: true });
+
+          const returnTo =
+            consumeOAuthReturnTo();
+
+          navigate(
+            returnTo,
+            {
+              replace: true,
+            },
+          );
         }
       } catch {
         if (active) {

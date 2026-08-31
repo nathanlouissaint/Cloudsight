@@ -19,6 +19,13 @@ import OAuthCompletePage from "./pages/OAuthCompletePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import WorkspaceOnboardingPage from "./pages/WorkspaceOnboardingPage";
 
+const OrganizationInvitationPage = lazy(
+  () =>
+    import(
+      "./pages/OrganizationInvitationPage"
+    )
+);
+
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -91,6 +98,13 @@ export default function App() {
           <Route
             path="/auth/oauth/complete"
             element={<OAuthCompletePage />}
+          />
+
+          <Route
+            path="/organization-invitations/:token"
+            element={
+              <OrganizationInvitationPage />
+            }
           />
 
           <Route

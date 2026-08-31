@@ -85,7 +85,9 @@ export function OrganizationProvider({
   ] = useState<string | null>(null);
 
   const refreshOrganizations =
-    useCallback(async () => {
+    useCallback(async (
+      preferredOrganizationId?: string,
+    ) => {
       if (
         !isAuthenticated ||
         !token
@@ -96,7 +98,7 @@ export function OrganizationProvider({
         setError(null);
         setLoading(false);
         setLoadedForToken(null);
-        return;
+        return [];
       }
 
       setLoading(true);
@@ -113,6 +115,29 @@ export function OrganizationProvider({
           nextOrganizations,
         );
 
+        const preferredOrganizationExists =
+          preferredOrganizationId !== undefined &&
+          nextOrganizations.some(
+            (organization) =>
+              organization.id ===
+              preferredOrganizationId,
+          );
+
+        if (
+          preferredOrganizationExists &&
+          preferredOrganizationId
+        ) {
+          setCurrentOrganizationId(
+            preferredOrganizationId,
+          );
+
+          setStoredOrganizationId(
+            preferredOrganizationId,
+          );
+
+          return nextOrganizations;
+        }
+
         const storedOrganizationId =
           getStoredOrganizationId();
 
@@ -128,7 +153,8 @@ export function OrganizationProvider({
           setCurrentOrganizationId(
             storedOrganizationId,
           );
-          return;
+
+          return nextOrganizations;
         }
 
         const firstOrganization =
@@ -146,6 +172,8 @@ export function OrganizationProvider({
           setCurrentOrganizationId(null);
           clearStoredOrganizationId();
         }
+
+        return nextOrganizations;
       } catch (requestError) {
         setOrganizations([]);
         setCurrentOrganizationId(null);
@@ -162,6 +190,8 @@ export function OrganizationProvider({
             "Failed to load organizations.",
           );
         }
+
+        return [];
       } finally {
         setLoading(false);
         setLoadedForToken(token);

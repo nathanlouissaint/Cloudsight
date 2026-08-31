@@ -9,9 +9,11 @@ import {
 import TopNavigation from "../../components/navigation/TopNavigation";
 
 import {
-  addOrganizationMember,
+  createOrganizationInvitation,
+  getOrganizationInvitations,
   getOrganizationMembers,
   removeOrganizationMember,
+  revokeOrganizationInvitation,
   updateOrganizationMemberRole,
 } from "../../organizations/organization.api";
 
@@ -20,6 +22,7 @@ import {
 } from "../../organizations/useOrganization";
 
 import type {
+  OrganizationInvitation,
   OrganizationMember,
   OrganizationRole,
 } from "../../organizations/types";
@@ -44,6 +47,9 @@ export default function TeamSettingsPage() {
   const [members, setMembers] =
     useState<OrganizationMember[]>([]);
 
+  const [invitations, setInvitations] =
+    useState<OrganizationInvitation[]>([]);
+
   const [loading, setLoading] =
     useState(false);
 
@@ -57,6 +63,9 @@ export default function TeamSettingsPage() {
     useState(false);
 
   const [mutatingMembershipId, setMutatingMembershipId] =
+    useState<string | null>(null);
+
+  const [mutatingInvitationId, setMutatingInvitationId] =
     useState<string | null>(null);
 
   const [error, setError] =
@@ -92,6 +101,7 @@ export default function TeamSettingsPage() {
         !canManageMembers
       ) {
         setMembers([]);
+        setInvitations([]);
         return;
       }
 
@@ -99,10 +109,23 @@ export default function TeamSettingsPage() {
       setError(null);
 
       try {
-        const response =
-          await getOrganizationMembers();
+        const [
+          membersResponse,
+          invitationsResponse,
+        ] = await Promise.all([
+          getOrganizationMembers(),
+          getOrganizationInvitations(),
+        ]);
 
-        setMembers(response.members);
+        setMembers(membersResponse.members);
+
+        setInvitations(
+          invitationsResponse.invitations.filter(
+            (invitation) =>
+              !invitation.acceptedAt &&
+              !invitation.revokedAt,
+          ),
+        );
       } catch (requestError) {
         if (requestError instanceof ApiError) {
           setError(requestError.message);
@@ -155,7 +178,7 @@ export default function TeamSettingsPage() {
     setSuccess(null);
 
     try {
-      await addOrganizationMember(
+      await createOrganizationInvitation(
         normalizedEmail,
         newMemberRole,
       );
@@ -166,7 +189,7 @@ export default function TeamSettingsPage() {
       await loadMembers();
 
       setSuccess(
-        "Organization member added.",
+        "Invitation sent.",
       );
     } catch (requestError) {
       if (requestError instanceof ApiError) {
@@ -178,6 +201,54 @@ export default function TeamSettingsPage() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleRevokeInvitation(
+    invitation: OrganizationInvitation,
+  ) {
+    if (
+      !canManageMembers ||
+      mutatingInvitationId
+    ) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Revoke invitation for ${invitation.email}?`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMutatingInvitationId(
+      invitation.id,
+    );
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await revokeOrganizationInvitation(
+        invitation.id,
+      );
+
+      await loadMembers();
+
+      setSuccess(
+        "Invitation revoked.",
+      );
+    } catch (requestError) {
+      if (requestError instanceof ApiError) {
+        setError(requestError.message);
+      } else {
+        setError(
+          "Failed to revoke invitation.",
+        );
+      }
+    } finally {
+      setMutatingInvitationId(null);
     }
   }
 
@@ -393,8 +464,8 @@ export default function TeamSettingsPage() {
                   }
                 >
                   {submitting
-                    ? "Adding..."
-                    : "Add member"}
+                    ? "Sending..."
+                    : "Send invitation"}
                 </button>
               </form>
 
@@ -415,6 +486,67 @@ export default function TeamSettingsPage() {
                   {success}
                 </p>
               )}
+
+              <div className="settings-members">
+                <div className="settings-members__header">
+                  <h2>Pending invitations</h2>
+
+                  <span>
+                    {invitations.length}
+                  </span>
+                </div>
+
+                {loading ? (
+                  <p>Loading invitations...</p>
+                ) : invitations.length === 0 ? (
+                  <p>No pending invitations.</p>
+                ) : (
+                  <div className="settings-members__list">
+                    {invitations.map(
+                      (invitation) => (
+                        <div
+                          key={invitation.id}
+                          className="settings-member"
+                        >
+                          <div className="settings-member__identity">
+                            <strong>
+                              {invitation.email}
+                            </strong>
+
+                            <span>
+                              {invitation.role}
+                            </span>
+
+                            <span>
+                              Expires{" "}
+                              {new Date(
+                                invitation.expiresAt,
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={
+                              mutatingInvitationId !== null
+                            }
+                            onClick={() =>
+                              void handleRevokeInvitation(
+                                invitation,
+                              )
+                            }
+                          >
+                            {mutatingInvitationId ===
+                            invitation.id
+                              ? "Revoking..."
+                              : "Revoke"}
+                          </button>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="settings-members">
                 <div className="settings-members__header">

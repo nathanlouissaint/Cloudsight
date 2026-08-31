@@ -1,9 +1,24 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { register as registerRequest } from "../../auth/auth.api";
+import {
+  buildAuthPath,
+  getSafeReturnTo,
+} from "../../auth/utils/returnTo";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const [searchParams] =
+    useSearchParams();
+
+  const returnTo =
+    getSafeReturnTo(
+      searchParams.get("returnTo"),
+    );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] =
@@ -28,7 +43,15 @@ export default function RegisterForm() {
       setLoading(true);
       setError("");
       await registerRequest({ email, password });
-      navigate("/login");
+      navigate(
+        buildAuthPath(
+          "/login",
+          returnTo,
+        ),
+        {
+          replace: true,
+        },
+      );
     } catch {
       setError("Unable to create your account.");
     } finally {

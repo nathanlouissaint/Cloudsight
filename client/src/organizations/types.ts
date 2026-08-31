@@ -30,6 +30,44 @@ export interface OrganizationMembersResponse {
   members: OrganizationMember[];
 }
 
+export interface OrganizationInvitationInvitedBy {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+export interface OrganizationInvitation {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: OrganizationRole;
+  invitedByUserId: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  invitedByUser: OrganizationInvitationInvitedBy;
+}
+
+export interface OrganizationInvitationsResponse {
+  invitations: OrganizationInvitation[];
+}
+
+export interface OrganizationInvitationPreview {
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  role: OrganizationRole;
+  expiresAt: string;
+}
+
+export interface OrganizationInvitationPreviewResponse {
+  invitation: OrganizationInvitationPreview;
+}
+
 export interface OrganizationsResponse {
   organizations: OrganizationSummary[];
 }
@@ -44,5 +82,7 @@ export interface OrganizationContextType {
   selectOrganization: (
     organizationId: string,
   ) => Promise<void>;
-  refreshOrganizations: () => Promise<void>;
+  refreshOrganizations: (
+    preferredOrganizationId?: string,
+  ) => Promise<OrganizationSummary[]>;
 }

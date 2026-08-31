@@ -12,6 +12,10 @@ import {
   startMicrosoftLogin,
 } from "../../auth/auth.api";
 import { useAuth } from "../../auth/useAuth";
+import {
+  buildAuthPath,
+  getSafeReturnTo,
+} from "../../auth/utils/returnTo";
 
 const microsoftAuthEnabled =
   import.meta.env.VITE_MICROSOFT_AUTH_ENABLED === "true";
@@ -23,6 +27,11 @@ export default function LoginForm() {
   const [searchParams] =
     useSearchParams();
   const { login } = useAuth();
+
+  const returnTo =
+    getSafeReturnTo(
+      searchParams.get("returnTo"),
+    );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,7 +74,9 @@ export default function LoginForm() {
         response.user
       );
 
-      navigate("/");
+      navigate(returnTo, {
+        replace: true,
+      });
     } catch {
       setError("Invalid email or password.");
     } finally {
@@ -154,7 +165,7 @@ export default function LoginForm() {
         className="google-login-button"
         disabled={loading}
         onClick={() => {
-          startGoogleLogin();
+          startGoogleLogin(returnTo);
         }}
       >
         <svg
@@ -187,7 +198,9 @@ export default function LoginForm() {
           type="button"
           className="google-login-button microsoft-login-button"
           disabled={loading}
-          onClick={startMicrosoftLogin}
+          onClick={() => {
+            startMicrosoftLogin(returnTo);
+          }}
         >
           <svg
             className="provider-login-icon"
@@ -208,7 +221,9 @@ export default function LoginForm() {
           type="button"
           className="google-login-button github-login-button"
           disabled={loading}
-          onClick={startGitHubLogin}
+          onClick={() => {
+            startGitHubLogin(returnTo);
+          }}
         >
           <svg
             className="provider-login-icon github-login-icon"
@@ -226,7 +241,12 @@ export default function LoginForm() {
 
       <p className="auth-footer">
         Don't have an account?{" "}
-        <Link to="/register">
+        <Link
+          to={buildAuthPath(
+            "/register",
+            returnTo,
+          )}
+        >
           Create one
         </Link>
       </p>
