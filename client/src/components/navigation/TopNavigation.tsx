@@ -43,6 +43,10 @@ const navItems = [
     path: "/settings/organization",
   },
   {
+    label: "Cloud Accounts",
+    path: "/settings/cloud-accounts",
+  },
+  {
     label: "Team",
     path: "/settings/team",
   },

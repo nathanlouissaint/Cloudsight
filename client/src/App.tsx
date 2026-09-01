@@ -41,6 +41,13 @@ const TeamSettingsPage = lazy(
     )
 );
 
+const CloudAccountsSettingsPage = lazy(
+  () =>
+    import(
+      "./pages/settings/CloudAccountsSettingsPage"
+    )
+);
+
 const OrganizationSettingsPage = lazy(
   () =>
     import(
@@ -169,6 +176,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <TeamSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/cloud-accounts"
+            element={
+              <ProtectedRoute>
+                <CloudAccountsSettingsPage />
               </ProtectedRoute>
             }
           />
