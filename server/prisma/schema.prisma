@@ -251,8 +251,14 @@ model CloudAccount {
   awsAccountId String @unique
   accountName  String
 
-  isActive       Boolean   @default(true)
-  disconnectedAt DateTime?
+  isActive          Boolean   @default(true)
+  disconnectedAt    DateTime?
+
+  roleArn            String?
+  externalId         String?
+  connectionStatus   String    @default("NOT_CONFIGURED")
+  lastVerifiedAt     DateTime?
+  connectionError    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

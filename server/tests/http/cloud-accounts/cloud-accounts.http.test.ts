@@ -469,6 +469,15 @@ httpDescribe(
               "Analytics",
             isActive: true,
             disconnectedAt: null,
+            externalId:
+              expect.stringMatching(
+                /^[a-f0-9]{64}$/,
+              ),
+            connectionStatus:
+              "NOT_CONFIGURED",
+            roleArn: null,
+            lastVerifiedAt: null,
+            connectionError: null,
           }),
         );
       },
@@ -803,6 +812,354 @@ httpDescribe(
             .set(
               headers(
                 owner,
+                primaryOrganization,
+              ),
+            );
+
+        expect(
+          response.status,
+        ).toBe(404);
+      },
+    );
+
+    /*
+     * Phase 22 AWS connection HTTP coverage
+     */
+
+    it(
+      "OWNER can configure an AWS connection",
+      async () => {
+        const response =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${primaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::111111111111:role/CloudSightReadRole",
+            });
+
+        expect(response.status).toBe(200);
+
+        expect(
+          response.body.account,
+        ).toEqual(
+          expect.objectContaining({
+            id:
+              primaryAccountId,
+            roleArn:
+              "arn:aws:iam::111111111111:role/CloudSightReadRole",
+            connectionStatus:
+              "PENDING",
+            connectionError:
+              null,
+          }),
+        );
+
+        expect(
+          response.body.account.externalId,
+        ).toMatch(
+          /^[a-f0-9]{64}$/,
+        );
+      },
+    );
+
+    it(
+      "ADMIN can configure an AWS connection",
+      async () => {
+        const response =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${primaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                admin,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::111111111111:role/CloudSightAdminReadRole",
+            });
+
+        expect(response.status).toBe(200);
+      },
+    );
+
+    for (
+      const [role, getAccount]
+      of [
+        [
+          "MEMBER",
+          () => member,
+        ],
+        [
+          "VIEWER",
+          () => viewer,
+        ],
+      ] as const
+    ) {
+      it(
+        `${role} cannot configure AWS connections`,
+        async () => {
+          const response =
+            await request(app)
+              .patch(
+                `/cloud-accounts/${primaryAccountId}/connection`,
+              )
+              .set(
+                headers(
+                  getAccount(),
+                  primaryOrganization,
+                ),
+              )
+              .send({
+                roleArn:
+                  "arn:aws:iam::111111111111:role/ForbiddenRole",
+              });
+
+          expect(
+            response.status,
+          ).toBe(403);
+        },
+      );
+    }
+
+    it(
+      "rejects an invalid AWS role ARN",
+      async () => {
+        const response =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${primaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "invalid-role-arn",
+            });
+
+        expect(
+          response.status,
+        ).toBe(400);
+      },
+    );
+
+    it(
+      "rejects a role ARN from a different AWS account",
+      async () => {
+        const response =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${primaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::999999999999:role/CloudSightReadRole",
+            });
+
+        expect(
+          response.status,
+        ).toBe(400);
+      },
+    );
+
+    it(
+      "cannot configure another organization's cloud account",
+      async () => {
+        const response =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${secondaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                admin,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::222222222222:role/CloudSightReadRole",
+            });
+
+        expect(
+          response.status,
+        ).toBe(404);
+      },
+    );
+
+    it(
+      "preserves the generated external ID during connection reconfiguration",
+      async () => {
+        const first =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${primaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::111111111111:role/CloudSightReadRole",
+            });
+
+        expect(first.status).toBe(200);
+
+        const externalId =
+          first.body.account.externalId;
+
+        const second =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${primaryAccountId}/connection`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::111111111111:role/CloudSightUpdatedRole",
+            });
+
+        expect(second.status).toBe(200);
+
+        expect(
+          second.body.account.externalId,
+        ).toBe(externalId);
+      },
+    );
+
+    it(
+      "rejects connection configuration for a disconnected account",
+      async () => {
+        const account =
+          await prisma.cloudAccount.create({
+            data: {
+              organizationId:
+                primaryOrganization.id,
+              awsAccountId:
+                "777777777777",
+              accountName:
+                "Disconnected AWS",
+              isActive: false,
+              disconnectedAt:
+                new Date(),
+            },
+          });
+
+        const response =
+          await request(app)
+            .patch(
+              `/cloud-accounts/${account.id}/connection`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            )
+            .send({
+              roleArn:
+                "arn:aws:iam::777777777777:role/CloudSightReadRole",
+            });
+
+        expect(
+          response.status,
+        ).toBe(409);
+      },
+    );
+
+    it(
+      "rejects verification when AWS connection is not configured",
+      async () => {
+        const account =
+          await prisma.cloudAccount.create({
+            data: {
+              organizationId:
+                primaryOrganization.id,
+              awsAccountId:
+                "888888888888",
+              accountName:
+                "Unconfigured AWS",
+            },
+          });
+
+        const response =
+          await request(app)
+            .post(
+              `/cloud-accounts/${account.id}/verify`,
+            )
+            .set(
+              headers(
+                owner,
+                primaryOrganization,
+              ),
+            );
+
+        expect(
+          response.status,
+        ).toBe(409);
+      },
+    );
+
+    it(
+      "MEMBER cannot verify AWS connections",
+      async () => {
+        const response =
+          await request(app)
+            .post(
+              `/cloud-accounts/${primaryAccountId}/verify`,
+            )
+            .set(
+              headers(
+                member,
+                primaryOrganization,
+              ),
+            );
+
+        expect(
+          response.status,
+        ).toBe(403);
+      },
+    );
+
+    it(
+      "cannot verify another organization's cloud account",
+      async () => {
+        const response =
+          await request(app)
+            .post(
+              `/cloud-accounts/${secondaryAccountId}/verify`,
+            )
+            .set(
+              headers(
+                admin,
                 primaryOrganization,
               ),
             );

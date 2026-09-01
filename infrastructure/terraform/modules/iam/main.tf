@@ -136,3 +136,31 @@ resource "aws_iam_role_policy_attachment" "parameter_store" {
   role       = aws_iam_role.ec2.name
   policy_arn = aws_iam_policy.parameter_store.arn
 }
+data "aws_iam_policy_document" "customer_account_assume_role" {
+  statement {
+    sid    = "AssumeCustomerCloudSightRoles"
+    effect = "Allow"
+
+    actions = [
+      "sts:AssumeRole"
+    ]
+
+    resources = [
+      "arn:aws:iam::*:role/CloudSightReadRole"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "customer_account_assume_role" {
+  name        = "${local.name_prefix}-customer-account-assume-role"
+  description = "Allow CloudSight to assume customer CloudSightReadRole IAM roles."
+
+  policy = data.aws_iam_policy_document.customer_account_assume_role.json
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "customer_account_assume_role" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = aws_iam_policy.customer_account_assume_role.arn
+}

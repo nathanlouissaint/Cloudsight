@@ -69,3 +69,6 @@ infrastructure/terraform/*.auto.tfvars.json
 # macOS
 # ----------------------------------------------------------
 .DS_Store
+
+# Local Terraform backend configuration
+infrastructure/terraform/environments/*/backend.hcl

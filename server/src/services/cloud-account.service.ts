@@ -3,14 +3,22 @@ import {
 } from "@prisma/client";
 
 import {
+  configureCloudAccountConnection,
   createCloudAccount,
   disconnectCloudAccount,
   findAllCloudAccountsForOrganization,
   findCloudAccountByAwsAccountId,
   findCloudAccountByIdForOrganization,
   reconnectCloudAccount,
+  updateCloudAccountConnectionState,
   updateCloudAccountName,
 } from "../repositories/cloud-account.repository";
+
+import {
+  generateExternalId,
+  validateRoleArn,
+  verifyAwsAccountConnection,
+} from "../aws/services/account-connection.service";
 
 export class CloudAccountError extends Error {
   constructor(
@@ -94,11 +102,15 @@ export async function addCloudAccount(
     );
   }
 
+  const externalId =
+    generateExternalId();
+
   try {
     return await createCloudAccount(
       organizationId,
       awsAccountId,
       accountName,
+      externalId,
     );
   } catch (error) {
     if (
@@ -198,4 +210,173 @@ export async function reconnectCloudAccountForOrganization(
     organizationId,
     accountId,
   );
+}
+
+export async function configureAwsConnection(
+  organizationId: string,
+  accountId: string,
+  roleArnInput: string,
+) {
+  const account =
+    await findCloudAccountByIdForOrganization(
+      organizationId,
+      accountId,
+    );
+
+  if (!account) {
+    throw new CloudAccountError(
+      404,
+      "Cloud account not found",
+    );
+  }
+
+  if (!account.isActive) {
+    throw new CloudAccountError(
+      409,
+      "Cloud account is disconnected",
+    );
+  }
+
+  let roleArn: string;
+
+  try {
+    roleArn =
+      validateRoleArn(
+        roleArnInput,
+      );
+  } catch {
+    throw new CloudAccountError(
+      400,
+      "AWS role ARN is invalid",
+    );
+  }
+
+  const arnMatch =
+    roleArn.match(
+      /^arn:(?:aws|aws-us-gov|aws-cn):iam::(\d{12}):role\//,
+    );
+
+  if (
+    !arnMatch ||
+    arnMatch[1] !== account.awsAccountId
+  ) {
+    throw new CloudAccountError(
+      400,
+      "AWS role ARN must belong to the registered AWS account",
+    );
+  }
+
+  const externalId =
+    account.externalId ??
+    generateExternalId();
+
+  return configureCloudAccountConnection(
+    organizationId,
+    accountId,
+    roleArn,
+    externalId,
+  );
+}
+
+export async function verifyCloudAccountAwsConnection(
+  organizationId: string,
+  accountId: string,
+  verifyConnection = verifyAwsAccountConnection,
+) {
+  const account =
+    await findCloudAccountByIdForOrganization(
+      organizationId,
+      accountId,
+    );
+
+  if (!account) {
+    throw new CloudAccountError(
+      404,
+      "Cloud account not found",
+    );
+  }
+
+  if (!account.isActive) {
+    throw new CloudAccountError(
+      409,
+      "Cloud account is disconnected",
+    );
+  }
+
+  if (
+    !account.roleArn ||
+    !account.externalId
+  ) {
+    throw new CloudAccountError(
+      409,
+      "AWS connection is not configured",
+    );
+  }
+
+  await updateCloudAccountConnectionState(
+    organizationId,
+    accountId,
+    {
+      connectionStatus:
+        "PENDING",
+      connectionError: null,
+    },
+  );
+
+  try {
+    const identity =
+      await verifyConnection({
+        roleArn:
+          account.roleArn,
+
+        externalId:
+          account.externalId,
+
+        expectedAwsAccountId:
+          account.awsAccountId,
+      });
+
+    const updated =
+      await updateCloudAccountConnectionState(
+        organizationId,
+        accountId,
+        {
+          connectionStatus:
+            "CONNECTED",
+
+          lastVerifiedAt:
+            new Date(),
+
+          connectionError: null,
+        },
+      );
+
+    return {
+      account: updated,
+      identity,
+    };
+  } catch (error) {
+    const connectionError =
+      error instanceof Error
+        ? error.message.slice(0, 1000)
+        : "AWS connection verification failed";
+
+    await updateCloudAccountConnectionState(
+      organizationId,
+      accountId,
+      {
+        connectionStatus:
+          "ERROR",
+
+        lastVerifiedAt: null,
+
+        connectionError,
+      },
+    );
+
+    throw new CloudAccountError(
+      502,
+      "AWS account verification failed",
+    );
+  }
 }

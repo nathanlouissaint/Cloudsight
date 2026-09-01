@@ -65,3 +65,37 @@ export function reconnectCloudAccount(
     },
   );
 }
+
+export function configureCloudAccountConnection(
+  accountId: string,
+  roleArn: string,
+) {
+  return apiRequest<CloudAccountResponse>(
+    `/cloud-accounts/${accountId}/connection`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        roleArn,
+      }),
+    },
+  );
+}
+
+export interface VerifyCloudAccountConnectionResponse {
+  account: CloudAccountResponse["account"];
+  identity: {
+    accountId: string;
+    arn: string | null;
+  };
+}
+
+export function verifyCloudAccountConnection(
+  accountId: string,
+) {
+  return apiRequest<VerifyCloudAccountConnectionResponse>(
+    `/cloud-accounts/${accountId}/verify`,
+    {
+      method: "POST",
+    },
+  );
+}

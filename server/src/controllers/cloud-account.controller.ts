@@ -9,10 +9,12 @@ import type {
 import {
   addCloudAccount,
   CloudAccountError,
+  configureAwsConnection,
   disconnectCloudAccountForOrganization,
   listCloudAccounts,
   reconnectCloudAccountForOrganization,
   renameCloudAccount,
+  verifyCloudAccountAwsConnection,
 } from "../services/cloud-account.service";
 
 function handleCloudAccountError(
@@ -227,6 +229,77 @@ export async function reconnectCloudAccountController(
       error,
       res,
       "Failed to reconnect cloud account",
+    );
+  }
+}
+
+
+export async function configureCloudAccountConnectionController(
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const organizationId =
+      requireOrganization(req, res);
+
+    if (!organizationId) {
+      return;
+    }
+
+    const accountId =
+      String(req.params.accountId);
+
+    const roleArn =
+      typeof req.body?.roleArn === "string"
+        ? req.body.roleArn
+        : "";
+
+    const account =
+      await configureAwsConnection(
+        organizationId,
+        accountId,
+        roleArn,
+      );
+
+    res.status(200).json({
+      account,
+    });
+  } catch (error) {
+    handleCloudAccountError(
+      error,
+      res,
+      "Failed to configure AWS connection",
+    );
+  }
+}
+
+export async function verifyCloudAccountConnectionController(
+  req: OrganizationAuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const organizationId =
+      requireOrganization(req, res);
+
+    if (!organizationId) {
+      return;
+    }
+
+    const accountId =
+      String(req.params.accountId);
+
+    const result =
+      await verifyCloudAccountAwsConnection(
+        organizationId,
+        accountId,
+      );
+
+    res.status(200).json(result);
+  } catch (error) {
+    handleCloudAccountError(
+      error,
+      res,
+      "Failed to verify AWS connection",
     );
   }
 }

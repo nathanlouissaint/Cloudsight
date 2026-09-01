@@ -8,16 +8,24 @@ import {
 import TopNavigation from "../../components/navigation/TopNavigation";
 
 import {
+  configureCloudAccountConnection,
   createCloudAccount,
   disconnectCloudAccount,
   getCloudAccounts,
   reconnectCloudAccount,
   renameCloudAccount,
+  verifyCloudAccountConnection,
 } from "../../cloud-accounts/cloud-account.api";
 
 import type {
   CloudAccount,
 } from "../../cloud-accounts/types";
+
+import {
+  buildAwsTrustPolicy,
+  getCloudSightPrincipalArn,
+} from "../../cloud-accounts/aws-onboarding";
+
 
 import {
   useOrganization,
@@ -50,6 +58,9 @@ export default function CloudAccountsSettingsPage() {
 
   const [mutatingAccountId, setMutatingAccountId] =
     useState<string | null>(null);
+
+  const [roleArns, setRoleArns] =
+    useState<Record<string, string>>({});
 
   const [error, setError] =
     useState<string | null>(null);
@@ -96,6 +107,7 @@ export default function CloudAccountsSettingsPage() {
   useEffect(() => {
     setAwsAccountId("");
     setAccountName("");
+    setRoleArns({});
     setError(null);
     setSuccess(null);
   }, [currentOrganizationId]);
@@ -328,6 +340,118 @@ export default function CloudAccountsSettingsPage() {
     }
   }
 
+  async function handleCopy(
+    value: string,
+    label: string,
+  ) {
+    try {
+      await navigator.clipboard.writeText(
+        value,
+      );
+
+      setError(null);
+      setSuccess(
+        `${label} copied.`,
+      );
+    } catch {
+      setSuccess(null);
+      setError(
+        `Failed to copy ${label.toLowerCase()}.`,
+      );
+    }
+  }
+
+  async function handleConfigureConnection(
+    account: CloudAccount,
+  ) {
+    if (
+      !canManageAccounts ||
+      mutatingAccountId ||
+      !account.isActive
+    ) {
+      return;
+    }
+
+    const roleArn =
+      (roleArns[account.id] ?? account.roleArn ?? "")
+        .trim();
+
+    if (!roleArn) {
+      setError(
+        "AWS role ARN is required.",
+      );
+      return;
+    }
+
+    setMutatingAccountId(account.id);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await configureCloudAccountConnection(
+        account.id,
+        roleArn,
+      );
+
+      await loadAccounts();
+
+      setSuccess(
+        "AWS role saved. Verify the connection to continue.",
+      );
+    } catch (requestError) {
+      if (requestError instanceof ApiError) {
+        setError(requestError.message);
+      } else {
+        setError(
+          "Failed to configure AWS connection.",
+        );
+      }
+    } finally {
+      setMutatingAccountId(null);
+    }
+  }
+
+  async function handleVerifyConnection(
+    account: CloudAccount,
+  ) {
+    if (
+      !canManageAccounts ||
+      mutatingAccountId ||
+      !account.isActive ||
+      !account.roleArn
+    ) {
+      return;
+    }
+
+    setMutatingAccountId(account.id);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await verifyCloudAccountConnection(
+        account.id,
+      );
+
+      await loadAccounts();
+
+      setSuccess(
+        "AWS connection verified.",
+      );
+    } catch (requestError) {
+      await loadAccounts();
+
+      if (requestError instanceof ApiError) {
+        setError(requestError.message);
+      } else {
+        setError(
+          "AWS connection verification failed.",
+        );
+      }
+    } finally {
+      setMutatingAccountId(null);
+    }
+  }
+
   if (!currentOrganization) {
     return (
       <>
@@ -467,6 +591,16 @@ export default function CloudAccountsSettingsPage() {
                   mutatingAccountId ===
                   account.id;
 
+                const trustPolicy =
+                  account.externalId
+                    ? buildAwsTrustPolicy(
+                        account.externalId,
+                      )
+                    : null;
+
+                const cloudSightPrincipalArn =
+                  getCloudSightPrincipalArn();
+
                 return (
                   <div key={account.id}>
                     <span className="settings-label">
@@ -483,6 +617,229 @@ export default function CloudAccountsSettingsPage() {
                       AWS account{" "}
                       {account.awsAccountId}
                     </p>
+
+                    <div className="settings-details">
+                      <div>
+                        <span className="settings-label">
+                          AWS connection
+                        </span>
+
+                        <strong>
+                          {account.connectionStatus ===
+                          "CONNECTED"
+                            ? "Connected"
+                            : account.connectionStatus ===
+                                "PENDING"
+                              ? "Pending verification"
+                              : account.connectionStatus ===
+                                  "ERROR"
+                                ? "Connection error"
+                                : "Not configured"}
+                        </strong>
+                      </div>
+
+                      {account.externalId && (
+                        <div>
+                          <span className="settings-label">
+                            AWS setup
+                          </span>
+
+                          <p className="settings-help">
+                            1. Create an IAM role in AWS
+                            for this account.
+                          </p>
+
+                          <p className="settings-help">
+                            2. Require this CloudSight
+                            External ID:
+                          </p>
+
+                          <code>
+                            {account.externalId}
+                          </code>
+
+                          {canManageAccounts && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleCopy(
+                                  account.externalId!,
+                                  "External ID",
+                                );
+                              }}
+                            >
+                              Copy External ID
+                            </button>
+                          )}
+
+                          {trustPolicy ? (
+                            <>
+                              <p className="settings-help">
+                                3. Use this trust policy
+                                on the IAM role:
+                              </p>
+
+                              <pre>
+                                <code>
+                                  {trustPolicy}
+                                </code>
+                              </pre>
+
+                              {canManageAccounts && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void handleCopy(
+                                      trustPolicy,
+                                      "Trust policy",
+                                    );
+                                  }}
+                                >
+                                  Copy trust policy
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <p className="settings-help">
+                              CloudSight AWS principal
+                              configuration is required
+                              before a trust policy can
+                              be generated.
+                            </p>
+                          )}
+
+                          {cloudSightPrincipalArn && (
+                            <>
+                              <p className="settings-help">
+                                CloudSight principal:
+                              </p>
+
+                              <code>
+                                {cloudSightPrincipalArn}
+                              </code>
+                            </>
+                          )}
+
+                          <p className="settings-help">
+                            4. After creating the role,
+                            paste its ARN below and save
+                            it.
+                          </p>
+
+                          <p className="settings-help">
+                            5. Verify the connection.
+                          </p>
+                        </div>
+                      )}
+
+                      {account.lastVerifiedAt && (
+                        <p className="settings-help">
+                          Last verified{" "}
+                          {new Date(
+                            account.lastVerifiedAt,
+                          ).toLocaleString()}
+                        </p>
+                      )}
+
+                      {account.connectionError && (
+                        <p
+                          className="settings-error"
+                          role="alert"
+                        >
+                          {account.connectionError}
+                        </p>
+                      )}
+
+                      {canManageAccounts &&
+                        account.isActive && (
+                          <div>
+                            <label
+                              htmlFor={`role-arn-${account.id}`}
+                            >
+                              AWS IAM role ARN
+                            </label>
+
+                            <input
+                              id={`role-arn-${account.id}`}
+                              type="text"
+                              autoComplete="off"
+                              value={
+                                roleArns[
+                                  account.id
+                                ] ??
+                                account.roleArn ??
+                                ""
+                              }
+                              disabled={
+                                mutating ||
+                                mutatingAccountId !==
+                                  null
+                              }
+                              placeholder="arn:aws:iam::123456789012:role/CloudSightReadRole"
+                              onChange={(event) => {
+                                setRoleArns(
+                                  (current) => ({
+                                    ...current,
+                                    [account.id]:
+                                      event.target.value,
+                                  }),
+                                );
+
+                                setError(null);
+                                setSuccess(null);
+                              }}
+                            />
+
+                            <div>
+                              <button
+                                type="button"
+                                disabled={
+                                  mutating ||
+                                  mutatingAccountId !==
+                                    null ||
+                                  !(
+                                    roleArns[
+                                      account.id
+                                    ] ??
+                                    account.roleArn ??
+                                    ""
+                                  ).trim()
+                                }
+                                onClick={() => {
+                                  void handleConfigureConnection(
+                                    account,
+                                  );
+                                }}
+                              >
+                                {mutating
+                                  ? "Saving..."
+                                  : account.roleArn
+                                    ? "Update role"
+                                    : "Save role"}
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={
+                                  mutating ||
+                                  mutatingAccountId !==
+                                    null ||
+                                  !account.roleArn
+                                }
+                                onClick={() => {
+                                  void handleVerifyConnection(
+                                    account,
+                                  );
+                                }}
+                              >
+                                {mutating
+                                  ? "Verifying..."
+                                  : "Verify connection"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                    </div>
 
                     {canManageAccounts && (
                       <div>

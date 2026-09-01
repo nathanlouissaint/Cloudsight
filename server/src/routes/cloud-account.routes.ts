@@ -3,11 +3,13 @@ import {
 } from "express";
 
 import {
+  configureCloudAccountConnectionController,
   createCloudAccountController,
   disconnectCloudAccountController,
   getCloudAccounts,
   reconnectCloudAccountController,
   updateCloudAccountController,
+  verifyCloudAccountConnectionController,
 } from "../controllers/cloud-account.controller";
 
 import {
@@ -77,5 +79,27 @@ router.post(
   ),
   reconnectCloudAccountController,
 );
+
+
+router.patch(
+  "/:accountId/connection",
+  authenticateToken,
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.CLOUD_ACCOUNTS_WRITE,
+  ),
+  configureCloudAccountConnectionController,
+);
+
+router.post(
+  "/:accountId/verify",
+  authenticateToken,
+  requireOrganizationContext,
+  requireOrganizationPermission(
+    ORGANIZATION_PERMISSIONS.CLOUD_ACCOUNTS_WRITE,
+  ),
+  verifyCloudAccountConnectionController,
+);
+
 
 export default router;

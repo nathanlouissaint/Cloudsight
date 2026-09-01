@@ -1,5 +1,5 @@
-bucket         = "cloudsight-terraform-state-prod"
-key            = "terraform.tfstate"
+bucket         = "YOUR_TERRAFORM_STATE_BUCKET"
+key            = "cloudsight/prod/terraform.tfstate"
 region         = "us-east-1"
-dynamodb_table = "cloudsight-terraform-locks-prod"
+dynamodb_table = "YOUR_TERRAFORM_LOCK_TABLE"
 encrypt        = true

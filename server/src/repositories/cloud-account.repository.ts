@@ -53,12 +53,14 @@ export async function createCloudAccount(
   organizationId: string,
   awsAccountId: string,
   accountName: string,
+  externalId: string,
 ) {
   return prisma.cloudAccount.create({
     data: {
       organizationId,
       awsAccountId,
       accountName,
+      externalId,
     },
   });
 }
@@ -107,6 +109,68 @@ export async function reconnectCloudAccount(
     data: {
       isActive: true,
       disconnectedAt: null,
+    },
+  });
+}
+
+export async function configureCloudAccountConnection(
+  organizationId: string,
+  accountId: string,
+  roleArn: string,
+  externalId: string,
+) {
+  return prisma.cloudAccount.update({
+    where: {
+      id: accountId,
+      organizationId,
+    },
+    data: {
+      roleArn,
+      externalId,
+      connectionStatus: "PENDING",
+      lastVerifiedAt: null,
+      connectionError: null,
+    },
+  });
+}
+
+export async function updateCloudAccountConnectionState(
+  organizationId: string,
+  accountId: string,
+  input: {
+    connectionStatus:
+      | "NOT_CONFIGURED"
+      | "PENDING"
+      | "CONNECTED"
+      | "ERROR";
+    lastVerifiedAt?: Date | null;
+    connectionError?: string | null;
+  },
+) {
+  return prisma.cloudAccount.update({
+    where: {
+      id: accountId,
+      organizationId,
+    },
+    data: {
+      connectionStatus:
+        input.connectionStatus,
+
+      ...(input.lastVerifiedAt !==
+      undefined
+        ? {
+            lastVerifiedAt:
+              input.lastVerifiedAt,
+          }
+        : {}),
+
+      ...(input.connectionError !==
+      undefined
+        ? {
+            connectionError:
+              input.connectionError,
+          }
+        : {}),
     },
   });
 }
