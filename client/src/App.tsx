@@ -9,6 +9,10 @@ import {
   lazy,
 } from "react";
 
+const LandingPage = lazy(
+  () => import("./pages/LandingPage")
+);
+
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -40,7 +44,13 @@ export default function App() {
         }
       >
         <Routes>
+          {/* Public Spend Guard landing page */}
+          <Route
+            path="/spend-guard"
+            element={<LandingPage />}
+          />
 
+          {/* Existing CloudSight application */}
           <Route
             path="/"
             element={<DashboardPage />}
@@ -65,7 +75,6 @@ export default function App() {
             path="/reports"
             element={<ReportsPage />}
           />
-
         </Routes>
       </Suspense>
     </BrowserRouter>
