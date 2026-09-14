@@ -18,11 +18,17 @@ export default function HeroSection() {
           </p>
 
           <div className="landing-hero__actions">
-            <a href="#private-beta" className="button button--primary">
+            <a
+              href="#private-beta"
+              className="button button--primary"
+            >
               Join Private Beta
             </a>
 
-            <a href="#product" className="button button--secondary">
+            <a
+              href="#how-it-works"
+              className="button button--secondary"
+            >
               See How It Works
             </a>
           </div>
@@ -32,19 +38,7 @@ export default function HeroSection() {
             Disconnect anytime
           </p>
         </div>
-
-        <SpendHeroPreview />
       </div>
     </section>
-  );
-}
-
-function SpendHeroPreview() {
-  return (
-    <div className="landing-hero__preview">
-      <div className="preview-window">
-        <p>CloudSight Spend Guard</p>
-      </div>
-    </div>
   );
 }
