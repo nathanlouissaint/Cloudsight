@@ -13,6 +13,14 @@ const LandingPage = lazy(
   () => import("./pages/LandingPage")
 );
 
+const SpendGuardSignupPage = lazy(
+  () => import("./pages/spend-guard/SpendGuardSignupPage")
+);
+
+const SpendGuardSetupPage = lazy(
+  () => import("./pages/spend-guard/SpendGuardSetupPage")
+);
+
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -44,10 +52,20 @@ export default function App() {
         }
       >
         <Routes>
-          {/* Public Spend Guard landing page */}
+          {/* Public Spend Guard funnel */}
           <Route
             path="/spend-guard"
             element={<LandingPage />}
+          />
+
+          <Route
+            path="/spend-guard/signup"
+            element={<SpendGuardSignupPage />}
+          />
+
+          <Route
+            path="/spend-guard/setup"
+            element={<SpendGuardSetupPage />}
           />
 
           {/* Existing CloudSight application */}
