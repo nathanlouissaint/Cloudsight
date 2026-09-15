@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export default function FinalCtaSection() {
@@ -28,12 +29,12 @@ export default function FinalCtaSection() {
             </p>
 
             <div className="final-cta__actions">
-              <a
-                href="/register?product=spend-guard"
+              <Link
+                to="/spend-guard/signup"
                 className="button button--primary final-cta__button"
               >
                 Join Private Beta
-              </a>
+              </Link>
             </div>
 
             <div className="final-cta__trust">

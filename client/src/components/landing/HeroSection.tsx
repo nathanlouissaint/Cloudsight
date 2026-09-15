@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 export default function HeroSection() {
   return (
     <section className="landing-hero">
@@ -18,12 +19,12 @@ export default function HeroSection() {
           </p>
 
           <div className="landing-hero__actions">
-            <a
-              href="#private-beta"
+            <Link
+              to="/spend-guard/signup"
               className="button button--primary"
             >
               Join Private Beta
-            </a>
+            </Link>
 
             <a
               href="#how-it-works"

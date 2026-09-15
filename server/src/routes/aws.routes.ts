@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   getAwsCosts,
+  verifyAwsConnection,
 } from "../controllers/aws.controller";
 
 import {
@@ -12,12 +13,17 @@ const router = Router();
 
 router.get(
   "/cost-explorer",
-  getAwsCosts
+  getAwsCosts,
 );
 
 router.post(
   "/collect",
-  collectCostsController
+  collectCostsController,
+);
+
+router.post(
+  "/verify-connection",
+  verifyAwsConnection,
 );
 
 export default router;

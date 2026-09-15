@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export default function LandingNavbar() {
@@ -52,12 +53,12 @@ export default function LandingNavbar() {
           <a href="#security">Security</a>
         </nav>
 
-        <a
-          href="#private-beta"
+        <Link
+          to="/spend-guard/signup"
           className="button button--primary landing-navbar__cta"
         >
           Join Private Beta
-        </a>
+        </Link>
       </div>
     </header>
   );

@@ -2,12 +2,19 @@ import { useState } from "react";
 
 import "../../styles/spend-guard/funnel.css";
 
+import {
+  verifyAwsConnection,
+} from "../../spend-guard/spend-guard.api";
+
 type SetupStep = "aws" | "budget" | "analysis";
 
 export default function SpendGuardSetupPage() {
   const [step, setStep] = useState<SetupStep>("aws");
   const [roleArn, setRoleArn] = useState("");
   const [budget, setBudget] = useState("");
+  const [awsAccountId, setAwsAccountId] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
 
   const stepNumber =
     step === "aws"
@@ -15,6 +22,43 @@ export default function SpendGuardSetupPage() {
       : step === "budget"
         ? 2
         : 3;
+
+  async function handleVerifyAwsConnection() {
+    const normalizedRoleArn = roleArn.trim();
+
+    if (!normalizedRoleArn) {
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationError("");
+
+    try {
+      const connection =
+        await verifyAwsConnection(
+          normalizedRoleArn,
+        );
+
+      setAwsAccountId(
+        connection.accountId,
+      );
+
+      setRoleArn(
+        connection.roleArn,
+      );
+
+      setStep("budget");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to verify AWS connection.";
+
+      setVerificationError(message);
+    } finally {
+      setIsVerifying(false);
+    }
+  }
 
   return (
     <main className="sg-onboarding">
@@ -152,14 +196,30 @@ export default function SpendGuardSetupPage() {
                   </small>
                 </label>
 
+                {verificationError && (
+                  <div
+                    className="sg-onboarding__error"
+                    role="alert"
+                  >
+                    {verificationError}
+                  </div>
+                )}
+
                 <div className="sg-onboarding__actions">
                   <button
                     type="button"
                     className="sg-button sg-button--primary"
-                    disabled={!roleArn.trim()}
-                    onClick={() => setStep("budget")}
+                    disabled={
+                      !roleArn.trim() ||
+                      isVerifying
+                    }
+                    onClick={
+                      handleVerifyAwsConnection
+                    }
                   >
-                    Verify connection
+                    {isVerifying
+                      ? "Verifying..."
+                      : "Verify connection"}
                   </button>
                 </div>
               </div>
@@ -239,6 +299,11 @@ export default function SpendGuardSetupPage() {
                 </div>
 
                 <div className="sg-review">
+                  <div className="sg-review__row">
+                    <span>AWS account</span>
+                    <strong>{awsAccountId}</strong>
+                  </div>
+
                   <div className="sg-review__row">
                     <span>AWS role</span>
                     <strong>{roleArn}</strong>
