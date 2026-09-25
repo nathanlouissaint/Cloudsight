@@ -6,6 +6,11 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test:registration": "node --import tsx --test test/registration.integration.test.ts",
+    "test:budget": "node --import tsx --test test/budget.integration.test.ts",
+    "test:cloud-account": "node --import tsx --test test/cloud-account.integration.test.ts",
+    "test:collection": "node --import tsx --test test/collection.integration.test.ts",
+    "test:spend-guard-analysis": "node --import tsx --test test/spend-guard-analysis.integration.test.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {

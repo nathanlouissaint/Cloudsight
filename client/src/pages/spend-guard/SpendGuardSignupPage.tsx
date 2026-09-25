@@ -7,6 +7,7 @@ import type {
 } from "react";
 
 import {
+  Link,
   useNavigate,
 } from "react-router-dom";
 
@@ -93,10 +94,18 @@ export default function SpendGuardSignupPage() {
 
     try {
       const auth =
-        await registerSpendGuardUser(
-          workEmail.trim(),
+        await registerSpendGuardUser({
+          email:
+            workEmail.trim(),
+
           password,
-        );
+
+          name:
+            name.trim(),
+
+          company:
+            company.trim(),
+        });
 
       sessionStorage.setItem(
         "cloudsightAccessToken",
@@ -140,8 +149,8 @@ export default function SpendGuardSignupPage() {
       <div className="sg-signup__glow" />
 
       <header className="sg-signup__topbar">
-        <a
-          href="/spend-guard"
+        <Link
+          to="/spend-guard"
           className="sg-signup__brand"
         >
           <span className="sg-signup__brand-mark">
@@ -151,7 +160,7 @@ export default function SpendGuardSignupPage() {
           <span>
             CloudSight
           </span>
-        </a>
+        </Link>
 
         <span className="sg-signup__product">
           Spend Guard

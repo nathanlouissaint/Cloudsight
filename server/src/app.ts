@@ -17,6 +17,7 @@ import analyticsRoutes from "./routes/analytics.routes";
 import accountRoutes from "./routes/account.routes";
 import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
 import healthRoutes from "./routes/health.routes";
+import spendGuardAnalysisRoutes from "./routes/spend-guard-analysis.routes";
 
 import {
   errorHandler,
@@ -75,6 +76,7 @@ app.use("/aws", awsRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/analytics/accounts", accountRoutes);
 app.use("/analytics/services", serviceAnalyticsRoutes);
+app.use("/spend-guard", spendGuardAnalysisRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -21,6 +21,10 @@ const SpendGuardSetupPage = lazy(
   () => import("./pages/spend-guard/SpendGuardSetupPage")
 );
 
+const SpendGuardResultPage = lazy(
+  () => import("./pages/spend-guard/SpendGuardResultPage")
+);
+
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -66,6 +70,11 @@ export default function App() {
           <Route
             path="/spend-guard/setup"
             element={<SpendGuardSetupPage />}
+          />
+
+          <Route
+            path="/spend-guard/results"
+            element={<SpendGuardResultPage />}
           />
 
           {/* Existing CloudSight application */}

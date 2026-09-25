@@ -1,8 +1,31 @@
-import { Router } from "express";
-import { getBudgetSummary } from "../controllers/budget.controller";
+import {
+  Router,
+} from "express";
 
-const router = Router();
+import {
+  getBudgetSummary,
+  setBudget,
+} from "../controllers/budget.controller";
 
-router.get("/", getBudgetSummary);
+import {
+  authenticateToken,
+} from "../middleware/auth.middleware";
+
+const router =
+  Router();
+
+router.use(
+  authenticateToken,
+);
+
+router.get(
+  "/",
+  getBudgetSummary,
+);
+
+router.post(
+  "/",
+  setBudget,
+);
 
 export default router;

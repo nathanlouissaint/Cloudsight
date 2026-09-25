@@ -1,20 +1,114 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
 
 import "../../styles/spend-guard/funnel.css";
 
 import {
+  getSpendGuardAwsConnection,
+  getSpendGuardBudgetSummary,
+  saveSpendGuardBudget,
+  runSpendGuardAnalysis,
   verifyAwsConnection,
 } from "../../spend-guard/spend-guard.api";
 
 type SetupStep = "aws" | "budget" | "analysis";
 
 export default function SpendGuardSetupPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<SetupStep>("aws");
   const [roleArn, setRoleArn] = useState("");
   const [budget, setBudget] = useState("");
   const [awsAccountId, setAwsAccountId] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState("");
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
+  const [budgetError, setBudgetError] = useState("");
+  const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAwsConnection() {
+      try {
+        const connection =
+          await getSpendGuardAwsConnection();
+
+        if (
+          !cancelled &&
+          connection.configured
+        ) {
+          setAwsAccountId(
+            connection.accountId ?? "",
+          );
+
+          setRoleArn(
+            connection.roleArn ?? "",
+          );
+        }
+      } catch (error: unknown) {
+        if (cancelled) {
+          return;
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to load your AWS connection.";
+
+        setVerificationError(message);
+      }
+    }
+
+    void loadAwsConnection();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBudget() {
+      try {
+        const summary =
+          await getSpendGuardBudgetSummary();
+
+        if (
+          !cancelled &&
+          summary.configured
+        ) {
+          setBudget(
+            String(summary.budget),
+          );
+        }
+      } catch (error: unknown) {
+        if (cancelled) {
+          return;
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to load your saved budget.";
+
+        setBudgetError(message);
+      }
+    }
+
+    void loadBudget();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stepNumber =
     step === "aws"
@@ -60,17 +154,75 @@ export default function SpendGuardSetupPage() {
     }
   }
 
+  async function handleSaveBudget() {
+    const numericBudget =
+      Number(budget);
+
+    if (
+      !Number.isFinite(numericBudget) ||
+      numericBudget <= 0
+    ) {
+      setBudgetError(
+        "Enter a monthly budget greater than zero.",
+      );
+      return;
+    }
+
+    setIsSavingBudget(true);
+    setBudgetError("");
+
+    try {
+      const savedBudget =
+        await saveSpendGuardBudget(
+          numericBudget,
+        );
+
+      setBudget(
+        String(savedBudget.amount),
+      );
+
+      setStep("analysis");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to save your budget.";
+
+      setBudgetError(message);
+    } finally {
+      setIsSavingBudget(false);
+    }
+  }
+
+  async function handleRunAnalysis() {
+    setIsRunningAnalysis(true);
+    setAnalysisError("");
+
+    try {
+      await runSpendGuardAnalysis();
+      navigate("/spend-guard/results");
+    } catch (error: unknown) {
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : "Unable to run your first analysis.",
+      );
+    } finally {
+      setIsRunningAnalysis(false);
+    }
+  }
+
   return (
     <main className="sg-onboarding">
       <div className="sg-onboarding__shell">
         <header className="sg-onboarding__topbar">
-          <a
-            href="/spend-guard"
+          <Link
+            to="/spend-guard"
             className="sg-onboarding__brand"
           >
             <span className="sg-onboarding__brand-mark">C</span>
             <span>CloudSight</span>
-          </a>
+          </Link>
 
           <span className="sg-onboarding__product">
             Spend Guard
@@ -250,6 +402,7 @@ export default function SpendGuardSetupPage() {
                       type="number"
                       min="1"
                       value={budget}
+                      disabled={isSavingBudget}
                       onChange={(event) =>
                         setBudget(event.target.value)
                       }
@@ -262,10 +415,20 @@ export default function SpendGuardSetupPage() {
                   </small>
                 </label>
 
+                {budgetError && (
+                  <div
+                    className="sg-onboarding__error"
+                    role="alert"
+                  >
+                    {budgetError}
+                  </div>
+                )}
+
                 <div className="sg-onboarding__actions">
                   <button
                     type="button"
                     className="sg-button sg-button--secondary"
+                    disabled={isSavingBudget}
                     onClick={() => setStep("aws")}
                   >
                     Back
@@ -274,10 +437,15 @@ export default function SpendGuardSetupPage() {
                   <button
                     type="button"
                     className="sg-button sg-button--primary"
-                    disabled={!budget}
-                    onClick={() => setStep("analysis")}
+                    disabled={
+                      !budget.trim() ||
+                      isSavingBudget
+                    }
+                    onClick={handleSaveBudget}
                   >
-                    Continue
+                    {isSavingBudget
+                      ? "Saving..."
+                      : "Continue"}
                   </button>
                 </div>
               </div>
@@ -331,11 +499,24 @@ export default function SpendGuardSetupPage() {
                     Back
                   </button>
 
+                  {analysisError && (
+                    <div
+                      className="sg-onboarding__error"
+                      role="alert"
+                    >
+                      {analysisError}
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     className="sg-button sg-button--primary"
+                    disabled={isRunningAnalysis}
+                    onClick={handleRunAnalysis}
                   >
-                    Run first analysis
+                    {isRunningAnalysis
+                      ? "Analyzing..."
+                      : "Run first analysis"}
                   </button>
                 </div>
               </div>

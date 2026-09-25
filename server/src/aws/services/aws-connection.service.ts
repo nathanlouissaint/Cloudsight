@@ -14,14 +14,20 @@ export interface AwsConnectionVerificationResult {
   roleArn: string;
 }
 
+export interface AwsTemporaryCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+}
+
 export class AwsConnectionService {
   constructor(
     private readonly sts: STSClient = stsClient,
   ) {}
 
-  async verifyRole(
+  async assumeRole(
     roleArn: string,
-  ): Promise<AwsConnectionVerificationResult> {
+  ): Promise<AwsTemporaryCredentials> {
     const assumeRoleResponse = await this.sts.send(
       new AssumeRoleCommand({
         RoleArn: roleArn,
@@ -43,6 +49,19 @@ export class AwsConnectionService {
       );
     }
 
+    return {
+      accessKeyId: credentials.AccessKeyId,
+      secretAccessKey: credentials.SecretAccessKey,
+      sessionToken: credentials.SessionToken,
+    };
+  }
+
+  async verifyRole(
+    roleArn: string,
+  ): Promise<AwsConnectionVerificationResult> {
+    const credentials =
+      await this.assumeRole(roleArn);
+
     const assumedRoleClient =
       new STSClient({
         region:
@@ -50,14 +69,9 @@ export class AwsConnectionService {
           "us-east-1",
 
         credentials: {
-          accessKeyId:
-            credentials.AccessKeyId,
-
-          secretAccessKey:
-            credentials.SecretAccessKey,
-
-          sessionToken:
-            credentials.SessionToken,
+          accessKeyId: credentials.accessKeyId,
+          secretAccessKey: credentials.secretAccessKey,
+          sessionToken: credentials.sessionToken,
         },
       });
 

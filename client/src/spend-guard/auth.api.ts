@@ -1,6 +1,4 @@
-import {
-  apiRequest,
-} from "../api/client";
+import { apiRequest } from "../api/client";
 
 export interface AuthUser {
   id: string;
@@ -12,19 +10,18 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
-export async function registerSpendGuardUser(
-  email: string,
-  password: string,
-): Promise<AuthResponse> {
-  return apiRequest<AuthResponse>(
-    "/auth/register",
-    {
-      method: "POST",
+export interface SpendGuardRegistration {
+  email: string;
+  password: string;
+  name: string;
+  company: string;
+}
 
-      body: {
-        email,
-        password,
-      },
-    },
-  );
+export async function registerSpendGuardUser(
+  registration: SpendGuardRegistration,
+): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: registration,
+  });
 }

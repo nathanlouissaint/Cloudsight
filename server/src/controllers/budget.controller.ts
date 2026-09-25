@@ -1,79 +1,232 @@
-import type { Request, Response } from "express";
-import { prisma } from "../config/prisma";
+import type {
+  Response,
+} from "express";
 
-export async function getBudgetSummary(
-  _req: Request,
-  res: Response
+import type {
+  AuthenticatedRequest,
+} from "../middleware/auth.middleware";
+
+import {
+  prisma,
+} from "../config/prisma";
+
+async function getOrganizationIdForUser(
+  userId: string,
+): Promise<string | null> {
+  const membership =
+    await prisma.organizationMember.findFirst({
+      where: {
+        userId,
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+
+      select: {
+        organizationId: true,
+      },
+    });
+
+  return membership?.organizationId ?? null;
+}
+
+function getCurrentMonth() {
+  const now = new Date();
+
+  return {
+    month:
+      now.getMonth() + 1,
+
+    year:
+      now.getFullYear(),
+  };
+}
+
+export async function setBudget(
+  req: AuthenticatedRequest,
+  res: Response,
 ) {
   try {
-    const now = new Date();
+    const userId =
+      req.user?.userId;
 
-    const currentMonthStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    );
-
-    const currentMonthEnd = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59
-    );
-
-    const budget = await prisma.budget.findFirst({
-      where: {
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    const spendResult = await prisma.costRecord.aggregate({
-      _sum: {
-        cost: true,
-      },
-      where: {
-        usageDate: {
-          gte: currentMonthStart,
-          lte: currentMonthEnd,
-        },
-      },
-    });
-
-    const spent = spendResult._sum.cost ?? 0;
-    const budgetAmount = budget?.amount ?? 0;
-    const remaining = budgetAmount - spent;
-
-    const usagePercent =
-      budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
-
-    let status = "healthy";
-
-    if (usagePercent >= 100) {
-      status = "exceeded";
-    } else if (usagePercent >= 85) {
-      status = "critical";
-    } else if (usagePercent >= 70) {
-      status = "warning";
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
     }
 
+    const organizationId =
+      await getOrganizationIdForUser(
+        userId,
+      );
+
+    if (!organizationId) {
+      return res.status(403).json({
+        message:
+          "No organization is associated with this account.",
+      });
+    }
+
+    const numericAmount =
+      Number(req.body.amount);
+
+    if (
+      !Number.isFinite(numericAmount) ||
+      numericAmount <= 0
+    ) {
+      return res.status(400).json({
+        message:
+          "Budget amount must be greater than zero.",
+      });
+    }
+
+    const {
+      month,
+      year,
+    } = getCurrentMonth();
+
+    const budget =
+      await prisma.budget.upsert({
+        where: {
+          organizationId_year_month: {
+            organizationId,
+            year,
+            month,
+          },
+        },
+
+        update: {
+          amount:
+            numericAmount,
+
+          name:
+            "Spend Guard Monthly Budget",
+
+          updatedAt:
+            new Date(),
+        },
+
+        create: {
+          organizationId,
+
+          name:
+            "Spend Guard Monthly Budget",
+
+          amount:
+            numericAmount,
+
+          month,
+          year,
+
+          updatedAt:
+            new Date(),
+        },
+      });
+
     return res.status(200).json({
-      budget: Number(budgetAmount.toFixed(2)),
-      spent: Number(spent.toFixed(2)),
-      remaining: Number(remaining.toFixed(2)),
-      usagePercent: Number(usagePercent.toFixed(2)),
-      status,
+      budget: {
+        id:
+          budget.id,
+
+        organizationId:
+          budget.organizationId,
+
+        name:
+          budget.name,
+
+        amount:
+          budget.amount,
+
+        month:
+          budget.month,
+
+        year:
+          budget.year,
+      },
     });
   } catch (error) {
-    console.error("Budget summary error:", error);
+    console.error(
+      "Set budget error:",
+      error,
+    );
 
     return res.status(500).json({
-      message: "Failed to load budget summary",
+      message:
+        "Failed to save budget.",
+    });
+  }
+}
+
+export async function getBudgetSummary(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const userId =
+      req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const organizationId =
+      await getOrganizationIdForUser(
+        userId,
+      );
+
+    if (!organizationId) {
+      return res.status(403).json({
+        message:
+          "No organization is associated with this account.",
+      });
+    }
+
+    const {
+      month,
+      year,
+    } = getCurrentMonth();
+
+    const budget =
+      await prisma.budget.findUnique({
+        where: {
+          organizationId_year_month: {
+            organizationId,
+            year,
+            month,
+          },
+        },
+      });
+
+    const budgetAmount =
+      budget?.amount ?? 0;
+
+    return res.status(200).json({
+      organizationId,
+
+      budget:
+        Number(
+          budgetAmount.toFixed(2),
+        ),
+
+      month,
+      year,
+
+      configured:
+        Boolean(budget),
+    });
+  } catch (error) {
+    console.error(
+      "Budget summary error:",
+      error,
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to load budget summary.",
     });
   }
 }
