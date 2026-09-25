@@ -1,11 +1,13 @@
 import { prisma } from "../config/prisma";
 
-export async function findCostSnapshotsByAccount(
+export async function findCostSnapshotsByAccountForOrganization(
+  organizationId: string,
   accountId: string
 ) {
   return prisma.costSnapshot.findMany({
     where: {
       accountId,
+      account: { organizationId },
     },
     include: {
       account: true,
@@ -16,7 +18,8 @@ export async function findCostSnapshotsByAccount(
   });
 }
 
-export async function findCostSnapshotsByDateRange(
+export async function findCostSnapshotsByDateRangeForOrganization(
+  organizationId: string,
   startDate: Date,
   endDate: Date
 ) {
@@ -26,6 +29,7 @@ export async function findCostSnapshotsByDateRange(
         gte: startDate,
         lte: endDate,
       },
+      account: { organizationId },
     },
     include: {
       account: true,
@@ -36,7 +40,9 @@ export async function findCostSnapshotsByDateRange(
   });
 }
 
-export async function findCurrentMonthCostSnapshots() {
+export async function findCurrentMonthCostSnapshotsForOrganization(
+  organizationId: string,
+) {
 
   const now = new Date();
 
@@ -52,6 +58,7 @@ export async function findCurrentMonthCostSnapshots() {
         gte: monthStart,
         lte: now,
       },
+      account: { organizationId },
     },
     include: {
       account: true,

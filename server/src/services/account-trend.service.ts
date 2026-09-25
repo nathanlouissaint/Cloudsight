@@ -1,18 +1,20 @@
 import {
-  findAccountTrend,
+  findAccountTrendForOrganization,
 } from "../repositories/account-trend.repository";
 
 type AccountTrendSnapshot = Awaited<
-  ReturnType<typeof findAccountTrend>
+  ReturnType<typeof findAccountTrendForOrganization>
 >[number];
 
 export async function getAccountTrend(
+  organizationId: string,
   accountId: string,
   startDate: Date,
   endDate: Date
 ) {
   const snapshots =
-    await findAccountTrend(
+    await findAccountTrendForOrganization(
+      organizationId,
       accountId,
       startDate,
       endDate

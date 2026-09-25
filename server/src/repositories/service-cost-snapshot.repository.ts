@@ -11,7 +11,8 @@ export async function createServiceCostSnapshot(input: {
   });
 }
 
-export async function findServiceSnapshotsByDateRange(
+export async function findServiceSnapshotsByDateRangeForOrganization(
+  organizationId: string,
   startDate: Date,
   endDate: Date
 ) {
@@ -21,6 +22,7 @@ export async function findServiceSnapshotsByDateRange(
         gte: startDate,
         lte: endDate,
       },
+      account: { organizationId },
     },
     include: {
       account: true,
@@ -31,7 +33,8 @@ export async function findServiceSnapshotsByDateRange(
   });
 }
 
-export async function findServiceSnapshotsByService(
+export async function findServiceSnapshotsByServiceForOrganization(
+  organizationId: string,
   serviceName: string,
   startDate: Date,
   endDate: Date
@@ -46,6 +49,7 @@ export async function findServiceSnapshotsByService(
         gte: startDate,
         lte: endDate,
       },
+      account: { organizationId },
     },
     include: {
       account: true,
@@ -56,7 +60,9 @@ export async function findServiceSnapshotsByService(
   });
 }
 
-export async function findCurrentMonthServiceSnapshots() {
+export async function findCurrentMonthServiceSnapshotsForOrganization(
+  organizationId: string,
+) {
 
   const now = new Date();
 
@@ -72,6 +78,7 @@ export async function findCurrentMonthServiceSnapshots() {
         gte: monthStart,
         lte: now,
       },
+      account: { organizationId },
     },
     include: {
       account: true,
@@ -88,7 +95,8 @@ export async function findCurrentMonthServiceSnapshots() {
 
 }
 
-export async function findCurrentMonthServiceSnapshotsByService(
+export async function findCurrentMonthServiceSnapshotsByServiceForOrganization(
+  organizationId: string,
   serviceName: string
 ) {
 
@@ -107,6 +115,7 @@ export async function findCurrentMonthServiceSnapshotsByService(
         gte: monthStart,
         lte: now,
       },
+      account: { organizationId },
     },
     include: {
       account: true,

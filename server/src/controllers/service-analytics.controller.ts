@@ -1,7 +1,6 @@
-import type {
-  Request,
-  Response,
-} from "express";
+import type { Response } from "express";
+import type { AuthenticatedRequest } from "../middleware/auth.middleware";
+import { getOrganizationIdForUser } from "../services/organization-context.service";
 
 import {
   getServiceBreakdown,
@@ -9,7 +8,7 @@ import {
   getTopDrivers,
 } from "../services/service-analytics.service";
 
-function getDates(req: Request) {
+function getDates(req: AuthenticatedRequest) {
   const endDate = req.query.endDate
     ? new Date(String(req.query.endDate))
     : new Date();
@@ -29,15 +28,20 @@ function getDates(req: Request) {
 }
 
 export async function getServices(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
     const { startDate, endDate } =
       getDates(req);
 
     const result =
       await getServiceBreakdown(
+        organizationId,
         startDate,
         endDate
       );
@@ -52,15 +56,20 @@ export async function getServices(
 }
 
 export async function getTopServiceDrivers(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
     const { startDate, endDate } =
       getDates(req);
 
     const result =
       await getTopDrivers(
+        organizationId,
         startDate,
         endDate
       );
@@ -75,15 +84,20 @@ export async function getTopServiceDrivers(
 }
 
 export async function getServiceTrends(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
     const { startDate, endDate } =
       getDates(req);
 
     const result =
       await getServiceTrend(
+        organizationId,
         String(
           req.params.serviceName
         ),

@@ -1,21 +1,29 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { prisma } from "../config/prisma";
+import type { AuthenticatedRequest } from "../middleware/auth.middleware";
+import { getOrganizationIdForUser } from "../services/organization-context.service";
 
 export async function getCostTrends(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const records = await prisma.costRecord.findMany({
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
+
+    const records = await prisma.costSnapshot.findMany({
+      where: { account: { organizationId } },
       orderBy: {
-        usageDate: "asc",
+        snapshotDate: "asc",
       },
     });
 
     const dailyTotals = new Map<string, number>();
 
     for (const record of records) {
-      const date = record.usageDate
+      const date = record.snapshotDate
         .toISOString()
         .split("T")[0];
 
@@ -24,7 +32,7 @@ export async function getCostTrends(
 
       dailyTotals.set(
         date,
-        current + record.cost
+        current + record.totalCost
       );
     }
 
@@ -50,16 +58,18 @@ export async function getCostTrends(
 }
 
 export async function getServiceBreakdown(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const records =
-      await prisma.costRecord.findMany({
-        include: {
-          service: true,
-        },
-      });
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
+
+    const records = await prisma.serviceCostSnapshot.findMany({
+      where: { account: { organizationId } },
+    });
 
     const totals = new Map<
       string,
@@ -68,7 +78,7 @@ export async function getServiceBreakdown(
 
     for (const record of records) {
       const serviceName =
-        record.service.name;
+        record.serviceName;
 
       const current =
         totals.get(serviceName) ?? 0;

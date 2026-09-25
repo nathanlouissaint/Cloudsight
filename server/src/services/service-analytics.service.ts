@@ -1,6 +1,6 @@
 import {
-  findServiceSnapshotsByDateRange,
-  findServiceSnapshotsByService,
+  findServiceSnapshotsByDateRangeForOrganization,
+  findServiceSnapshotsByServiceForOrganization,
 } from "../repositories/service-cost-snapshot.repository";
 
 interface ServiceSnapshot {
@@ -16,11 +16,13 @@ interface ServiceBreakdownItem {
 }
 
 export async function getServiceBreakdown(
+  organizationId: string,
   startDate: Date,
   endDate: Date
 ): Promise<ServiceBreakdownItem[]> {
   const snapshots =
-    await findServiceSnapshotsByDateRange(
+    await findServiceSnapshotsByDateRangeForOrganization(
+      organizationId,
       startDate,
       endDate
     ) as ServiceSnapshot[];
@@ -61,11 +63,13 @@ export async function getServiceBreakdown(
 }
 
 export async function getTopDrivers(
+  organizationId: string,
   startDate: Date,
   endDate: Date
 ) {
   const services =
     await getServiceBreakdown(
+      organizationId,
       startDate,
       endDate
     );
@@ -103,12 +107,14 @@ export async function getTopDrivers(
 }
 
 export async function getServiceTrend(
+  organizationId: string,
   serviceName: string,
   startDate: Date,
   endDate: Date
 ) {
   const snapshots =
-    await findServiceSnapshotsByService(
+    await findServiceSnapshotsByServiceForOrganization(
+      organizationId,
       serviceName,
       startDate,
       endDate
