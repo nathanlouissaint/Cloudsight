@@ -1,4 +1,5 @@
 import {
+  useRef,
   useState,
 } from "react";
 
@@ -14,6 +15,8 @@ import {
 import {
   registerSpendGuardUser,
 } from "../../spend-guard/auth.api";
+
+import { analytics } from "../../lib/analytics";
 
 import "../../styles/spend-guard/funnel.css";
 
@@ -38,6 +41,8 @@ const benefits = [
 export default function SpendGuardSignupPage() {
   const navigate =
     useNavigate();
+
+  const hasTrackedSignupStart = useRef(false);
 
   const [
     name,
@@ -73,6 +78,20 @@ export default function SpendGuardSignupPage() {
     error,
     setError,
   ] = useState("");
+
+  function trackSignupStarted() {
+    if (hasTrackedSignupStart.current) {
+      return;
+    }
+
+    hasTrackedSignupStart.current = true;
+
+    analytics.track("signup_started", {
+      page: "spend_guard_signup",
+      path: window.location.pathname,
+      source: "spend_guard",
+    });
+  }
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -126,6 +145,16 @@ export default function SpendGuardSignupPage() {
             auth.user.id,
         }),
       );
+
+      analytics.identify(auth.user.id, {
+        source: "spend_guard",
+      });
+
+      analytics.track("signup_completed", {
+        page: "spend_guard_signup",
+        path: window.location.pathname,
+        source: "spend_guard",
+      });
 
       navigate(
         "/spend-guard/setup",
@@ -241,11 +270,10 @@ export default function SpendGuardSignupPage() {
                 type="text"
                 autoComplete="name"
                 value={name}
-                onChange={(event) =>
-                  setName(
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => {
+                  trackSignupStarted();
+                  setName(event.target.value);
+                }}
                 placeholder="Your name"
                 required
               />
@@ -260,11 +288,10 @@ export default function SpendGuardSignupPage() {
                 type="email"
                 autoComplete="email"
                 value={workEmail}
-                onChange={(event) =>
-                  setWorkEmail(
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => {
+                  trackSignupStarted();
+                  setWorkEmail(event.target.value);
+                }}
                 placeholder="you@company.com"
                 required
               />
@@ -279,11 +306,10 @@ export default function SpendGuardSignupPage() {
                 type="text"
                 autoComplete="organization"
                 value={company}
-                onChange={(event) =>
-                  setCompany(
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => {
+                  trackSignupStarted();
+                  setCompany(event.target.value);
+                }}
                 placeholder="Company name"
                 required
               />
@@ -297,11 +323,10 @@ export default function SpendGuardSignupPage() {
               <div className="sg-signup__select-wrap">
                 <select
                   value={awsSpendRange}
-                  onChange={(event) =>
-                    setAwsSpendRange(
-                      event.target.value,
-                    )
-                  }
+                  onChange={(event) => {
+                    trackSignupStarted();
+                    setAwsSpendRange(event.target.value);
+                  }}
                   required
                 >
                   <option value="">
@@ -345,11 +370,10 @@ export default function SpendGuardSignupPage() {
                 autoComplete="new-password"
                 minLength={8}
                 value={password}
-                onChange={(event) =>
-                  setPassword(
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => {
+                  trackSignupStarted();
+                  setPassword(event.target.value);
+                }}
                 placeholder="Minimum 8 characters"
                 required
               />

@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -17,6 +18,8 @@ import {
 import type {
   SpendGuardAnalysis,
 } from "../../spend-guard/spend-guard.api";
+
+import { analytics } from "../../lib/analytics";
 
 function formatCurrency(
   value: number,
@@ -58,6 +61,8 @@ function getRiskLabel(
 export default function SpendGuardResultPage() {
   const navigate =
     useNavigate();
+
+  const hasTrackedAnalysisView = useRef(false);
 
   const [
     analysis,
@@ -106,6 +111,16 @@ export default function SpendGuardResultPage() {
 
         if (!cancelled) {
           setAnalysis(result);
+
+          if (!hasTrackedAnalysisView.current) {
+            hasTrackedAnalysisView.current = true;
+
+            analytics.track("analysis_viewed", {
+              page: "spend_guard_results",
+              path: window.location.pathname,
+              source: "spend_guard",
+            });
+          }
         }
       } catch (loadError: unknown) {
         if (!cancelled) {

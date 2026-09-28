@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { analytics } from "../../lib/analytics";
+
 export default function HeroSection() {
   return (
     <section className="landing-hero">
@@ -22,6 +24,13 @@ export default function HeroSection() {
             <Link
               to="/spend-guard/signup"
               className="button button--primary"
+              onClick={() =>
+                analytics.track("hero_cta_clicked", {
+                  cta_location: "hero",
+                  page: "landing",
+                  path: window.location.pathname,
+                })
+              }
             >
               Join Private Beta
             </Link>

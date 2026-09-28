@@ -17,6 +17,8 @@ import {
   verifyAwsConnection,
 } from "../../spend-guard/spend-guard.api";
 
+import { analytics } from "../../lib/analytics";
+
 type SetupStep = "aws" | "budget" | "analysis";
 
 export default function SpendGuardSetupPage() {
@@ -124,6 +126,12 @@ export default function SpendGuardSetupPage() {
       return;
     }
 
+    analytics.track("aws_connection_started", {
+      page: "spend_guard_setup",
+      path: window.location.pathname,
+      source: "spend_guard",
+    });
+
     setIsVerifying(true);
     setVerificationError("");
 
@@ -140,6 +148,12 @@ export default function SpendGuardSetupPage() {
       setRoleArn(
         connection.roleArn,
       );
+
+      analytics.track("mock_aws_account_verified", {
+        page: "spend_guard_setup",
+        path: window.location.pathname,
+        source: "spend_guard",
+      });
 
       setStep("budget");
     } catch (error: unknown) {
@@ -180,6 +194,12 @@ export default function SpendGuardSetupPage() {
       setBudget(
         String(savedBudget.amount),
       );
+
+      analytics.track("budget_created", {
+        page: "spend_guard_setup",
+        path: window.location.pathname,
+        source: "spend_guard",
+      });
 
       setStep("analysis");
     } catch (error: unknown) {
