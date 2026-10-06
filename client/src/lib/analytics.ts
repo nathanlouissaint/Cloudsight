@@ -80,7 +80,7 @@ export const analytics = {
 
     try {
       posthog.capture(eventName, {
-        environment: "development",
+        environment: import.meta.env.PROD ? "production" : "development",
         ...properties,
       });
     } catch {
