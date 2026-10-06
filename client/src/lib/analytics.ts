@@ -11,7 +11,13 @@ export type AnalyticsEventName =
   | "aws_access_requested"
   | "budget_created"
   | "analysis_viewed"
-  | "demo_requested";
+  | "demo_requested"
+  | "website_audit_page_viewed"
+  | "website_audit_cta_clicked"
+  | "website_audit_form_started"
+  | "website_audit_form_submitted"
+  | "website_audit_qualified_lead"
+  | "website_audit_booking_clicked";
 
 type AnalyticsPropertyValue =
   | string
@@ -73,7 +79,10 @@ export const analytics = {
     }
 
     try {
-      posthog.capture(eventName, properties);
+      posthog.capture(eventName, {
+        environment: "development",
+        ...properties,
+      });
     } catch {
       // Analytics must never prevent product actions from completing.
     }
@@ -91,6 +100,18 @@ export const analytics = {
       posthog.identify(userId, properties);
     } catch {
       // Analytics must never prevent authentication from completing.
+    }
+  },
+
+  reset() {
+    if (!initialized) {
+      return;
+    }
+
+    try {
+      posthog.reset();
+    } catch {
+      // Analytics must never prevent logout from completing.
     }
   },
 };

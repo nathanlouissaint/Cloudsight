@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import {
   NavLink,
 } from "react-router-dom";
+import { useAuth } from "../../auth/auth.context";
 
 const navItems = [
   {
@@ -34,6 +35,8 @@ const navItems = [
 ];
 
 export default function TopNavigation() {
+  const { logout } = useAuth();
+
   return (
     <motion.header
       initial={{
@@ -96,8 +99,8 @@ export default function TopNavigation() {
           <Bell size={18} />
         </button>
 
-        <button className="account-switcher">
-          Production
+        <button className="account-switcher" onClick={() => void logout()}>
+          Sign out
           <ChevronDown size={14} />
         </button>
       </div>

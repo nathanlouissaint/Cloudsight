@@ -4,7 +4,6 @@ import type {
 } from "express";
 
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import {
   Prisma,
 } from "@prisma/client";
@@ -15,32 +14,43 @@ import {
 import {
   prisma,
 } from "../config/prisma";
+import { logger } from "../config/logger";
+import type { AuthenticatedRequest } from "../middleware/auth.middleware";
+import {
+  createSession,
+  revokeRefreshToken,
+  rotateRefreshToken,
+} from "../services/auth-session.service";
+import {
+  clearRefreshTokenCookie,
+  getRefreshTokenFromRequest,
+  setRefreshTokenCookie,
+} from "../services/auth-cookie.service";
+import {
+  createAccessToken,
+} from "../services/token.service";
 
-function createAccessToken(
+function getSessionMetadata(req: Request) {
+  return {
+    ipAddress: req.ip ?? null,
+    userAgent: req.get("user-agent") ?? null,
+  };
+}
+
+function buildAuthResponse(
+  accessToken: string,
   user: {
     id: string;
     email: string;
   },
 ) {
-  const secret =
-    process.env.JWT_SECRET;
-
-  if (!secret) {
-    throw new Error(
-      "JWT_SECRET is not configured.",
-    );
-  }
-
-  return jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-    },
-    secret,
-    {
-      expiresIn: "7d",
-    },
-  );
+  return {
+    accessToken,
+    // Temporary compatibility alias for the current frontend. This is the
+    // same short-lived access token, never the refresh token.
+    token: accessToken,
+    user,
+  };
 }
 
 function createOrganizationSlug(
@@ -229,21 +239,25 @@ export async function register(
         },
       );
 
-    const token =
-      createAccessToken(
-        result.user,
-      );
+    const session = await createSession(
+      result.user.id,
+      getSessionMetadata(req),
+    );
+    const accessToken = createAccessToken(
+      result.user.id,
+    );
+
+    setRefreshTokenCookie(
+      res,
+      session.refreshToken,
+      session.session.expiresAt,
+    );
 
     return res.status(201).json({
-      token,
-
-      user: {
-        id:
-          result.user.id,
-
-        email:
-          result.user.email,
-      },
+      ...buildAuthResponse(accessToken, {
+        id: result.user.id,
+        email: result.user.email,
+      }),
 
       organization: {
         id:
@@ -268,10 +282,7 @@ export async function register(
       });
     }
 
-    console.error(
-      "Registration error:",
-      error,
-    );
+    logger.error({ err: error }, "Registration error");
 
     return res.status(500).json({
       message:
@@ -336,29 +347,148 @@ export async function login(
       });
     }
 
-    const token =
-      createAccessToken(user);
-
-    return res.status(200).json({
-      token,
-
-      user: {
-        id:
-          user.id,
-
-        email:
-          user.email,
-      },
-    });
-  } catch (error) {
-    console.error(
-      "Login error:",
-      error,
+    const session = await createSession(
+      user.id,
+      getSessionMetadata(req),
     );
+    const accessToken = createAccessToken(
+      user.id,
+    );
+
+    setRefreshTokenCookie(
+      res,
+      session.refreshToken,
+      session.session.expiresAt,
+    );
+
+    return res.status(200).json(
+      buildAuthResponse(accessToken, {
+        id: user.id,
+        email: user.email,
+      }),
+    );
+  } catch (error) {
+    logger.error({ err: error }, "Login error");
 
     return res.status(500).json({
       message:
         "Internal server error",
+    });
+  }
+}
+
+export async function refresh(
+  req: Request,
+  res: Response,
+) {
+  const refreshToken = getRefreshTokenFromRequest(req);
+
+  if (!refreshToken) {
+    clearRefreshTokenCookie(res);
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
+
+  try {
+    const result = await rotateRefreshToken(
+      refreshToken,
+      getSessionMetadata(req),
+    );
+
+    if (result.status !== "rotated") {
+      clearRefreshTokenCookie(res);
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: result.session.userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      clearRefreshTokenCookie(res);
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const accessToken = createAccessToken(user.id);
+    setRefreshTokenCookie(
+      res,
+      result.refreshToken,
+      result.session.expiresAt,
+    );
+
+    return res.status(200).json(
+      buildAuthResponse(accessToken, user),
+    );
+  } catch (error) {
+    logger.error({ err: error }, "Refresh token error");
+    clearRefreshTokenCookie(res);
+
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
+}
+
+export async function logout(
+  req: Request,
+  res: Response,
+) {
+  const refreshToken = getRefreshTokenFromRequest(req);
+
+  try {
+    if (refreshToken) {
+      await revokeRefreshToken(refreshToken);
+    }
+  } catch (error) {
+    logger.error({ err: error }, "Logout session revocation error");
+  } finally {
+    clearRefreshTokenCookie(res);
+  }
+
+  return res.status(204).send();
+}
+
+export async function me(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        authProvider: true,
+        emailVerifiedAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    logger.error({ err: error }, "Current user lookup error");
+    return res.status(500).json({
+      message: "Unable to load current user.",
     });
   }
 }

@@ -2,6 +2,9 @@ import type { Response } from "express";
 import { prisma } from "../config/prisma";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware";
 import { getOrganizationIdForUser } from "../services/organization-context.service";
+import { getCachedJson, setCachedJson } from "../config/redis";
+import { organizationCacheKeys } from "../services/organization-cache.service";
+import { logger } from "../config/logger";
 
 export async function getCostTrends(
   req: AuthenticatedRequest,
@@ -13,42 +16,32 @@ export async function getCostTrends(
     const organizationId = await getOrganizationIdForUser(userId);
     if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
 
-    const records = await prisma.costSnapshot.findMany({
+    const cacheKey = organizationCacheKeys.costTrends(organizationId);
+    const cachedTrends = await getCachedJson<Array<{ date: string; cost: number }>>(cacheKey);
+
+    if (cachedTrends) {
+      return res.status(200).json(cachedTrends);
+    }
+
+    const records = await prisma.costSnapshot.groupBy({
+      by: ["snapshotDate"],
+      _sum: { totalCost: true },
       where: { account: { organizationId } },
       orderBy: {
         snapshotDate: "asc",
       },
     });
 
-    const dailyTotals = new Map<string, number>();
-
-    for (const record of records) {
-      const date = record.snapshotDate
-        .toISOString()
-        .split("T")[0];
-
-      const current =
-        dailyTotals.get(date) ?? 0;
-
-      dailyTotals.set(
-        date,
-        current + record.totalCost
-      );
-    }
-
-    const trends = Array.from(
-      dailyTotals.entries()
-    ).map(([date, cost]) => ({
-      date,
-      cost: Number(cost.toFixed(2)),
+    const trends = records.map((record) => ({
+      date: record.snapshotDate.toISOString().split("T")[0],
+      cost: Number((record._sum.totalCost ?? 0).toFixed(2)),
     }));
+
+    void setCachedJson(cacheKey, trends, 60);
 
     return res.status(200).json(trends);
   } catch (error) {
-    console.error(
-      "Cost trends error:",
-      error
-    );
+    logger.error({ err: error }, "Cost trends error");
 
     return res.status(500).json({
       message:
@@ -67,47 +60,35 @@ export async function getServiceBreakdown(
     const organizationId = await getOrganizationIdForUser(userId);
     if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
 
-    const records = await prisma.serviceCostSnapshot.findMany({
+    const cacheKey = organizationCacheKeys.serviceSummary(organizationId);
+    const cachedBreakdown = await getCachedJson<Array<{ service: string; cost: number }>>(cacheKey);
+
+    if (cachedBreakdown) {
+      return res.status(200).json(cachedBreakdown);
+    }
+
+    const records = await prisma.serviceCostSnapshot.groupBy({
+      by: ["serviceName"],
+      _sum: { cost: true },
       where: { account: { organizationId } },
     });
 
-    const totals = new Map<
-      string,
-      number
-    >();
-
-    for (const record of records) {
-      const serviceName =
-        record.serviceName;
-
-      const current =
-        totals.get(serviceName) ?? 0;
-
-      totals.set(
-        serviceName,
-        current + record.cost
-      );
-    }
-
-    const breakdown = Array.from(
-      totals.entries()
-    )
-      .map(([service, cost]) => ({
-        service,
-        cost: Number(cost.toFixed(2)),
+    const breakdown = records
+      .map((record) => ({
+        service: record.serviceName,
+        cost: Number((record._sum.cost ?? 0).toFixed(2)),
       }))
       .sort(
         (a, b) => b.cost - a.cost
       );
 
+    void setCachedJson(cacheKey, breakdown, 60);
+
     return res.status(200).json(
       breakdown
     );
   } catch (error) {
-    console.error(
-      "Service breakdown error:",
-      error
-    );
+    logger.error({ err: error }, "Service breakdown error");
 
     return res.status(500).json({
       message:

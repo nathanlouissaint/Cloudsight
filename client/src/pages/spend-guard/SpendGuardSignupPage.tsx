@@ -17,6 +17,7 @@ import {
 } from "../../spend-guard/auth.api";
 
 import { analytics } from "../../lib/analytics";
+import { authStore } from "../../auth/auth.store";
 
 import "../../styles/spend-guard/funnel.css";
 
@@ -126,25 +127,11 @@ export default function SpendGuardSignupPage() {
             company.trim(),
         });
 
-      sessionStorage.setItem(
-        "cloudsightAccessToken",
-        auth.token,
-      );
-
-      sessionStorage.setItem(
-        "spendGuardBetaLead",
-        JSON.stringify({
-          name:
-            name.trim(),
-          workEmail:
-            auth.user.email,
-          company:
-            company.trim(),
-          awsSpendRange,
-          userId:
-            auth.user.id,
-        }),
-      );
+      const accessToken = auth.accessToken ?? auth.token;
+      if (!accessToken) {
+        throw new Error("Unable to establish your authenticated session.");
+      }
+      authStore.setAuthenticated(accessToken, auth.user);
 
       analytics.identify(auth.user.id, {
         source: "spend_guard",

@@ -22,6 +22,8 @@ import {
 import {
   prisma,
 } from "../config/prisma";
+import { invalidateOrganizationAnalyticsCache } from "../services/organization-cache.service";
+import { logger } from "../config/logger";
 
 async function getOrganizationIdForUser(
   userId: string,
@@ -62,7 +64,7 @@ export async function getAwsCosts(
 
     return res.status(200).json(data);
   } catch (error: any) {
-    console.error(error);
+    logger.error({ err: error }, "Failed to retrieve AWS costs");
 
     return res.status(500).json({
       message:
@@ -224,6 +226,10 @@ export async function verifyAwsConnection(
           },
         });
 
+    void invalidateOrganizationAnalyticsCache(
+      organizationId,
+    );
+
     return res.status(200).json({
       connected: true,
       accountId: cloudAccount.awsAccountId,
@@ -235,10 +241,7 @@ export async function verifyAwsConnection(
       mocked: mockAwsEnabled,
     });
   } catch (error: unknown) {
-    console.error(
-      "AWS connection verification failed:",
-      error,
-    );
+    logger.error({ err: error }, "AWS connection verification failed");
 
     const message =
       error instanceof Error
@@ -308,10 +311,7 @@ export async function getAwsConnection(
       lastVerifiedAt: cloudAccount.lastVerifiedAt,
     });
   } catch (error) {
-    console.error(
-      "AWS connection lookup failed:",
-      error,
-    );
+    logger.error({ err: error }, "AWS connection lookup failed");
 
     return res.status(500).json({
       message:

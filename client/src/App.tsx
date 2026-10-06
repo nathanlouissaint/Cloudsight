@@ -8,13 +8,22 @@ import {
   Suspense,
   lazy,
 } from "react";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 const LandingPage = lazy(
   () => import("./pages/LandingPage")
 );
 
+const WebsiteAuditPage = lazy(
+  () => import("./pages/WebsiteAuditPage")
+);
+
 const SpendGuardSignupPage = lazy(
   () => import("./pages/spend-guard/SpendGuardSignupPage")
+);
+
+const SpendGuardLoginPage = lazy(
+  () => import("./pages/spend-guard/SpendGuardLoginPage")
 );
 
 const SpendGuardSetupPage = lazy(
@@ -56,6 +65,11 @@ export default function App() {
         }
       >
         <Routes>
+          <Route
+            path="/website-audit"
+            element={<WebsiteAuditPage />}
+          />
+
           {/* Public Spend Guard funnel */}
           <Route
             path="/spend-guard"
@@ -68,39 +82,44 @@ export default function App() {
           />
 
           <Route
+            path="/spend-guard/login"
+            element={<SpendGuardLoginPage />}
+          />
+
+          <Route
             path="/spend-guard/setup"
-            element={<SpendGuardSetupPage />}
+            element={<ProtectedRoute><SpendGuardSetupPage /></ProtectedRoute>}
           />
 
           <Route
             path="/spend-guard/results"
-            element={<SpendGuardResultPage />}
+            element={<ProtectedRoute><SpendGuardResultPage /></ProtectedRoute>}
           />
 
           {/* Existing CloudSight application */}
           <Route
             path="/"
-            element={<DashboardPage />}
+            element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
           />
 
           <Route
             path="/costs"
-            element={<CostsPage />}
+            element={<ProtectedRoute><CostsPage /></ProtectedRoute>}
           />
 
           <Route
             path="/forecasting"
-            element={<ForecastingPage />}
+            element={<ProtectedRoute><ForecastingPage /></ProtectedRoute>}
           />
 
           <Route
             path="/alerts"
-            element={<AlertsPage />}
+            element={<ProtectedRoute><AlertsPage /></ProtectedRoute>}
           />
 
           <Route
             path="/reports"
-            element={<ReportsPage />}
+            element={<ProtectedRoute><ReportsPage /></ProtectedRoute>}
           />
         </Routes>
       </Suspense>

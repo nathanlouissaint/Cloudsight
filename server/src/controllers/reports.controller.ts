@@ -9,6 +9,7 @@ import {
   getReportNotes,
   updateReportNote,
 } from "../services/reports/report.service";
+import { logger } from "../config/logger";
 
 async function requireOrganizationId(req: AuthenticatedRequest, res: Response) {
   const userId = req.user?.userId;
@@ -60,7 +61,7 @@ export async function getExecutiveReport(req: AuthenticatedRequest, res: Respons
         : `No monthly budget has been configured. ${topService} is currently the largest cost driver, representing ${topServicePercent}% of spend.`,
     });
   } catch (error) {
-    console.error("Executive report error:", error);
+    logger.error({ err: error }, "Executive report error");
     return res.status(500).json({ message: "Failed to generate report" });
   }
 }
@@ -74,7 +75,7 @@ export async function exportCsv(req: AuthenticatedRequest, res: Response) {
     res.setHeader("Content-Disposition", 'attachment; filename="cloud-cost-report.csv"');
     return res.status(200).send(csv);
   } catch (error) {
-    console.error("CSV export error:", error);
+    logger.error({ err: error }, "CSV export error");
     return res.status(500).json({ message: "Failed to export report." });
   }
 }

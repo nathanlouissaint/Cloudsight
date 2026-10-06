@@ -26,6 +26,46 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  redis:
+    image: redis:7-alpine
+    container_name: cloudsight-redis-prod
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - cloudsight-network
+
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    image: ${SERVER_MIGRATOR_IMAGE:?SERVER_MIGRATOR_IMAGE is required}
+    container_name: cloudsight-migrate-prod
+
+    restart: "no"
+
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - cloudsight-network
+
+    security_opt:
+      - no-new-privileges:true
+
   server:
     image: ${SERVER_IMAGE:?SERVER_IMAGE is required}
     container_name: cloudsight-server-prod
@@ -37,6 +77,15 @@ services:
       PORT: 5001
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
+      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN is required}
+      AWS_PROVIDER: ${AWS_PROVIDER:-aws}
+      AWS_REGION: ${AWS_REGION:?AWS_REGION is required}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+      WEBSITE_AUDIT_NOTIFICATION_EMAIL: ${WEBSITE_AUDIT_NOTIFICATION_EMAIL:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
 
     expose:
       - "5001"
@@ -44,6 +93,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
     healthcheck:
       test:

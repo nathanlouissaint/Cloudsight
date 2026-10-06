@@ -17,6 +17,7 @@ import {
 import {
   alertHistoryService,
 } from "../services/alert-history.service";
+import { logger } from "../config/logger";
 
 type AlertHistoryItem = Awaited<
   ReturnType<typeof alertHistoryService.getRecentHistory>
@@ -39,10 +40,7 @@ export async function getAlerts(
         AlertsContract.parse(alerts)
       );
   } catch (error) {
-    console.error(
-      "Alerts error:",
-      error
-    );
+    logger.error({ err: error }, "Alerts error");
 
     return res
       .status(500)
@@ -88,10 +86,7 @@ export async function getAlertHistory(
       .status(200)
       .json(response);
   } catch (error) {
-    console.error(
-      "Alert history error:",
-      error
-    );
+    logger.error({ err: error }, "Alert history error");
 
     return res
       .status(500)

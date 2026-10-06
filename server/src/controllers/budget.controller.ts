@@ -9,6 +9,8 @@ import type {
 import {
   prisma,
 } from "../config/prisma";
+import { invalidateOrganizationAnalyticsCache } from "../services/organization-cache.service";
+import { logger } from "../config/logger";
 
 async function getOrganizationIdForUser(
   userId: string,
@@ -125,6 +127,10 @@ export async function setBudget(
         },
       });
 
+    void invalidateOrganizationAnalyticsCache(
+      organizationId,
+    );
+
     return res.status(200).json({
       budget: {
         id:
@@ -147,10 +153,7 @@ export async function setBudget(
       },
     });
   } catch (error) {
-    console.error(
-      "Set budget error:",
-      error,
-    );
+    logger.error({ err: error }, "Set budget error");
 
     return res.status(500).json({
       message:
@@ -219,10 +222,7 @@ export async function getBudgetSummary(
         Boolean(budget),
     });
   } catch (error) {
-    console.error(
-      "Budget summary error:",
-      error,
-    );
+    logger.error({ err: error }, "Budget summary error");
 
     return res.status(500).json({
       message:

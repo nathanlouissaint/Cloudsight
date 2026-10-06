@@ -67,12 +67,14 @@ function accessToken(
 ) {
   return jwt.sign(
     {
-      userId: user.id,
-      email: user.email,
+      sub: user.id,
     },
     jwtSecret,
     {
-      expiresIn: "7d",
+      expiresIn: "15m",
+      algorithm: "HS256",
+      issuer: "cloudsight-api",
+      audience: "cloudsight-web",
     },
   );
 }

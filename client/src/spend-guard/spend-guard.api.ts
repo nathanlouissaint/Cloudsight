@@ -18,102 +18,19 @@ export interface SpendGuardAwsConnection {
   lastVerifiedAt?: string;
 }
 
-interface AwsConnectionError {
-  connected?: boolean;
-  message?: string;
-  error?: string;
-}
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ??
-  import.meta.env.VITE_API_BASE_URL ??
-  "/api";
+import { apiRequest } from "../api/client";
 
 export async function verifyAwsConnection(
   roleArn: string,
 ): Promise<AwsConnectionVerification> {
-  const token =
-    sessionStorage.getItem(
-      "cloudsightAccessToken",
-    );
-
-  if (!token) {
-    throw new Error(
-      "Your session has expired. Please create your account again.",
-    );
-  }
-
-  const response = await fetch(
-    `${API_BASE_URL}/aws/verify-connection`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        roleArn,
-      }),
-    },
-  );
-
-  const body =
-    (await response.json()) as
-      | AwsConnectionVerification
-      | AwsConnectionError;
-
-  if (!response.ok) {
-    const errorBody =
-      body as AwsConnectionError;
-
-    throw new Error(
-      errorBody.error ??
-        errorBody.message ??
-        "Unable to verify AWS connection.",
-    );
-  }
-
-  return body as AwsConnectionVerification;
+  return apiRequest<AwsConnectionVerification>("/aws/verify-connection", {
+    method: "POST",
+    body: { roleArn },
+  });
 }
 
 export async function getSpendGuardAwsConnection(): Promise<SpendGuardAwsConnection> {
-  const token =
-    sessionStorage.getItem(
-      "cloudsightAccessToken",
-    );
-
-  if (!token) {
-    throw new Error(
-      "Your session has expired. Please create your account again.",
-    );
-  }
-
-  const response = await fetch(
-    `${API_BASE_URL}/aws/connection`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  const body =
-    (await response.json()) as
-      | SpendGuardAwsConnection
-      | AwsConnectionError;
-
-  if (!response.ok) {
-    const errorBody =
-      body as AwsConnectionError;
-
-    throw new Error(
-      errorBody.error ??
-        errorBody.message ??
-        "Unable to load your AWS connection.",
-    );
-  }
-
-  return body as SpendGuardAwsConnection;
+  return apiRequest<SpendGuardAwsConnection>("/aws/connection");
 }
 
 export interface SpendGuardBudget {
@@ -174,38 +91,7 @@ export interface SpendGuardAnalysis {
 async function requestSpendGuardAnalysis(
   method: "GET" | "POST",
 ): Promise<SpendGuardAnalysis> {
-  const token = sessionStorage.getItem(
-    "cloudsightAccessToken",
-  );
-
-  if (!token) {
-    throw new Error(
-      "Your session has expired. Please create your account again.",
-    );
-  }
-
-  const response = await fetch(
-    `${API_BASE_URL}/spend-guard/analysis`,
-    {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-  const body = (await response.json()) as
-    | SpendGuardAnalysis
-    | { message?: string };
-
-  if (!response.ok) {
-    throw new Error(
-      "message" in body && body.message
-        ? body.message
-        : "Unable to run Spend Guard analysis.",
-    );
-  }
-
-  return body as SpendGuardAnalysis;
+  return apiRequest<SpendGuardAnalysis>("/spend-guard/analysis", { method });
 }
 
 export function runSpendGuardAnalysis() {
@@ -219,97 +105,13 @@ export function getSpendGuardAnalysis() {
 export async function saveSpendGuardBudget(
   amount: number,
 ): Promise<SpendGuardBudget> {
-  const token =
-    sessionStorage.getItem(
-      "cloudsightAccessToken",
-    );
-
-  if (!token) {
-    throw new Error(
-      "Your session has expired. Please create your account again.",
-    );
-  }
-
-  const response =
-    await fetch(
-      `${API_BASE_URL}/budget`,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-
-          Authorization:
-            `Bearer ${token}`,
-        },
-
-        body:
-          JSON.stringify({
-            amount,
-          }),
-      },
-    );
-
-  const body =
-    (await response.json()) as
-      | SaveBudgetResponse
-      | {
-          message?: string;
-        };
-
-  if (!response.ok) {
-    throw new Error(
-      "message" in body &&
-        body.message
-        ? body.message
-        : "Unable to save budget.",
-    );
-  }
-
-  return (
-    body as SaveBudgetResponse
-  ).budget;
+  const body = await apiRequest<SaveBudgetResponse>("/budget", {
+    method: "POST",
+    body: { amount },
+  });
+  return body.budget;
 }
 
 export async function getSpendGuardBudgetSummary(): Promise<SpendGuardBudgetSummary> {
-  const token =
-    sessionStorage.getItem(
-      "cloudsightAccessToken",
-    );
-
-  if (!token) {
-    throw new Error(
-      "Your session has expired. Please create your account again.",
-    );
-  }
-
-  const response =
-    await fetch(
-      `${API_BASE_URL}/budget`,
-      {
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
-        },
-      },
-    );
-
-  const body =
-    (await response.json()) as
-      | SpendGuardBudgetSummary
-      | {
-          message?: string;
-        };
-
-  if (!response.ok) {
-    throw new Error(
-      "message" in body &&
-        body.message
-        ? body.message
-        : "Unable to load your budget.",
-    );
-  }
-
-  return body as SpendGuardBudgetSummary;
+  return apiRequest<SpendGuardBudgetSummary>("/budget");
 }

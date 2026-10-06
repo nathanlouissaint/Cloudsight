@@ -13,6 +13,8 @@ import {
 import type {
   AuthenticatedRequest,
 } from "../middleware/auth.middleware";
+import { invalidateOrganizationAnalyticsCache } from "../services/organization-cache.service";
+import { logger } from "../config/logger";
 
 async function getOrganizationIdForUser(
   userId: string,
@@ -89,12 +91,16 @@ export async function collectCostsController(
     const result =
       await collectCosts(cloudAccount);
 
+    void invalidateOrganizationAnalyticsCache(
+      organizationId,
+    );
+
     return res.status(200).json({
       success: true,
       ...result,
     });
   } catch (error: unknown) {
-    console.error(error);
+    logger.error({ err: error }, "Cost collection failed");
 
     return res.status(502).json({
       success: false,

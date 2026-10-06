@@ -5,6 +5,7 @@ import { getOrganizationIdForUser } from "../services/organization-context.servi
 import {
   getAccountTrend,
 } from "../services/account-trend.service";
+import { logger } from "../config/logger";
 
 export async function getAccountTrendController(
   req: AuthenticatedRequest,
@@ -49,7 +50,7 @@ export async function getAccountTrendController(
 
     res.status(200).json(result);
   } catch (error) {
-    console.error(error);
+    logger.error({ err: error }, "Failed to load account trend");
 
     res.status(500).json({
       message:

@@ -27,6 +27,26 @@ model User {
   Session                Session[]
 }
 
+model WebsiteAuditLead {
+  id                 String                  @id @default(uuid())
+  firstName          String
+  lastName           String
+  workEmail          String
+  company            String
+  websiteUrl         String
+  companyDescription String
+  websiteProblem     String
+  launchTimeline     String
+  budgetRange        String
+  status             WebsiteAuditLeadStatus  @default(NEW)
+  source             WebsiteAuditLeadSource  @default(WEBSITE_AUDIT_FUNNEL)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([workEmail, websiteUrl, createdAt])
+  @@index([status, createdAt])
+}
+
 model CloudAccount {
   id                      String                @id @default(uuid())
   awsAccountId            String                @unique
@@ -73,6 +93,7 @@ model ServiceCostSnapshot {
   account      CloudAccount @relation(fields: [accountId], references: [id])
 
   @@index([accountId])
+  @@index([accountId, snapshotDate])
   @@index([snapshotDate])
   @@index([serviceName])
   @@unique([accountId, serviceName, snapshotDate])
@@ -244,12 +265,16 @@ model SecurityAudit {
 model Session {
   id               String    @id
   userId           String
+  tokenFamilyId     String
   refreshTokenHash String    @unique
   ipAddress        String?
   userAgent        String?
   deviceName       String?
   expiresAt        DateTime
   revokedAt        DateTime?
+  replacedAt       DateTime?
+  replacedBySessionId String?
+  reuseDetectedAt  DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime
   lastUsedAt       DateTime  @default(now())
@@ -259,6 +284,7 @@ model Session {
   @@index([revokedAt])
   @@index([userId])
   @@index([userId, revokedAt])
+  @@index([tokenFamilyId])
 }
 
 enum AuditEventType {
@@ -291,4 +317,18 @@ enum OrganizationRole {
   ADMIN
   MEMBER
   VIEWER
+}
+
+enum WebsiteAuditLeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CALL_BOOKED
+  PROPOSAL_SENT
+  WON
+  LOST
+}
+
+enum WebsiteAuditLeadSource {
+  WEBSITE_AUDIT_FUNNEL
 }

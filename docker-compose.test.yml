@@ -1,0 +1,20 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: cloudsight-postgres-test
+    environment:
+      POSTGRES_USER: ${TEST_POSTGRES_USER:-cloudsight_test_user}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-cloudsight_test_password}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-cloudsight_test}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - cloudsight_postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  cloudsight_postgres_test_data:

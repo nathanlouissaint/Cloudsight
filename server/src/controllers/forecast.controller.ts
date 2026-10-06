@@ -9,6 +9,7 @@ import {
   forecastService,
 } from "../services/forecast.service";
 import { getOrganizationIdForUser } from "../services/organization-context.service";
+import { logger } from "../config/logger";
 
 export async function getForecast(
   req: AuthenticatedRequest,
@@ -35,10 +36,7 @@ export async function getForecast(
 
   } catch (error) {
 
-    console.error(
-      "Forecast error:",
-      error
-    );
+    logger.error({ err: error }, "Forecast error");
 
     return res
       .status(500)

@@ -17,6 +17,7 @@ import type {
 import {
   calculateSpendGuardAnalysis,
 } from "../services/spend-guard-analysis.service";
+import { logger } from "../config/logger";
 
 function getUtcPeriod(now = new Date()) {
   const month = now.getUTCMonth() + 1;
@@ -191,10 +192,7 @@ async function respondWithAnalysis(
         context.cloudAccount,
       );
     } catch (error) {
-      console.error(
-        "Spend Guard collection before analysis failed:",
-        error,
-      );
+      logger.error({ err: error }, "Spend Guard collection before analysis failed");
 
       return res.status(502).json({
         message:
@@ -274,10 +272,7 @@ export async function runSpendGuardAnalysis(
       true,
     );
   } catch (error) {
-    console.error(
-      "Spend Guard analysis failed:",
-      error,
-    );
+    logger.error({ err: error }, "Spend Guard analysis failed");
 
     return res.status(500).json({
       message:
@@ -297,10 +292,7 @@ export async function getSpendGuardAnalysis(
       false,
     );
   } catch (error) {
-    console.error(
-      "Spend Guard analysis lookup failed:",
-      error,
-    );
+    logger.error({ err: error }, "Spend Guard analysis lookup failed");
 
     return res.status(500).json({
       message:

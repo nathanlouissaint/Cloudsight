@@ -14,6 +14,7 @@ import {
 
 import { queryClient } from "./lib/queryClient";
 import { analytics } from "./lib/analytics";
+import { AuthProvider } from "./auth/AuthProvider";
 
 analytics.init();
 
@@ -22,7 +23,9 @@ ReactDOM.createRoot(
 ).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
 
       <ReactQueryDevtools
         initialIsOpen={false}

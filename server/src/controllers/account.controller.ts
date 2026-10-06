@@ -2,6 +2,7 @@ import type { Response } from "express";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware";
 import { getOrganizationIdForUser } from "../services/organization-context.service";
 import { getAccountSummary } from "../services/account-aggregation.service";
+import { logger } from "../config/logger";
 
 export async function getAccounts(
   req: AuthenticatedRequest,
@@ -39,10 +40,7 @@ export async function getAccounts(
       accounts: result,
     });
   } catch (error) {
-    console.error(
-      "Failed to load account analytics:",
-      error
-    );
+    logger.error({ err: error }, "Failed to load account analytics");
 
     res.status(500).json({
       message: "Failed to load account analytics",

@@ -3,7 +3,7 @@ import cors from "cors";
 import compression from "compression";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import pinoHttp from "pino-http";
+import { httpLogger } from "./config/logger";
 
 import authRoutes from "./routes/auth.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
@@ -18,6 +18,7 @@ import accountRoutes from "./routes/account.routes";
 import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
 import healthRoutes from "./routes/health.routes";
 import spendGuardAnalysisRoutes from "./routes/spend-guard-analysis.routes";
+import websiteAuditLeadRoutes from "./routes/website-audit-lead.routes";
 
 import {
   errorHandler,
@@ -28,7 +29,7 @@ const app = express();
 
 app.set("trust proxy", false);
 
-app.use(pinoHttp());
+app.use(httpLogger);
 
 app.use(helmet());
 
@@ -77,6 +78,7 @@ app.use("/analytics", analyticsRoutes);
 app.use("/analytics/accounts", accountRoutes);
 app.use("/analytics/services", serviceAnalyticsRoutes);
 app.use("/spend-guard", spendGuardAnalysisRoutes);
+app.use("/website-audit", websiteAuditLeadRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
