@@ -13,6 +13,9 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 const LandingPage = lazy(
   () => import("./pages/LandingPage")
 );
+const AetherLandingPage = lazy(
+  () => import("./pages/AetherLandingPage")
+);
 
 const WebsiteAuditPage = lazy(
   () => import("./pages/WebsiteAuditPage")
@@ -99,6 +102,10 @@ export default function App() {
           {/* Existing CloudSight application */}
           <Route
             path="/"
+            element={<AetherLandingPage />}
+          />
+          <Route
+            path="/app"
             element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
           />
 
