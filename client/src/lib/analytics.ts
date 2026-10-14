@@ -17,7 +17,8 @@ export type AnalyticsEventName =
   | "website_audit_form_started"
   | "website_audit_form_submitted"
   | "website_audit_qualified_lead"
-  | "website_audit_booking_clicked";
+  | "website_audit_booking_clicked"
+  | "website_audit_selected_work_clicked";
 
 type AnalyticsPropertyValue =
   | string
@@ -38,6 +39,16 @@ function getConfiguration() {
   const host = import.meta.env.VITE_POSTHOG_HOST?.trim();
 
   if (!key || !host) {
+    return null;
+  }
+
+  try {
+    const url = new URL(host);
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return null;
+    }
+  } catch {
+    // A malformed analytics host must not affect application startup.
     return null;
   }
 
