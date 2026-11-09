@@ -21,6 +21,10 @@ const SaasScorecardPage = lazy(
   () => import("./pages/SaasScorecardPage")
 );
 
+const HomepageRedesign = lazy(
+  () => import("./pages/HomepageRedesign")
+);
+
 const CostsPage = lazy(
   () => import("./pages/CostsPage")
 );
@@ -61,6 +65,11 @@ export default function App() {
 
           <Route
             path="/"
+            element={<HomepageRedesign />}
+          />
+
+          <Route
+            path="/dashboard"
             element={<DashboardPage />}
           />
 
