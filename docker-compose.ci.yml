@@ -10,7 +10,7 @@ services:
 
   migrate:
     container_name: cloudsight-migrate-ci
-    image: cloudsight-server-ci
+    image: cloudsight-migrator-ci
     build:
       context: .
       dockerfile: ./server/Dockerfile
