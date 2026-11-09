@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter,
   Routes,
@@ -8,16 +9,25 @@ import {
   Suspense,
   lazy,
 } from "react";
+
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 
+// New CloudSight Growth Lab homepage
+const GrowthLabHomepage = lazy(
+  () => import("./pages/GrowthLabHomepage")
+);
+
+// Existing Spend Guard landing page
 const LandingPage = lazy(
   () => import("./pages/LandingPage")
 );
 
+// Website Audit
 const WebsiteAuditPage = lazy(
   () => import("./pages/WebsiteAuditPage")
 );
 
+// Spend Guard authentication and onboarding
 const SpendGuardSignupPage = lazy(
   () => import("./pages/spend-guard/SpendGuardSignupPage")
 );
@@ -34,6 +44,7 @@ const SpendGuardResultPage = lazy(
   () => import("./pages/spend-guard/SpendGuardResultPage")
 );
 
+// Existing CloudSight application
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
@@ -57,14 +68,15 @@ const ReportsPage = lazy(
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense
-        fallback={
-          <div>
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+          {/* Public Growth Lab homepage */}
+          <Route
+            path="/"
+            element={<GrowthLabHomepage />}
+          />
+
+          {/* Public Website Audit */}
           <Route
             path="/website-audit"
             element={<WebsiteAuditPage />}
@@ -86,40 +98,69 @@ export default function App() {
             element={<SpendGuardLoginPage />}
           />
 
+          {/* Protected Spend Guard onboarding */}
           <Route
             path="/spend-guard/setup"
-            element={<ProtectedRoute><SpendGuardSetupPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <SpendGuardSetupPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/spend-guard/results"
-            element={<ProtectedRoute><SpendGuardResultPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <SpendGuardResultPage />
+              </ProtectedRoute>
+            }
           />
 
-          {/* Existing CloudSight application */}
+          {/* Protected CloudSight dashboard */}
           <Route
-            path="/"
-            element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/costs"
-            element={<ProtectedRoute><CostsPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <CostsPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/forecasting"
-            element={<ProtectedRoute><ForecastingPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <ForecastingPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/alerts"
-            element={<ProtectedRoute><AlertsPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <AlertsPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/reports"
-            element={<ProtectedRoute><ReportsPage /></ProtectedRoute>}
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </Suspense>
