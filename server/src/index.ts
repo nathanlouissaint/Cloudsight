@@ -4,32 +4,62 @@ dotenv.config();
 
 import app from "./app";
 import { prisma } from "./config/prisma";
+import { validateEnvironment } from "./config/environment";
+import { connectRedis, disconnectRedis } from "./config/redis";
+import { logger } from "./config/logger";
+import { captureException, flushSentry, initializeSentry } from "./config/sentry";
+
+validateEnvironment();
+initializeSentry();
+void connectRedis();
 
 const PORT =
   Number(process.env.PORT) || 5000;
 
 const server =
   app.listen(PORT, () => {
-    console.log(
-      `CloudSight API running on port ${PORT}`
-    );
+    logger.info({ port: PORT }, "CloudSight API started");
   });
 
+let shuttingDown = false;
+
 async function shutdown(
-  signal: string
+  signal: string,
+  error?: unknown,
 ) {
-  console.log(
-    `Received ${signal}. Shutting down...`
-  );
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
+  logger.info({ signal }, "Shutdown started");
+
+  if (error) {
+    logger.fatal({ err: error, signal }, "Process terminated after an unhandled error");
+    captureException(error, { signal, source: "process" });
+  }
+
+  const forceShutdown = setTimeout(() => {
+    logger.fatal({ signal }, "Shutdown timed out");
+    process.exit(1);
+  }, 10_000);
+
+  forceShutdown.unref();
 
   server.close(async () => {
-    await prisma.$disconnect();
+    try {
+      clearTimeout(forceShutdown);
+      await flushSentry();
+      await disconnectRedis();
+      await prisma.$disconnect();
 
-    console.log(
-      "Shutdown complete."
-    );
+      logger.info({ signal }, "Shutdown complete");
 
-    process.exit(0);
+      process.exit(error ? 1 : 0);
+    } catch (shutdownError) {
+      logger.fatal({ err: shutdownError, signal }, "Shutdown failed");
+      process.exit(1);
+    }
   });
 }
 
@@ -42,3 +72,11 @@ process.on(
   "SIGTERM",
   () => void shutdown("SIGTERM")
 );
+
+process.on("uncaughtException", (error) => {
+  void shutdown("uncaughtException", error);
+});
+
+process.on("unhandledRejection", (reason) => {
+  void shutdown("unhandledRejection", reason);
+});

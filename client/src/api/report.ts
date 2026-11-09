@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest, apiRequestBlob } from "./client";
 
 export interface ReportNote {
   id: string;
@@ -9,21 +9,7 @@ export interface ReportNote {
 }
 
 export async function exportReportCsv() {
-  const API_BASE =
-    import.meta.env.VITE_API_URL ??
-    "http://localhost:5001";
-
-  const response = await fetch(
-    `${API_BASE}/reports/export/csv`
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to export report."
-    );
-  }
-
-  const blob = await response.blob();
+  const blob = await apiRequestBlob("/reports/export/csv");
 
   const url =
     window.URL.createObjectURL(blob);
@@ -55,32 +41,10 @@ export async function createReportNote(
   title: string,
   content: string
 ) {
-  const API_BASE =
-    import.meta.env.VITE_API_URL ??
-    "http://localhost:5001";
-
-  const response = await fetch(
-    `${API_BASE}/reports/notes`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        content,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to create note."
-    );
-  }
-
-  return response.json();
+  return apiRequest<ReportNote>("/reports/notes", {
+    method: "POST",
+    body: { title, content },
+  });
 }
 
 export async function updateReportNote(
@@ -88,51 +52,14 @@ export async function updateReportNote(
   title: string,
   content: string
 ) {
-  const API_BASE =
-    import.meta.env.VITE_API_URL ??
-    "http://localhost:5001";
-
-  const response = await fetch(
-    `${API_BASE}/reports/notes/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        content,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to update note."
-    );
-  }
-
-  return response.json();
+  return apiRequest<ReportNote>(`/reports/notes/${id}`, {
+    method: "PUT",
+    body: { title, content },
+  });
 }
 
 export async function deleteReportNote(
   id: string
 ) {
-  const API_BASE =
-    import.meta.env.VITE_API_URL ??
-    "http://localhost:5001";
-
-  const response = await fetch(
-    `${API_BASE}/reports/notes/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Failed to delete note."
-    );
-  }
+  await apiRequest<void>(`/reports/notes/${id}`, { method: "DELETE" });
 }

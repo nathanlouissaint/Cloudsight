@@ -6,18 +6,18 @@ import type {
 
 export class BudgetBreachDetectionService {
 
-  async detectBudgetBreach(): Promise<AlertModel[]> {
+  async detectBudgetBreach(organizationId: string): Promise<AlertModel[]> {
 
     const now = new Date();
 
     const budget =
-      await prisma.budget.findFirst({
+      await prisma.budget.findUnique({
         where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
+          organizationId_year_month: {
+            organizationId,
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+          },
         },
       });
 
@@ -26,23 +26,24 @@ export class BudgetBreachDetectionService {
     }
 
   const spend =
-  await prisma.costRecord.aggregate({
+  await prisma.costSnapshot.aggregate({
     _sum: {
-      cost: true,
+      totalCost: true,
     },
     where: {
-      usageDate: {
+      snapshotDate: {
         gte: new Date(
           now.getFullYear(),
           now.getMonth(),
           1
         ),
       },
+      account: { organizationId },
     },
   });
 
 const currentSpend =
-  spend._sum.cost ?? 0;
+  spend._sum.totalCost ?? 0;
 
     if (
       currentSpend <= budget.amount

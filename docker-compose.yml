@@ -1,75 +1,92 @@
 services:
   postgres:
-    image: postgres:16
-    container_name: cloudsight-postgres
+    image: postgres:16-alpine
     restart: unless-stopped
-
     environment:
-      POSTGRES_USER: cloudsight_user
-      POSTGRES_PASSWORD: cloudsight_password
-      POSTGRES_DB: cloudsight
-
-    ports:
-      - "5433:5432"
-
+      POSTGRES_USER: ${POSTGRES_USER:-cloudsight}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-cloudsight}
     volumes:
       - cloudsight_postgres_data:/var/lib/postgresql/data
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cloudsight_user -d cloudsight"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
 
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-
-    container_name: cloudsight-server
+  redis:
+    image: redis:7-alpine
     restart: unless-stopped
-
-    environment:
-      DATABASE_URL: postgresql://cloudsight_user:cloudsight_password@postgres:5432/cloudsight?schema=public
-      JWT_SECRET: supersecret
-      PORT: 5001
-      NODE_ENV: development
-
     ports:
-      - "5001:5001"
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
 
+  migrate:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cloudsight}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-cloudsight}?schema=public
     depends_on:
       postgres:
         condition: service_healthy
+    restart: "no"
 
-    volumes:
-      - ./server:/app
-      - /app/node_modules
-
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cloudsight}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-cloudsight}?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      AWS_PROVIDER: ${AWS_PROVIDER:-aws}
+      AWS_REGION: ${AWS_REGION:?AWS_REGION is required}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+      WEBSITE_AUDIT_NOTIFICATION_EMAIL: ${WEBSITE_AUDIT_NOTIFICATION_EMAIL:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:5001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   client:
     build:
-      context: ./client
-      dockerfile: Dockerfile
-
-    container_name: cloudsight-client
+      context: .
+      dockerfile: client/Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_WEBSITE_AUDIT_BOOKING_URL: ${VITE_WEBSITE_AUDIT_BOOKING_URL:-}
     restart: unless-stopped
-
-    environment:
-      VITE_API_URL: http://localhost:5001
-
     ports:
-      - "3000:5173"
-
+      - "${CLIENT_PORT:-3000}:80"
     depends_on:
-      - server
-
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-
-    command: npm run dev -- --host 0.0.0.0
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   cloudsight_postgres_data:

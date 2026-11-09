@@ -1,4 +1,4 @@
-import { findCostSnapshotsByDateRange } from "../repositories/cost-snapshot.repository";
+import { findCostSnapshotsByDateRangeForOrganization } from "../repositories/cost-snapshot.repository";
 
 interface CostSnapshotWithAccount {
   accountId: string;
@@ -15,11 +15,13 @@ interface AccountSummary {
 }
 
 export async function getAccountSummary(
+  organizationId: string,
   startDate: Date,
   endDate: Date
 ): Promise<AccountSummary[]> {
   const snapshots =
-    await findCostSnapshotsByDateRange(
+    await findCostSnapshotsByDateRangeForOrganization(
+      organizationId,
       startDate,
       endDate
     ) as CostSnapshotWithAccount[];

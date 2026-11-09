@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { verifyAccessToken } from "../services/token.service";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     userId: string;
-    email: string;
+    email?: string;
   };
 }
 
@@ -24,15 +24,11 @@ export function authenticateToken(
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as {
-      userId: string;
-      email: string;
-    };
+    const claims = verifyAccessToken(token);
 
-    req.user = decoded;
+    req.user = {
+      userId: claims.subject,
+    };
 
     next();
   } catch {

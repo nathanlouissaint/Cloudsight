@@ -6,12 +6,25 @@ export default defineConfig({
   plugins: [
     react(),
     visualizer({
+
+
       filename: "dist/stats.html",
       gzipSize: true,
       brotliSize: true,
       open: false,
     }),
   ],
+
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        rewrite: (path) =>
+          path.replace(/^\/api/, ""),
+      },
+    },
+  },
 
   build: {
     chunkSizeWarningLimit: 1000,

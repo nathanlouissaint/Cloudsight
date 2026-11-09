@@ -13,13 +13,19 @@ import {
 } from "@tanstack/react-query-devtools";
 
 import { queryClient } from "./lib/queryClient";
+import { analytics } from "./lib/analytics";
+import { AuthProvider } from "./auth/AuthProvider";
+
+analytics.init();
 
 ReactDOM.createRoot(
   document.getElementById("root")!
 ).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
 
       <ReactQueryDevtools
         initialIsOpen={false}
