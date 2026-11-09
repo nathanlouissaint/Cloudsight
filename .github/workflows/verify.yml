@@ -32,5 +32,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npm exec --workspace=server prisma generate
+
       - name: Verify Repository
         run: npm run verify
