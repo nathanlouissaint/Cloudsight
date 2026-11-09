@@ -71,3 +71,14 @@ export default defineConfig([
   },
 ])
 ```
+# Relay Form showcase
+
+The public root route is a standalone CloudSight showcase project. It is a static Vite build and uses the existing Nginx SPA fallback (`try_files $uri $uri/ /index.html`).
+
+## Production build
+
+```bash
+npm run build --workspace=client
+```
+
+Set `VITE_CLOUDSIGHT_RETURN_URL` at build time to an approved HTTPS `cloudsight.ai` or `cloudsight.com` URL to enable the optional return control. Invalid URLs are ignored.

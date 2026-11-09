@@ -18,6 +18,7 @@ export interface RefreshedAuthResponse {
 }
 
 let refreshPromise: Promise<RefreshedAuthResponse> | null = null;
+const REFRESH_TIMEOUT_MS = 10_000;
 
 async function parseJson(response: Response): Promise<unknown> {
   const contentType = response.headers.get("content-type");
@@ -31,11 +32,24 @@ function getErrorMessage(data: unknown, status: number) {
 }
 
 async function requestRefresh(): Promise<RefreshedAuthResponse> {
-  const response = await fetch(`${API_BASE}/auth/refresh`, {
-    method: "POST",
-    headers: { Accept: "application/json" },
-    credentials: "include",
-  });
+  const controller = new AbortController();
+  const timeout = window.setTimeout(
+    () => controller.abort(),
+    REFRESH_TIMEOUT_MS,
+  );
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+
   const data = await parseJson(response);
   if (!response.ok || !data || typeof data !== "object" || !("accessToken" in data) || typeof data.accessToken !== "string" || !("user" in data) || !data.user || typeof data.user !== "object" || !("id" in data.user) || typeof data.user.id !== "string" || !("email" in data.user) || typeof data.user.email !== "string") {
     authStore.clear();

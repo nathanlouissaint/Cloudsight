@@ -3,17 +3,20 @@ import type { FormEvent } from "react";
 import { ArrowUpRight, CheckCircle2, ExternalLink } from "lucide-react";
 import { analytics } from "../lib/analytics";
 import { submitWebsiteAuditLead, type WebsiteAuditLead } from "./auditLead.service";
+import { getWebsiteAuditGoalLabelFromSearch } from "./goals";
 import {
   getWebsiteAuditBookingAnalyticsProperties,
   getWebsiteAuditBookingUrl,
 } from "./booking";
 
-const initialLead: WebsiteAuditLead = { firstName: "", lastName: "", workEmail: "", company: "", websiteUrl: "", offering: "", websiteProblem: "", timeline: "", budget: "", honeypot: "" };
+function getInitialWebsiteAuditLead(search: string): WebsiteAuditLead {
+  return { firstName: "", lastName: "", workEmail: "", company: "", websiteUrl: "", offering: "", websiteProblem: getWebsiteAuditGoalLabelFromSearch(search), timeline: "", budget: "", honeypot: "" };
+}
 const required = ["firstName", "workEmail", "company", "websiteUrl"] as const;
 const isHttpUrl = (value: string) => { try { const url = new URL(value); return url.protocol === "http:" || url.protocol === "https:"; } catch { return false; } };
 
 export function WebsiteAuditForm() {
-  const [lead, setLead] = useState(initialLead);
+  const [lead, setLead] = useState(() => getInitialWebsiteAuditLead(window.location.search));
   const [started, setStarted] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState("");

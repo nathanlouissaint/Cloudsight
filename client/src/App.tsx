@@ -9,9 +9,22 @@ import {
   lazy,
 } from "react";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { RouteErrorBoundary } from "./components/states/RouteErrorBoundary";
 
 const LandingPage = lazy(
   () => import("./pages/LandingPage")
+);
+
+const StudioDemo = lazy(
+  () => import("./pages/StudioDemo")
+);
+
+const HomepageRedesign = lazy(
+  () => import("./pages/HomepageRedesign")
+);
+
+const SaasScorecardPage = lazy(
+  () => import("./pages/SaasScorecardPage")
 );
 
 const WebsiteAuditPage = lazy(
@@ -57,72 +70,83 @@ const ReportsPage = lazy(
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense
-        fallback={
-          <div>
-            Loading...
-          </div>
-        }
-      >
-        <Routes>
-          <Route
-            path="/website-audit"
-            element={<WebsiteAuditPage />}
-          />
+      <RouteErrorBoundary>
+        <Suspense fallback={<div role="status">Loading page…</div>}>
+          <Routes>
+            <Route
+              path="/website-audit"
+              element={<WebsiteAuditPage />}
+            />
 
-          {/* Public Spend Guard funnel */}
-          <Route
-            path="/spend-guard"
-            element={<LandingPage />}
-          />
+            {/* Public Spend Guard funnel */}
+            <Route
+              path="/spend-guard"
+              element={<LandingPage />}
+            />
 
-          <Route
-            path="/spend-guard/signup"
-            element={<SpendGuardSignupPage />}
-          />
+            <Route
+              path="/spend-guard/signup"
+              element={<SpendGuardSignupPage />}
+            />
 
-          <Route
-            path="/spend-guard/login"
-            element={<SpendGuardLoginPage />}
-          />
+            <Route
+              path="/spend-guard/login"
+              element={<SpendGuardLoginPage />}
+            />
 
-          <Route
-            path="/spend-guard/setup"
-            element={<ProtectedRoute><SpendGuardSetupPage /></ProtectedRoute>}
-          />
+            <Route
+              path="/spend-guard/setup"
+              element={<ProtectedRoute><SpendGuardSetupPage /></ProtectedRoute>}
+            />
 
-          <Route
-            path="/spend-guard/results"
-            element={<ProtectedRoute><SpendGuardResultPage /></ProtectedRoute>}
-          />
+            <Route
+              path="/spend-guard/results"
+              element={<ProtectedRoute><SpendGuardResultPage /></ProtectedRoute>}
+            />
 
-          {/* Existing CloudSight application */}
-          <Route
-            path="/"
-            element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
-          />
+            {/* Public homepage. Dashboard routes remain behind authentication. */}
+            <Route
+              path="/"
+              element={<HomepageRedesign />}
+            />
 
-          <Route
-            path="/costs"
-            element={<ProtectedRoute><CostsPage /></ProtectedRoute>}
-          />
+            <Route
+              path="/studio-demo"
+              element={<StudioDemo />}
+            />
 
-          <Route
-            path="/forecasting"
-            element={<ProtectedRoute><ForecastingPage /></ProtectedRoute>}
-          />
+            <Route
+              path="/saas-scorecard"
+              element={<SaasScorecardPage />}
+            />
 
-          <Route
-            path="/alerts"
-            element={<ProtectedRoute><AlertsPage /></ProtectedRoute>}
-          />
+            <Route
+              path="/dashboard"
+              element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
+            />
 
-          <Route
-            path="/reports"
-            element={<ProtectedRoute><ReportsPage /></ProtectedRoute>}
-          />
-        </Routes>
-      </Suspense>
+            <Route
+              path="/costs"
+              element={<ProtectedRoute><CostsPage /></ProtectedRoute>}
+            />
+
+            <Route
+              path="/forecasting"
+              element={<ProtectedRoute><ForecastingPage /></ProtectedRoute>}
+            />
+
+            <Route
+              path="/alerts"
+              element={<ProtectedRoute><AlertsPage /></ProtectedRoute>}
+            />
+
+            <Route
+              path="/reports"
+              element={<ProtectedRoute><ReportsPage /></ProtectedRoute>}
+            />
+          </Routes>
+        </Suspense>
+      </RouteErrorBoundary>
     </BrowserRouter>
   );
 }
