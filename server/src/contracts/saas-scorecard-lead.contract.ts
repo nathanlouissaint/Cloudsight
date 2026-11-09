@@ -1,0 +1,4 @@
+import { z } from "zod";
+const url = z.string().trim().max(2048).refine((value) => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } }, "Website URL must be a valid HTTP(S) URL.");
+export const saasScorecardLeadContract = z.object({ firstName:z.string().trim().min(1).max(100), workEmail:z.string().trim().email().max(320), company:z.string().trim().min(1).max(200), websiteUrl:url, marketingConsent:z.boolean().default(false), totalScore:z.number().min(0).max(100), categoryScores:z.record(z.string(),z.number().min(0).max(25)), answerIds:z.record(z.string(),z.enum(["strong","partial","weak"])), scoringVersion:z.literal("saas-scorecard-v1"), recommendations:z.array(z.object({ questionId:z.string(), title:z.string(), why:z.string(), nextStep:z.string(), service:z.string() })).max(3), honeypot:z.string().max(200).optional().default("") }).strict();
+export type SaasScorecardLeadInput = z.infer<typeof saasScorecardLeadContract>;

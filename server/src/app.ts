@@ -17,6 +17,7 @@ import analyticsRoutes from "./routes/analytics.routes";
 import accountRoutes from "./routes/account.routes";
 import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
 import healthRoutes from "./routes/health.routes";
+import saasScorecardRoutes from "./routes/saas-scorecard.routes";
 
 import {
   errorHandler,
@@ -63,6 +64,7 @@ app.use(
 );
 
 app.use("/health", healthRoutes);
+app.use("/saas-scorecard", saasScorecardRoutes);
 
 app.use("/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);

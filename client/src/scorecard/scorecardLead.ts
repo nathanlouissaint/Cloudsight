@@ -1,0 +1,3 @@
+import type { ScorecardRecommendation, ScorecardResult } from "./scoring";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
+export async function submitScorecardLead(payload: { firstName: string; workEmail: string; company: string; websiteUrl: string; marketingConsent: boolean; honeypot: string } & ScorecardResult & { recommendations: ScorecardRecommendation[] }) { const response = await fetch(`${API_BASE}/saas-scorecard/leads`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error("Unable to save scorecard lead"); }

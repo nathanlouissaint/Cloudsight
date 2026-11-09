@@ -1,0 +1,20 @@
+# CI-only Compose overrides. Never use for deployment.
+services:
+  postgres:
+    container_name: cloudsight-postgres-ci
+    volumes:
+      - cloudsight_postgres_ci_data:/var/lib/postgresql/data
+  server:
+    container_name: cloudsight-server-ci
+    image: cloudsight-server-ci
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+  client:
+    container_name: cloudsight-client-ci
+    image: cloudsight-client-ci
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
+volumes:
+  cloudsight_postgres_ci_data:

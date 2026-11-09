@@ -32,14 +32,14 @@ jobs:
 
       - name: Start Production Stack
         run: |
-          docker compose -f docker-compose.prod.yml up -d --build
+          docker compose --env-file .github/ci/compose.env -f docker-compose.prod.yml -f docker-compose.ci.yml up -d --build
 
       - name: Wait for Containers
         run: |
           timeout 180 bash -c '
-            until [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-postgres-prod)" = "healthy" ] &&
-                  [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-server-prod)" = "healthy" ] &&
-                  [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-client-prod)" = "healthy" ];
+            until [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-postgres-ci)" = "healthy" ] &&
+                  [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-server-ci)" = "healthy" ] &&
+                  [ "$(docker inspect -f "{{.State.Health.Status}}" cloudsight-client-ci)" = "healthy" ];
             do
               echo "Waiting for services..."
               sleep 5
@@ -60,12 +60,12 @@ jobs:
 
       - name: Container Status
         if: failure()
-        run: docker compose -f docker-compose.prod.yml ps
+        run: docker compose --env-file .github/ci/compose.env -f docker-compose.prod.yml -f docker-compose.ci.yml ps
 
       - name: Container Logs
         if: failure()
-        run: docker compose -f docker-compose.prod.yml logs
+        run: docker compose --env-file .github/ci/compose.env -f docker-compose.prod.yml -f docker-compose.ci.yml logs
 
       - name: Shutdown Stack
         if: always()
-        run: docker compose -f docker-compose.prod.yml down -v
+        run: docker compose --env-file .github/ci/compose.env -f docker-compose.prod.yml -f docker-compose.ci.yml down -v
