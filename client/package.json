@@ -8,7 +8,8 @@
   "build": "tsc -b && vite build",
   "typecheck": "tsc -b",
   "lint": "eslint .",
-  "preview": "vite preview"
+  "preview": "vite preview",
+  "test:scorecard": "node --import tsx --test test/scorecard-scoring.test.ts"
 },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
