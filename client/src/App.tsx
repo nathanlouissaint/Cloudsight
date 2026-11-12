@@ -8,9 +8,22 @@ import {
   Suspense,
   lazy,
 } from "react";
+import { MarketingConsent } from "./components/MarketingConsent";
 
 const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
+);
+
+const WebsiteAuditPage = lazy(
+  () => import("./pages/WebsiteAuditPage")
+);
+
+const SaasScorecardPage = lazy(
+  () => import("./pages/SaasScorecardPage")
+);
+
+const GrowthLabWebsiteAuditPage = lazy(
+  () => import("./pages/GrowthLabWebsiteAuditPage")
 );
 
 const CostsPage = lazy(
@@ -42,7 +55,22 @@ export default function App() {
         <Routes>
 
           <Route
+            path="/website-audit"
+            element={<WebsiteAuditPage />}
+          />
+
+          <Route
+            path="/saas-scorecard"
+            element={<SaasScorecardPage />}
+          />
+
+          <Route
             path="/"
+            element={<GrowthLabWebsiteAuditPage />}
+          />
+
+          <Route
+            path="/dashboard"
             element={<DashboardPage />}
           />
 
@@ -67,6 +95,7 @@ export default function App() {
           />
 
         </Routes>
+        <MarketingConsent />
       </Suspense>
     </BrowserRouter>
   );
