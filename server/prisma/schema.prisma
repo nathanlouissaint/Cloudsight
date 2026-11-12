@@ -47,6 +47,28 @@ model WebsiteAuditLead {
   @@index([status, createdAt])
 }
 
+model SaasScorecardLead {
+  id                String   @id @default(uuid())
+  fullName          String?
+  phone             String?
+  assessmentAnswers Json?
+  report            Json?
+  firstName         String
+  workEmail         String
+  company           String
+  websiteUrl        String
+  marketingConsent  Boolean  @default(false)
+  totalScore        Float
+  categoryScores    Json
+  answerIds         Json
+  scoringVersion    String
+  recommendations   Json
+  source            String   @default("SAAS_SCORECARD")
+  createdAt         DateTime @default(now())
+
+  @@index([workEmail, websiteUrl, createdAt])
+}
+
 model CloudAccount {
   id                      String                @id @default(uuid())
   awsAccountId            String                @unique

@@ -19,6 +19,7 @@ import serviceAnalyticsRoutes from "./routes/service-analytics.routes";
 import healthRoutes from "./routes/health.routes";
 import spendGuardAnalysisRoutes from "./routes/spend-guard-analysis.routes";
 import websiteAuditLeadRoutes from "./routes/website-audit-lead.routes";
+import growthScorecardLeadRoutes from "./routes/growth-scorecard-lead.routes";
 
 import {
   errorHandler,
@@ -79,6 +80,7 @@ app.use("/analytics/accounts", accountRoutes);
 app.use("/analytics/services", serviceAnalyticsRoutes);
 app.use("/spend-guard", spendGuardAnalysisRoutes);
 app.use("/website-audit", websiteAuditLeadRoutes);
+app.use("/scorecard", growthScorecardLeadRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
