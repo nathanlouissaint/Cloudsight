@@ -13,6 +13,18 @@ const DashboardPage = lazy(
   () => import("./pages/DashboardPage")
 );
 
+const WebsiteAuditPage = lazy(
+  () => import("./pages/WebsiteAuditPage")
+);
+
+const SaasScorecardPage = lazy(
+  () => import("./pages/SaasScorecardPage")
+);
+
+const HomepageRedesign = lazy(
+  () => import("./pages/HomepageRedesign")
+);
+
 const CostsPage = lazy(
   () => import("./pages/CostsPage")
 );
@@ -42,7 +54,22 @@ export default function App() {
         <Routes>
 
           <Route
+            path="/website-audit"
+            element={<WebsiteAuditPage />}
+          />
+
+          <Route
+            path="/saas-scorecard"
+            element={<SaasScorecardPage />}
+          />
+
+          <Route
             path="/"
+            element={<HomepageRedesign />}
+          />
+
+          <Route
+            path="/dashboard"
             element={<DashboardPage />}
           />
 
