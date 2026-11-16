@@ -1,7 +1,6 @@
-import type {
-  Request,
-  Response,
-} from "express";
+import type { Response } from "express";
+import type { AuthenticatedRequest } from "../middleware/auth.middleware";
+import { getOrganizationIdForUser } from "../services/organization-context.service";
 
 import {
   AlertsContract,
@@ -18,18 +17,22 @@ import {
 import {
   alertHistoryService,
 } from "../services/alert-history.service";
+import { logger } from "../config/logger";
 
 type AlertHistoryItem = Awaited<
   ReturnType<typeof alertHistoryService.getRecentHistory>
 >[number];
 
 export async function getAlerts(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const alerts =
-      await alertService.getAlerts();
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
+    const alerts = await alertService.getAlerts(organizationId);
 
     return res
       .status(200)
@@ -37,10 +40,7 @@ export async function getAlerts(
         AlertsContract.parse(alerts)
       );
   } catch (error) {
-    console.error(
-      "Alerts error:",
-      error
-    );
+    logger.error({ err: error }, "Alerts error");
 
     return res
       .status(500)
@@ -52,12 +52,15 @@ export async function getAlerts(
 }
 
 export async function getAlertHistory(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const history =
-      await alertHistoryService.getRecentHistory();
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const organizationId = await getOrganizationIdForUser(userId);
+    if (!organizationId) return res.status(403).json({ message: "No organization is associated with this account." });
+    const history = await alertHistoryService.getRecentHistory(organizationId);
 
     const response =
       AlertHistoryContract.parse(
@@ -83,10 +86,7 @@ export async function getAlertHistory(
       .status(200)
       .json(response);
   } catch (error) {
-    console.error(
-      "Alert history error:",
-      error
-    );
+    logger.error({ err: error }, "Alert history error");
 
     return res
       .status(500)

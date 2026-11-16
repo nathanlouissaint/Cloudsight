@@ -5,9 +5,11 @@ import type {
 } from "../types/alert.types";
 
 export async function findRecentAlertHistory(
+  organizationId: string,
   limit = 10
 ) {
   return prisma.alertHistory.findMany({
+    where: { organizationId },
     orderBy: {
       occurredAt: "desc",
     },
@@ -16,10 +18,12 @@ export async function findRecentAlertHistory(
 }
 
 export async function createAlertHistoryRecord(
+  organizationId: string,
   alert: AlertModel
 ) {
   return prisma.alertHistory.create({
     data: {
+      organizationId,
       alertId: alert.id,
       type: alert.type,
       severity: alert.severity,

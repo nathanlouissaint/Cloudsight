@@ -1,5 +1,5 @@
 import {
-  findCostSnapshotsByDateRange,
+  findCostSnapshotsByDateRangeForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 import {
@@ -7,21 +7,24 @@ import {
 } from "./historical-trend.service";
 
 type CostSnapshotWithAccount = Awaited<
-  ReturnType<typeof findCostSnapshotsByDateRange>
+  ReturnType<typeof findCostSnapshotsByDateRangeForOrganization>
 >[number];
 
 export async function getHistoricalCostTrends(
+  organizationId: string,
   startDate: Date,
   endDate: Date
 ) {
   const snapshots =
-    await findCostSnapshotsByDateRange(
+    await findCostSnapshotsByDateRangeForOrganization(
+      organizationId,
       startDate,
       endDate
     );
 
   const trends =
     await historicalTrendService.getDailyTrend(
+      organizationId,
       startDate,
       endDate
     );

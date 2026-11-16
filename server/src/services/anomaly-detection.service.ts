@@ -1,15 +1,15 @@
 import type { AlertModel } from "../types/alert.types";
 
 import {
-  findCurrentMonthCostSnapshots,
+  findCurrentMonthCostSnapshotsForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 export class AnomalyDetectionService {
 
-  async detectCostSpike(): Promise<AlertModel[]> {
+  async detectCostSpike(organizationId: string): Promise<AlertModel[]> {
 
     const snapshots =
-      await findCurrentMonthCostSnapshots();
+      await findCurrentMonthCostSnapshotsForOrganization(organizationId);
 
     if (snapshots.length < 8) {
       return [];
@@ -58,6 +58,10 @@ export class AnomalyDetectionService {
         (sum, day) => sum + day.cost,
         0
       ) / previous.length;
+
+    if (average <= 0) {
+      return [];
+    }
 
     const ratio =
       latest.cost / average;

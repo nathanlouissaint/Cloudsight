@@ -1,237 +1,76 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
-const SERVICE_PROFILES: Record<
-  string,
-  {
-    base: number;
-    variance: number;
-  }
-> = {
-  EC2: { base: 58, variance: 20 },
-  EKS: { base: 48, variance: 16 },
-  RDS: { base: 34, variance: 12 },
-  ECS: { base: 28, variance: 10 },
-  CloudFront: { base: 16, variance: 6 },
-  S3: { base: 12, variance: 5 },
-  Lambda: { base: 8, variance: 4 },
-  Route53: { base: 3, variance: 1 },
-};
-
-
-const CLOUD_ACCOUNTS = [
-  {
-    awsAccountId: "111111111111",
-    accountName: "Production",
-    multiplier: 0.65,
-  },
-  {
-    awsAccountId: "222222222222",
-    accountName: "Staging",
-    multiplier: 0.22,
-  },
-  {
-    awsAccountId: "333333333333",
-    accountName: "Development",
-    multiplier: 0.13,
-  },
+const organizationId = "00000000-0000-4000-8000-000000000001";
+const userId = "00000000-0000-4000-8000-000000000002";
+const accounts = [
+  { id: "00000000-0000-4000-8000-000000000011", awsAccountId: "111111111111", accountName: "Production", multiplier: 0.65 },
+  { id: "00000000-0000-4000-8000-000000000012", awsAccountId: "222222222222", accountName: "Staging", multiplier: 0.22 },
+  { id: "00000000-0000-4000-8000-000000000013", awsAccountId: "333333333333", accountName: "Development", multiplier: 0.13 },
 ];
+const services = ["EC2", "EKS", "RDS", "ECS", "CloudFront", "S3", "Lambda", "Route53"];
 
-function generateCost(
-  base: number,
-  variance: number,
-  multiplier = 1
-): number {
-  const fluctuation =
-    (Math.random() - 0.5) * variance;
-
-  return Number(
-    Math.max(
-      (base + fluctuation) * multiplier,
-      0.5
-    ).toFixed(2)
-  );
+function cost(dayOffset: number, serviceIndex: number, multiplier: number) {
+  return Number(((20 + serviceIndex * 8 + ((dayOffset * 7 + serviceIndex * 3) % 11)) * multiplier).toFixed(2));
 }
 
 async function main() {
-  console.log("Cleaning existing records...");
+  const timestamp = new Date();
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: {},
+    create: { id: userId, email: "seed@cloudsight.local", passwordHash: null },
+  });
+  await prisma.organization.upsert({
+    where: { id: organizationId },
+    update: { name: "CloudSight Seed Organization", slug: "cloudsight-seed", updatedAt: timestamp },
+    create: { id: organizationId, name: "CloudSight Seed Organization", slug: "cloudsight-seed", updatedAt: timestamp },
+  });
+  await prisma.organizationMember.upsert({
+    where: { organizationId_userId: { organizationId, userId } },
+    update: { role: "OWNER", updatedAt: timestamp },
+    create: { id: "00000000-0000-4000-8000-000000000003", organizationId, userId, role: "OWNER", updatedAt: timestamp },
+  });
 
-  await prisma.serviceCostSnapshot.deleteMany();
-  await prisma.budgetSnapshot.deleteMany();
-  await prisma.costSnapshot.deleteMany();
-  await prisma.cloudAccount.deleteMany();
-  await prisma.costRecord.deleteMany();
-
-  console.log("Loading services...");
-
-  const services =
-    await prisma.cloudService.findMany();
-
-  if (services.length !== 8) {
-    throw new Error(
-      `Expected 8 cloud services, found ${services.length}`
-    );
-  }
-
-  console.log("Creating cloud accounts...");
-
-  const accounts = [];
-
-  for (const account of CLOUD_ACCOUNTS) {
-    const created =
-      await prisma.cloudAccount.create({
-        data: {
-          awsAccountId: account.awsAccountId,
-          accountName: account.accountName,
-        },
-      });
-
-    accounts.push({
-      ...created,
-      multiplier: account.multiplier,
+  for (const account of accounts) {
+    await prisma.cloudAccount.upsert({
+      where: { awsAccountId: account.awsAccountId },
+      update: { organizationId, accountName: account.accountName, isActive: true, connectionStatus: "MOCK_VERIFIED" },
+      create: { id: account.id, organizationId, awsAccountId: account.awsAccountId, accountName: account.accountName, isActive: true, connectionStatus: "MOCK_VERIFIED" },
     });
   }
 
-  const costRecords: {
-    serviceId: string;
-    usageDate: Date;
-    cost: number;
-  }[] = [];
+  const now = new Date();
+  await prisma.budget.upsert({
+    where: { organizationId_year_month: { organizationId, year: now.getFullYear(), month: now.getMonth() + 1 } },
+    update: { amount: 5000, name: "Monthly Cloud Budget", updatedAt: timestamp },
+    create: { id: "00000000-0000-4000-8000-000000000004", organizationId, name: "Monthly Cloud Budget", amount: 5000, month: now.getMonth() + 1, year: now.getFullYear(), updatedAt: timestamp },
+  });
 
-  const costSnapshots: {
-    accountId: string;
-    snapshotDate: Date;
-    totalCost: number;
-  }[] = [];
-
-  const serviceSnapshots: {
-    accountId: string;
-    serviceName: string;
-    snapshotDate: Date;
-    cost: number;
-  }[] = [];
-
-  const budgetSnapshots: {
-    budgetName: string;
-    budgetAmount: number;
-    actualSpend: number;
-    snapshotDate: Date;
-  }[] = [];
-
-  for (
-    let dayOffset = 89;
-    dayOffset >= 0;
-    dayOffset--
-  ) {
-    const usageDate = new Date();
-
-    usageDate.setDate(
-      usageDate.getDate() - dayOffset
-    );
-
-    usageDate.setHours(0, 0, 0, 0);
-
-    let totalDailySpend = 0;
-
-    for (const service of services) {
-      const profile =
-        SERVICE_PROFILES[service.name];
-
-      if (!profile) {
-        throw new Error(
-          `Missing profile for service: ${service.name}`
-        );
-      }
-
-      const cost = generateCost(
-        profile.base,
-        profile.variance
-      );
-
-      totalDailySpend += cost;
-
-      costRecords.push({
-        serviceId: service.id,
-        usageDate,
-        cost,
-      });
-
-      for (const account of accounts) {
-        serviceSnapshots.push({
-          accountId: account.id,
-          serviceName: service.name,
-          snapshotDate: usageDate,
-          cost: Number(
-            (
-              cost *
-              account.multiplier
-            ).toFixed(2)
-          ),
+  for (let dayOffset = 29; dayOffset >= 0; dayOffset--) {
+    const snapshotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOffset);
+    for (const account of accounts) {
+      let totalCost = 0;
+      for (const [serviceIndex, serviceName] of services.entries()) {
+        const serviceCost = cost(dayOffset, serviceIndex, account.multiplier);
+        totalCost += serviceCost;
+        await prisma.serviceCostSnapshot.upsert({
+          where: { accountId_serviceName_snapshotDate: { accountId: account.id, serviceName, snapshotDate } },
+          update: { cost: serviceCost },
+          create: { id: `${account.id.slice(0, 30)}${dayOffset}${serviceIndex}`, accountId: account.id, serviceName, snapshotDate, cost: serviceCost },
         });
       }
+      await prisma.costSnapshot.upsert({
+        where: { accountId_snapshotDate: { accountId: account.id, snapshotDate } },
+        update: { totalCost: Number(totalCost.toFixed(2)) },
+        create: { id: `${account.id.slice(0, 32)}${dayOffset}`, accountId: account.id, snapshotDate, totalCost: Number(totalCost.toFixed(2)) },
+      });
     }
-
-for (const account of accounts) {
-  const accountCost = Number(
-    (totalDailySpend * account.multiplier).toFixed(2)
-  );
-
-  costSnapshots.push({
-    accountId: account.id,
-    snapshotDate: usageDate,
-    totalCost: accountCost,
-  });
-}
-
-    budgetSnapshots.push({
-      budgetName: "Monthly Cloud Budget",
-      budgetAmount: 5000,
-      actualSpend: Number(
-        totalDailySpend.toFixed(2)
-      ),
-      snapshotDate: usageDate,
-    });
   }
-
-  await prisma.costRecord.createMany({
-    data: costRecords,
-  });
-
-  await prisma.costSnapshot.createMany({
-    data: costSnapshots,
-  });
-
-  await prisma.serviceCostSnapshot.createMany({
-    data: serviceSnapshots,
-  });
-
-  await prisma.budgetSnapshot.createMany({
-    data: budgetSnapshots,
-  });
-
-  console.log(
-    `Created ${costRecords.length} cost records`
-  );
-
-  console.log(
-    `Created ${costSnapshots.length} cost snapshots`
-  );
-
-  console.log(
-    `Created ${serviceSnapshots.length} service snapshots`
-  );
-
-  console.log(
-    `Created ${budgetSnapshots.length} budget snapshots`
-  );
+  console.log("Seeded organization-scoped accounts, budgets, and daily cost snapshots.");
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+}).finally(async () => prisma.$disconnect());

@@ -83,6 +83,7 @@ build/
 .env.development
 client/.env*
 server/.env*
+!server/.env.test.example
 terraform/terraform.tfvars
 terraform/environments/*/terraform.tfvars
 

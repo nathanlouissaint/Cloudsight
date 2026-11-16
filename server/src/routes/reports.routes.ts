@@ -7,16 +7,17 @@ import {
   removeNote,
   updateNote,
 } from "../controllers/reports.controller";
+import { authenticateToken } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/", getExecutiveReport);
+router.get("/", authenticateToken, getExecutiveReport);
 
-router.get("/export/csv", exportCsv);
+router.get("/export/csv", authenticateToken, exportCsv);
 
-router.get("/notes", getNotes);
-router.post("/notes", createNote);
-router.put("/notes/:id", updateNote);
-router.delete("/notes/:id", removeNote);
+router.get("/notes", authenticateToken, getNotes);
+router.post("/notes", authenticateToken, createNote);
+router.put("/notes/:id", authenticateToken, updateNote);
+router.delete("/notes/:id", authenticateToken, removeNote);
 
 export default router;

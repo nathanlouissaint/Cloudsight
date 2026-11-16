@@ -1,5 +1,5 @@
 import {
-  findCostSnapshotsByDateRange,
+  findCostSnapshotsByDateRangeForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 export interface HistoricalTrendPoint {
@@ -10,12 +10,14 @@ export interface HistoricalTrendPoint {
 export class HistoricalTrendService {
 
   async getDailyTrend(
+    organizationId: string,
     startDate: Date,
     endDate: Date
   ): Promise<HistoricalTrendPoint[]> {
 
     const snapshots =
-      await findCostSnapshotsByDateRange(
+      await findCostSnapshotsByDateRangeForOrganization(
+        organizationId,
         startDate,
         endDate
       );
