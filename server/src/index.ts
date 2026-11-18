@@ -8,12 +8,10 @@ import { validateEnvironment } from "./config/environment";
 import { connectRedis, disconnectRedis } from "./config/redis";
 import { logger } from "./config/logger";
 import { captureException, flushSentry, initializeSentry } from "./config/sentry";
-import { startWebsiteAuditWorker, stopWebsiteAuditWorker } from "./services/website-audit-job.service";
 
 validateEnvironment();
 initializeSentry();
 void connectRedis();
-void startWebsiteAuditWorker();
 
 const PORT =
   Number(process.env.PORT) || 5000;
@@ -53,7 +51,6 @@ async function shutdown(
       clearTimeout(forceShutdown);
       await flushSentry();
       await disconnectRedis();
-      stopWebsiteAuditWorker();
       await prisma.$disconnect();
 
       logger.info({ signal }, "Shutdown complete");

@@ -52,6 +52,7 @@ model WebsiteAuditJob {
   id              String                 @id @default(uuid())
   submittedUrl    String
   normalizedUrl   String
+  domain          String
   status          WebsiteAuditJobStatus  @default(PENDING)
   failureReason   String?
   retryCount      Int                    @default(0)
@@ -60,11 +61,15 @@ model WebsiteAuditJob {
   createdAt       DateTime               @default(now())
   startedAt       DateTime?
   completedAt     DateTime?
+  leaseExpiresAt  DateTime?
+  workerId        String?
+  expiresAt       DateTime
   lead            WebsiteAuditLead?     @relation(fields: [leadId], references: [id])
   report          WebsiteAuditReport?
 
   @@index([status, createdAt])
   @@index([leadId])
+  @@index([domain, status])
 }
 
 model WebsiteAuditReport {

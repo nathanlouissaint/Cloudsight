@@ -10,6 +10,7 @@ type Address = { address: string; family: number };
 const blockedHosts = new Set(["localhost", "metadata.google.internal", "metadata", "instance-data"]);
 const timeoutMs = 8_000;
 const maxBytes = 1_000_000;
+const crawlerAgent = "CloudSight-Audit";
 
 export function isPrivateAddress(address: string) {
   const family = net.isIP(address);
@@ -51,6 +52,7 @@ function getPinned(url: URL, addresses: Address[]) {
 
 export async function fetchAuditHtml(initialUrl: string) {
   if (process.env.AUDIT_CRAWLER_NETWORK_ISOLATION !== "enabled") throw new AuditFetchError("CRAWLER_NETWORK_ISOLATION_REQUIRED");
+  if (!(await robotsAllows(initialUrl))) throw new AuditFetchError("ROBOTS_DISALLOWED");
   let current = initialUrl;
   for (let redirects = 0; redirects <= 3; redirects += 1) {
     const { url, addresses } = await validateAuditUrl(current);
@@ -63,4 +65,16 @@ export async function fetchAuditHtml(initialUrl: string) {
     return { finalUrl: url.toString(), html: response.body };
   }
   throw new AuditFetchError("FETCH_FAILED");
+}
+
+export async function robotsAllows(initialUrl: string) {
+  try {
+    const page = new URL(initialUrl); const robots = new URL("/robots.txt", page);
+    const { url, addresses } = await validateAuditUrl(robots.toString()); const response = await getPinned(url, addresses);
+    if (response.status === 404) return true;
+    if (response.status < 200 || response.status >= 300 || response.body.length > 256_000) return false;
+    let applies = false;
+    for (const raw of response.body.split(/\r?\n/)) { const line = raw.replace(/#.*/, "").trim(); const [key, ...rest] = line.split(":"); const value = rest.join(":").trim(); if (!key) continue; if (key.toLowerCase() === "user-agent") applies = value.toLowerCase() === "*" || value.toLowerCase() === crawlerAgent.toLowerCase(); if (applies && key.toLowerCase() === "disallow" && value && page.pathname.startsWith(value)) return false; }
+    return true;
+  } catch { return false; }
 }
