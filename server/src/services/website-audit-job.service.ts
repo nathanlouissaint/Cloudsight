@@ -40,13 +40,13 @@ export async function processNextAuditJob(workerId: string = crypto.randomUUID()
   } catch (error) {
     const code = error instanceof AuditFetchError ? error.code : "PROCESSING_FAILED";
     const retry = candidate.retryCount + 1;
-    await prisma.websiteAuditJob.update({ where: { id: candidate.id }, data: retry <= maxRetries && code !== "CRAWLER_NETWORK_ISOLATION_REQUIRED" ? { status: WebsiteAuditJobStatus.PENDING, retryCount: retry, failureReason: code, startedAt: null, leaseExpiresAt: null, workerId: null } : { status: WebsiteAuditJobStatus.FAILED, retryCount: retry, failureReason: code, completedAt: new Date(), leaseExpiresAt: null } });
+    await prisma.websiteAuditJob.update({ where: { id: candidate.id }, data: retry <= maxRetries ? { status: WebsiteAuditJobStatus.PENDING, retryCount: retry, failureReason: code, startedAt: null, leaseExpiresAt: null, workerId: null } : { status: WebsiteAuditJobStatus.FAILED, retryCount: retry, failureReason: code, completedAt: new Date(), leaseExpiresAt: null } });
   }
   return true;
 }
 
 /** Serializable transaction: capacity checks and the pending→processing claim commit together. */
-export async function claimNextAuditJob(workerId: string) {
+export async function claimNextAuditJob(workerId: string, beforeClaim?: () => Promise<void>) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       return await prisma.$transaction(async (tx) => {
@@ -56,6 +56,7 @@ export async function claimNextAuditJob(workerId: string) {
         if (!candidate) return null;
         const domainRunning = await tx.websiteAuditJob.count({ where: { domain: candidate.domain, status: WebsiteAuditJobStatus.PROCESSING, leaseExpiresAt: { gt: new Date() } } });
         if (domainRunning >= domainConcurrency) return null;
+        if (beforeClaim) await beforeClaim();
         const claim = await tx.websiteAuditJob.updateMany({ where: { id: candidate.id, status: WebsiteAuditJobStatus.PENDING }, data: { status: WebsiteAuditJobStatus.PROCESSING, startedAt: new Date(), workerId, leaseExpiresAt: new Date(Date.now() + 60_000) } });
         return claim.count ? candidate : null;
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
