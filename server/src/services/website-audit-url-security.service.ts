@@ -12,6 +12,9 @@ const blockedHosts = new Set(["localhost", "metadata.google.internal", "metadata
 const timeoutMs = 8_000;
 const maxBytes = 1_000_000;
 const crawlerAgent = "CloudSight-Audit";
+const robotsCache = new Map<string, { policy: string | null; expiresAt: number }>();
+const robotsCacheTtlMs = Number(process.env.WEBSITE_AUDIT_ROBOTS_CACHE_TTL_MS ?? 300_000);
+const robotsCacheMax = 500;
 
 export function isPrivateAddress(address: string) {
   const family = net.isIP(address);
@@ -72,11 +75,20 @@ export async function fetchAuditHtml(initialUrl: string, transport: AuditNetwork
 export async function robotsAllows(initialUrl: string, transport: AuditNetworkTransport = productionTransport) {
   try {
     const page = new URL(initialUrl); const robots = new URL("/robots.txt", page);
+    const cacheKey = `${page.origin}|${crawlerAgent}`; const cached = robotsCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.policy === null ? true : robotsPolicyAllows(cached.policy, page.pathname, crawlerAgent);
     const { url, addresses } = await validateAuditUrl(robots.toString(), transport); const response = await transport.request(url, addresses);
-    if (response.status === 404) return true;
+    if (response.status === 404) { cacheRobots(cacheKey, null); return true; }
     if (response.status < 200 || response.status >= 300 || response.body.length > 256_000) return false;
-    let applies = false;
-    for (const raw of response.body.split(/\r?\n/)) { const line = raw.replace(/#.*/, "").trim(); const [key, ...rest] = line.split(":"); const value = rest.join(":").trim(); if (!key) continue; if (key.toLowerCase() === "user-agent") applies = value.toLowerCase() === "*" || value.toLowerCase() === crawlerAgent.toLowerCase(); if (applies && key.toLowerCase() === "disallow" && value && page.pathname.startsWith(value)) return false; }
-    return true;
+    cacheRobots(cacheKey, response.body); return robotsPolicyAllows(response.body, page.pathname, crawlerAgent);
   } catch { return false; }
+}
+function cacheRobots(key: string, policy: string | null) { if (robotsCache.size >= robotsCacheMax) robotsCache.delete(robotsCache.keys().next().value as string); robotsCache.set(key, { policy, expiresAt: Date.now() + robotsCacheTtlMs }); }
+export function clearRobotsPolicyCache() { robotsCache.clear(); }
+
+export function robotsPolicyAllows(body: string, pathname: string, agent = crawlerAgent) {
+  const rules: { allow: boolean; pattern: string }[] = []; let applies = false;
+  for (const raw of body.split(/\r?\n/)) { const line = raw.replace(/#.*/, "").trim(); const [key, ...rest] = line.split(":"); const value = rest.join(":").trim(); if (!key) continue; const field = key.toLowerCase(); if (field === "user-agent") { applies = value.toLowerCase() === "*" || agent.toLowerCase().startsWith(value.toLowerCase()); continue; } if (applies && (field === "allow" || field === "disallow") && value) rules.push({ allow: field === "allow", pattern: value }); }
+  const matches = rules.filter((rule) => { const end = rule.pattern.endsWith("$"); const source = (end ? rule.pattern.slice(0, -1) : rule.pattern).replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*"); return new RegExp(`^${source}${end ? "$" : ""}`).test(pathname); });
+  if (!matches.length) return true; matches.sort((a, b) => b.pattern.length - a.pattern.length || Number(b.allow) - Number(a.allow)); return matches[0].allow;
 }

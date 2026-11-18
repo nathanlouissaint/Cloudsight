@@ -1,12 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AuditFetchError, fetchAuditHtml, isPrivateAddress, type AuditNetworkTransport } from "../src/services/website-audit-url-security.service";
+import { AuditFetchError, clearRobotsPolicyCache, fetchAuditHtml, isPrivateAddress, robotsAllows, robotsPolicyAllows, type AuditNetworkTransport } from "../src/services/website-audit-url-security.service";
 import { extractHomepageEvidence } from "../src/services/website-audit-extractor.service";
 
 test("blocks private, metadata, loopback, and IPv6 internal addresses", () => {
   for (const address of ["127.0.0.1", "10.0.0.1", "172.16.0.1", "192.168.0.1", "169.254.169.254", "::1", "fc00::1", "fe80::1"]) assert.equal(isPrivateAddress(address), true);
   assert.equal(isPrivateAddress("93.184.216.34"), false);
 });
+
+test("robots parser honors longest rule, allow precedence, wildcards, and agent groups", () => {
+  const rules = "User-agent: *\nDisallow: /private\nAllow: /private/public\nDisallow: /*.pdf$\nUser-agent: CloudSight-Audit\nDisallow: /blocked";
+  assert.equal(robotsPolicyAllows(rules, "/private/public", "CloudSight-Audit"), true);
+  assert.equal(robotsPolicyAllows(rules, "/blocked", "CloudSight-Audit"), false);
+  assert.equal(robotsPolicyAllows(rules, "/report.pdf", "Other"), false);
+});
+test("robots policy cache evaluates distinct paths against one cached policy", async () => { clearRobotsPolicyCache(); let calls = 0; const transport: AuditNetworkTransport = { resolve: async () => [{ address: "93.184.216.34", family: 4 }], request: async () => { calls += 1; return { status: 200, headers: {}, body: "User-agent: *\nDisallow: /private\nAllow: /private/public" }; } }; assert.equal(await robotsAllows("https://fixture.test/private", transport), false); assert.equal(await robotsAllows("https://fixture.test/private/public", transport), true); assert.equal(calls, 1); });
 
 test("rejects a redirect that resolves to a private destination through the injected transport", async () => {
   process.env.AUDIT_CRAWLER_NETWORK_ISOLATION = "enabled";

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { Prisma, WebsiteAuditJobStatus } from "@prisma/client";
 import { prisma } from "../config/prisma";
-import { AuditFetchError, fetchAuditHtml, validateAuditUrl } from "./website-audit-url-security.service";
+import { AuditFetchError, fetchAuditHtml, validateAuditUrl, type AuditNetworkTransport } from "./website-audit-url-security.service";
 import { extractHomepageEvidence } from "./website-audit-extractor.service";
 function tokenHash(token: string) {
   const secret = process.env.WEBSITE_AUDIT_TOKEN_SECRET ?? (process.env.NODE_ENV === "production" ? "" : "development-only-secret");
@@ -12,8 +12,8 @@ const maxRetries = 2;
 const globalConcurrency = Number(process.env.WEBSITE_AUDIT_GLOBAL_CONCURRENCY ?? 2);
 const domainConcurrency = Number(process.env.WEBSITE_AUDIT_DOMAIN_CONCURRENCY ?? 1);
 
-export async function createAuditJob(submittedUrl: string, leadId?: string) {
-  const { url } = await validateAuditUrl(submittedUrl);
+export async function createAuditJob(submittedUrl: string, leadId?: string, transport?: AuditNetworkTransport) {
+  const { url } = await validateAuditUrl(submittedUrl, transport);
   const token = crypto.randomBytes(32).toString("base64url");
   const recent = await prisma.websiteAuditJob.findFirst({ where: { normalizedUrl: url.toString(), status: { in: [WebsiteAuditJobStatus.PENDING, WebsiteAuditJobStatus.PROCESSING] }, createdAt: { gte: new Date(Date.now() - 10 * 60_000) } }, orderBy: { createdAt: "desc" } });
   if (recent) return { job: recent, token: null, duplicate: true };
@@ -29,12 +29,12 @@ export async function recoverInterruptedAuditJobs() {
   await prisma.websiteAuditJob.updateMany({ where: { status: WebsiteAuditJobStatus.PROCESSING, leaseExpiresAt: { lt: new Date() } }, data: { status: WebsiteAuditJobStatus.PENDING, failureReason: "WORKER_INTERRUPTED", startedAt: null, leaseExpiresAt: null, workerId: null } });
 }
 
-export async function processNextAuditJob(workerId: string = crypto.randomUUID()) {
+export async function processNextAuditJob(workerId: string = crypto.randomUUID(), transport?: AuditNetworkTransport) {
   let candidate: Awaited<ReturnType<typeof claimNextAuditJob>>;
   try { candidate = await claimNextAuditJob(workerId); } catch { return false; }
   if (!candidate) return false;
   try {
-    const fetched = await fetchAuditHtml(candidate.normalizedUrl);
+    const fetched = await fetchAuditHtml(candidate.normalizedUrl, transport);
     const evidence = extractHomepageEvidence(fetched.html, fetched.finalUrl);
     await prisma.$transaction([prisma.websiteAuditReport.upsert({ where: { auditJobId: candidate.id }, create: { auditJobId: candidate.id, auditedUrl: fetched.finalUrl, metadata: evidence.metadata, findings: evidence.findings }, update: { auditedUrl: fetched.finalUrl, metadata: evidence.metadata, findings: evidence.findings } }), prisma.websiteAuditJob.update({ where: { id: candidate.id }, data: { status: WebsiteAuditJobStatus.COMPLETED, completedAt: new Date(), failureReason: null, leaseExpiresAt: null } })]);
   } catch (error) {
