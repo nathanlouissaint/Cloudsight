@@ -7,6 +7,7 @@ export class AuditFetchError extends Error {
   constructor(public readonly code: string) { super(code); }
 }
 type Address = { address: string; family: number };
+export interface AuditNetworkTransport { resolve(hostname: string): Promise<Address[]>; request(url: URL, addresses: Address[]): Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }>; }
 const blockedHosts = new Set(["localhost", "metadata.google.internal", "metadata", "instance-data"]);
 const timeoutMs = 8_000;
 const maxBytes = 1_000_000;
@@ -26,11 +27,11 @@ export function isPrivateAddress(address: string) {
   return true;
 }
 
-export async function validateAuditUrl(value: string) {
+export async function validateAuditUrl(value: string, transport: AuditNetworkTransport = productionTransport) {
   let url: URL;
   try { url = new URL(value.trim()); } catch { throw new AuditFetchError("INVALID_URL"); }
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || blockedHosts.has(url.hostname.toLowerCase()) || (url.port && !['80', '443'].includes(url.port))) throw new AuditFetchError("UNSAFE_URL");
-  const addresses = await dns.lookup(url.hostname, { all: true, verbatim: true });
+  const addresses = await transport.resolve(url.hostname);
   if (!addresses.length || addresses.some((entry) => isPrivateAddress(entry.address))) throw new AuditFetchError("PRIVATE_NETWORK");
   url.hash = "";
   return { url, addresses };
@@ -49,14 +50,15 @@ function getPinned(url: URL, addresses: Address[]) {
     request.once("error", reject); request.end();
   });
 }
+export const productionTransport: AuditNetworkTransport = { resolve: (hostname) => dns.lookup(hostname, { all: true, verbatim: true }), request: getPinned };
 
-export async function fetchAuditHtml(initialUrl: string) {
+export async function fetchAuditHtml(initialUrl: string, transport: AuditNetworkTransport = productionTransport) {
   if (process.env.AUDIT_CRAWLER_NETWORK_ISOLATION !== "enabled") throw new AuditFetchError("CRAWLER_NETWORK_ISOLATION_REQUIRED");
-  if (!(await robotsAllows(initialUrl))) throw new AuditFetchError("ROBOTS_DISALLOWED");
+  if (!(await robotsAllows(initialUrl, transport))) throw new AuditFetchError("ROBOTS_DISALLOWED");
   let current = initialUrl;
   for (let redirects = 0; redirects <= 3; redirects += 1) {
-    const { url, addresses } = await validateAuditUrl(current);
-    const response = await getPinned(url, addresses);
+    const { url, addresses } = await validateAuditUrl(current, transport);
+    const response = await transport.request(url, addresses);
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       if (!response.headers.location || redirects === 3) throw new AuditFetchError("TOO_MANY_REDIRECTS");
       current = new URL(response.headers.location, url).toString(); continue;
@@ -67,10 +69,10 @@ export async function fetchAuditHtml(initialUrl: string) {
   throw new AuditFetchError("FETCH_FAILED");
 }
 
-export async function robotsAllows(initialUrl: string) {
+export async function robotsAllows(initialUrl: string, transport: AuditNetworkTransport = productionTransport) {
   try {
     const page = new URL(initialUrl); const robots = new URL("/robots.txt", page);
-    const { url, addresses } = await validateAuditUrl(robots.toString()); const response = await getPinned(url, addresses);
+    const { url, addresses } = await validateAuditUrl(robots.toString(), transport); const response = await transport.request(url, addresses);
     if (response.status === 404) return true;
     if (response.status < 200 || response.status >= 300 || response.body.length > 256_000) return false;
     let applies = false;
