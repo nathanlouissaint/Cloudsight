@@ -35,3 +35,7 @@ export async function submitWebsiteAuditLead(lead: WebsiteAuditLead) {
     },
   );
 }
+
+export type WebsiteAuditJob = { status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED"; auditedUrl: string; failureReason: string | null; report: { auditedUrl: string; metadata: { title: string | null; metaDescription: string | null; h1: string[]; h2: string[]; ctas: { text: string; href: string }[]; forms: { action: string | null; method: string; fields: string[] }[] }; findings: { category: string; evidence: string; source: string }[] } | null };
+export async function startWebsiteAudit(websiteUrl: string, leadId: string) { return apiRequest<{ reportToken: string | null; status: WebsiteAuditJob["status"] }>("/website-audit/jobs", { method: "POST", skipAuthHeader: true, skipAuthRefresh: true, body: { websiteUrl, leadId } }); }
+export async function getWebsiteAudit(token: string) { return apiRequest<WebsiteAuditJob>(`/website-audit/jobs/${token}`, { skipAuthHeader: true, skipAuthRefresh: true }); }

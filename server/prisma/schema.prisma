@@ -42,9 +42,39 @@ model WebsiteAuditLead {
   source             WebsiteAuditLeadSource  @default(WEBSITE_AUDIT_FUNNEL)
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
+  auditJobs          WebsiteAuditJob[]
 
   @@index([workEmail, websiteUrl, createdAt])
   @@index([status, createdAt])
+}
+
+model WebsiteAuditJob {
+  id              String                 @id @default(uuid())
+  submittedUrl    String
+  normalizedUrl   String
+  status          WebsiteAuditJobStatus  @default(PENDING)
+  failureReason   String?
+  retryCount      Int                    @default(0)
+  reportTokenHash String                 @unique
+  leadId          String?
+  createdAt       DateTime               @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  lead            WebsiteAuditLead?     @relation(fields: [leadId], references: [id])
+  report          WebsiteAuditReport?
+
+  @@index([status, createdAt])
+  @@index([leadId])
+}
+
+model WebsiteAuditReport {
+  id          String          @id @default(uuid())
+  auditJobId  String          @unique
+  auditedUrl  String
+  metadata    Json
+  findings    Json
+  createdAt   DateTime        @default(now())
+  auditJob    WebsiteAuditJob @relation(fields: [auditJobId], references: [id], onDelete: Cascade)
 }
 
 model CloudAccount {
@@ -331,4 +361,11 @@ enum WebsiteAuditLeadStatus {
 
 enum WebsiteAuditLeadSource {
   WEBSITE_AUDIT_FUNNEL
+}
+
+enum WebsiteAuditJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }

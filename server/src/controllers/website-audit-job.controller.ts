@@ -1,0 +1,8 @@
+import type { Request, Response } from "express";
+import { logger } from "../config/logger";
+import { createAuditJob, getAuditByToken } from "../services/website-audit-job.service";
+import { AuditFetchError } from "../services/website-audit-url-security.service";
+import { z } from "zod";
+const input = z.object({ websiteUrl: z.string().trim().min(1).max(2048), leadId: z.string().uuid().optional() }).strict();
+export async function submitAuditJob(req: Request, res: Response) { const parsed = input.safeParse(req.body); if (!parsed.success) return res.status(400).json({ message: "Enter a valid website URL." }); try { const created = await createAuditJob(parsed.data.websiteUrl, parsed.data.leadId); return res.status(created.duplicate ? 200 : 202).json({ jobId: created.job.id, status: created.job.status, reportToken: created.token, duplicate: created.duplicate }); } catch (error) { if (error instanceof AuditFetchError) return res.status(400).json({ message: "That URL cannot be audited." }); logger.error({ err: error }, "Audit job submission failed"); return res.status(503).json({ message: "Audit service unavailable." }); } }
+export async function readAuditJob(req: Request, res: Response) { const token = typeof req.params.token === "string" ? req.params.token : ""; const audit = await getAuditByToken(token); if (!audit) return res.status(404).json({ message: "Report not found." }); return res.json({ status: audit.status, auditedUrl: audit.normalizedUrl, failureReason: audit.status === "FAILED" ? audit.failureReason : null, report: audit.status === "COMPLETED" ? audit.report : null }); }

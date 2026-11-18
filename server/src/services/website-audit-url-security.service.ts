@@ -1,0 +1,66 @@
+import dns from "node:dns/promises";
+import http from "node:http";
+import https from "node:https";
+import net from "node:net";
+
+export class AuditFetchError extends Error {
+  constructor(public readonly code: string) { super(code); }
+}
+type Address = { address: string; family: number };
+const blockedHosts = new Set(["localhost", "metadata.google.internal", "metadata", "instance-data"]);
+const timeoutMs = 8_000;
+const maxBytes = 1_000_000;
+
+export function isPrivateAddress(address: string) {
+  const family = net.isIP(address);
+  if (family === 4) {
+    const [a, b] = address.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && (b === 0 || b === 168)) || (a === 198 && (b === 18 || b === 19));
+  }
+  if (family === 6) {
+    const value = address.toLowerCase();
+    if (value.startsWith("::ffff:")) return isPrivateAddress(value.slice(7));
+    return value === "::" || value === "::1" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe8") || value.startsWith("fe9") || value.startsWith("fea") || value.startsWith("feb") || value.startsWith("ff");
+  }
+  return true;
+}
+
+export async function validateAuditUrl(value: string) {
+  let url: URL;
+  try { url = new URL(value.trim()); } catch { throw new AuditFetchError("INVALID_URL"); }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || blockedHosts.has(url.hostname.toLowerCase()) || (url.port && !['80', '443'].includes(url.port))) throw new AuditFetchError("UNSAFE_URL");
+  const addresses = await dns.lookup(url.hostname, { all: true, verbatim: true });
+  if (!addresses.length || addresses.some((entry) => isPrivateAddress(entry.address))) throw new AuditFetchError("PRIVATE_NETWORK");
+  url.hash = "";
+  return { url, addresses };
+}
+
+function getPinned(url: URL, addresses: Address[]) {
+  const address = addresses[0];
+  const transport = url.protocol === "https:" ? https : http;
+  return new Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }>((resolve, reject) => {
+    const request = transport.request(url, { method: "GET", headers: { "User-Agent": "CloudSight-Audit/1.0", Accept: "text/html,application/xhtml+xml" }, servername: url.hostname, lookup: (_host, _opts, callback) => callback(null, address.address, address.family) }, (response) => {
+      const chunks: Buffer[] = []; let bytes = 0;
+      response.on("data", (chunk: Buffer) => { bytes += chunk.length; if (bytes > maxBytes) request.destroy(new AuditFetchError("RESPONSE_TOO_LARGE")); else chunks.push(chunk); });
+      response.on("end", () => resolve({ status: response.statusCode ?? 0, headers: response.headers, body: Buffer.concat(chunks).toString("utf8") }));
+    });
+    request.setTimeout(timeoutMs, () => request.destroy(new AuditFetchError("TIMEOUT")));
+    request.once("error", reject); request.end();
+  });
+}
+
+export async function fetchAuditHtml(initialUrl: string) {
+  if (process.env.AUDIT_CRAWLER_NETWORK_ISOLATION !== "enabled") throw new AuditFetchError("CRAWLER_NETWORK_ISOLATION_REQUIRED");
+  let current = initialUrl;
+  for (let redirects = 0; redirects <= 3; redirects += 1) {
+    const { url, addresses } = await validateAuditUrl(current);
+    const response = await getPinned(url, addresses);
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      if (!response.headers.location || redirects === 3) throw new AuditFetchError("TOO_MANY_REDIRECTS");
+      current = new URL(response.headers.location, url).toString(); continue;
+    }
+    if (response.status < 200 || response.status >= 300 || !String(response.headers["content-type"] ?? "").toLowerCase().includes("text/html")) throw new AuditFetchError("NON_HTML_RESPONSE");
+    return { finalUrl: url.toString(), html: response.body };
+  }
+  throw new AuditFetchError("FETCH_FAILED");
+}
