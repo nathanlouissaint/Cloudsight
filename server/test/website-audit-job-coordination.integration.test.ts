@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import { after, afterEach, before, test } from "node:test";
+import crypto from "node:crypto";
+import { WebsiteAuditJobStatus } from "@prisma/client";
+import { prisma } from "../src/config/prisma";
+import { claimNextAuditJob, recoverInterruptedAuditJobs } from "../src/services/website-audit-job.service";
+
+const prefix = `coord-${crypto.randomUUID()}`;
+async function job(domain: string) { return prisma.websiteAuditJob.create({ data: { submittedUrl: `https://${domain}/`, normalizedUrl: `https://${domain}/`, domain, reportTokenHash: crypto.randomBytes(32).toString("hex"), expiresAt: new Date(Date.now() + 60_000) } }); }
+before(() => { if (!process.env.DATABASE_URL?.includes("cloudsight_test")) throw new Error("Requires isolated cloudsight_test database"); });
+afterEach(async () => { await prisma.websiteAuditReport.deleteMany({ where: { auditJob: { domain: { startsWith: prefix } } } }); await prisma.websiteAuditJob.deleteMany({ where: { domain: { startsWith: prefix } } }); });
+after(async () => prisma.$disconnect());
+
+test("concurrent workers claim a job only once", async () => { const created = await job(`${prefix}-one.test`); const claims = await Promise.all(Array.from({ length: 8 }, (_, i) => claimNextAuditJob(`worker-${i}`))); assert.equal(claims.filter((x) => x?.id === created.id).length, 1); const stored = await prisma.websiteAuditJob.findUniqueOrThrow({ where: { id: created.id } }); assert.equal(stored.status, WebsiteAuditJobStatus.PROCESSING); });
+test("global and per-domain limits are enforced by PostgreSQL transactions", async () => { const a = await job(`${prefix}-a.test`); const b = await job(`${prefix}-b.test`); const c = await job(`${prefix}-c.test`); const claims = await Promise.all([claimNextAuditJob("one"), claimNextAuditJob("two"), claimNextAuditJob("three")]); assert.equal(claims.filter(Boolean).length, 2); await prisma.websiteAuditJob.updateMany({ where: { id: { in: [a.id, b.id, c.id] } }, data: { status: WebsiteAuditJobStatus.COMPLETED, completedAt: new Date(), leaseExpiresAt: null, workerId: null } }); const sameA = await job(`${prefix}-same.test`); const sameB = await job(`${prefix}-same.test`); const same = await Promise.all([claimNextAuditJob("four"), claimNextAuditJob("five")]); assert.equal(same.filter((x) => x?.domain === `${prefix}-same.test`).length, 1); void sameA; void sameB; });
+test("expired leases recover without duplicate report records", async () => { const created = await job(`${prefix}-recover.test`); await prisma.websiteAuditJob.update({ where: { id: created.id }, data: { status: WebsiteAuditJobStatus.PROCESSING, workerId: "crashed", leaseExpiresAt: new Date(Date.now() - 1_000) } }); await recoverInterruptedAuditJobs(); const reclaimed = await claimNextAuditJob("recovery"); assert.equal(reclaimed?.id, created.id); await prisma.websiteAuditReport.upsert({ where: { auditJobId: created.id }, create: { auditJobId: created.id, auditedUrl: created.normalizedUrl, metadata: {}, findings: [] }, update: {} }); await prisma.websiteAuditReport.upsert({ where: { auditJobId: created.id }, create: { auditJobId: created.id, auditedUrl: created.normalizedUrl, metadata: {}, findings: [] }, update: {} }); assert.equal(await prisma.websiteAuditReport.count({ where: { auditJobId: created.id } }), 1); });

@@ -46,7 +46,7 @@ export async function processNextAuditJob(workerId: string = crypto.randomUUID()
 }
 
 /** Serializable transaction: capacity checks and the pending→processing claim commit together. */
-async function claimNextAuditJob(workerId: string) {
+export async function claimNextAuditJob(workerId: string) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       return await prisma.$transaction(async (tx) => {
