@@ -3,6 +3,8 @@ import { Prisma, WebsiteAuditJobStatus } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { AuditFetchError, fetchAuditHtml, validateAuditUrl, type AuditNetworkTransport } from "./website-audit-url-security.service";
 import { extractHomepageEvidence } from "./website-audit-extractor.service";
+import { analyzeHomepageConversion } from "./website-audit-conversion-analysis.service";
+import { isAiAnalysisConfigured, safelyRequestAiRecommendations } from "./website-audit-ai-analysis.service";
 function tokenHash(token: string) {
   const secret = process.env.WEBSITE_AUDIT_TOKEN_SECRET ?? (process.env.NODE_ENV === "production" ? "" : "development-only-secret");
   if (!secret) throw new Error("WEBSITE_AUDIT_TOKEN_SECRET is required in production.");
@@ -36,7 +38,12 @@ export async function processNextAuditJob(workerId: string = crypto.randomUUID()
   try {
     const fetched = await fetchAuditHtml(candidate.normalizedUrl, transport);
     const evidence = extractHomepageEvidence(fetched.html, fetched.finalUrl);
-    await prisma.$transaction([prisma.websiteAuditReport.upsert({ where: { auditJobId: candidate.id }, create: { auditJobId: candidate.id, auditedUrl: fetched.finalUrl, metadata: evidence.metadata, findings: evidence.findings }, update: { auditedUrl: fetched.finalUrl, metadata: evidence.metadata, findings: evidence.findings } }), prisma.websiteAuditJob.update({ where: { id: candidate.id }, data: { status: WebsiteAuditJobStatus.COMPLETED, completedAt: new Date(), failureReason: null, leaseExpiresAt: null } })]);
+    const findings = analyzeHomepageConversion(evidence.metadata, fetched.finalUrl);
+    const reservation = isAiAnalysisConfigured() && !candidate.aiAnalysisAttemptedAt
+      ? await prisma.websiteAuditJob.updateMany({ where: { id: candidate.id, aiAnalysisAttemptedAt: null }, data: { aiAnalysisAttemptedAt: new Date() } })
+      : { count: 0 };
+    const aiRecommendations = reservation.count ? await safelyRequestAiRecommendations(evidence.metadata, findings) : null;
+    await prisma.$transaction([prisma.websiteAuditReport.upsert({ where: { auditJobId: candidate.id }, create: { auditJobId: candidate.id, auditedUrl: fetched.finalUrl, metadata: evidence.metadata, findings, aiRecommendations: aiRecommendations ?? Prisma.JsonNull }, update: { auditedUrl: fetched.finalUrl, metadata: evidence.metadata, findings, aiRecommendations: aiRecommendations ?? Prisma.JsonNull } }), prisma.websiteAuditJob.update({ where: { id: candidate.id }, data: { status: WebsiteAuditJobStatus.COMPLETED, completedAt: new Date(), failureReason: null, leaseExpiresAt: null } })]);
   } catch (error) {
     const code = error instanceof AuditFetchError ? error.code : "PROCESSING_FAILED";
     const retry = candidate.retryCount + 1;

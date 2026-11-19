@@ -1,0 +1,51 @@
+# Reference-only isolated worker stack. It is not a production deployment file.
+# The worker has no database credential or external network attachment. Crawls
+# leave via audit-egress; production permits its fixed broker endpoint only via
+# an independently verified firewall/proxy policy.
+services:
+  audit-worker:
+    image: ${CLOUDSIGHT_SERVER_IMAGE:?CLOUDSIGHT_SERVER_IMAGE is required}
+    command: ["node", "dist/audit-worker.js"]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      NODE_ENV: production
+      AUDIT_CRAWLER_NETWORK_ISOLATION: ${AUDIT_CRAWLER_NETWORK_ISOLATION:-}
+      AUDIT_CRAWLER_EGRESS_PROXY_URL: http://audit-egress:3128
+      AUDIT_WORKER_BROKER_URL: ${AUDIT_WORKER_BROKER_URL:?AUDIT_WORKER_BROKER_URL is required}
+      AUDIT_WORKER_BROKER_TOKEN: ${AUDIT_WORKER_BROKER_TOKEN:?AUDIT_WORKER_BROKER_TOKEN is required}
+      WEBSITE_AUDIT_GLOBAL_CONCURRENCY: ${WEBSITE_AUDIT_GLOBAL_CONCURRENCY:-2}
+      WEBSITE_AUDIT_DOMAIN_CONCURRENCY: ${WEBSITE_AUDIT_DOMAIN_CONCURRENCY:-1}
+      WEBSITE_AUDIT_ROBOTS_CACHE_TTL_MS: ${WEBSITE_AUDIT_ROBOTS_CACHE_TTL_MS:-300000}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+    networks:
+      crawler:
+        ipv4_address: 172.30.0.10
+
+  audit-egress:
+    image: ubuntu/squid:6.10-24.04_beta
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/spool/squid
+      - /var/log/squid
+      - /run
+      - /tmp
+    volumes:
+      - ./squid.conf:/etc/squid/squid.conf:ro
+    networks:
+      crawler:
+        ipv4_address: 172.30.0.20
+      internet: {}
+
+networks:
+  crawler:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  internet:
+    internal: false

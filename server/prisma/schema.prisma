@@ -63,6 +63,7 @@ model WebsiteAuditJob {
   completedAt     DateTime?
   leaseExpiresAt  DateTime?
   workerId        String?
+  aiAnalysisAttemptedAt DateTime?
   expiresAt       DateTime
   lead            WebsiteAuditLead?     @relation(fields: [leadId], references: [id])
   report          WebsiteAuditReport?
@@ -73,13 +74,14 @@ model WebsiteAuditJob {
 }
 
 model WebsiteAuditReport {
-  id          String          @id @default(uuid())
-  auditJobId  String          @unique
-  auditedUrl  String
-  metadata    Json
-  findings    Json
-  createdAt   DateTime        @default(now())
-  auditJob    WebsiteAuditJob @relation(fields: [auditJobId], references: [id], onDelete: Cascade)
+  id                String          @id @default(uuid())
+  auditJobId        String          @unique
+  auditedUrl        String
+  metadata          Json
+  findings          Json
+  aiRecommendations Json?
+  createdAt         DateTime        @default(now())
+  auditJob          WebsiteAuditJob @relation(fields: [auditJobId], references: [id], onDelete: Cascade)
 }
 
 model CloudAccount {

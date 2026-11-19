@@ -1,0 +1,22 @@
+aws_region = "us-east-1"
+name_prefix = "cloudsight-production"
+vpc_id = "vpc-REPLACE"
+availability_zone = "us-east-1a"
+# Choose unused, non-overlapping private CIDRs within the existing VPC.
+worker_subnet_cidr = "10.20.21.0/28"
+proxy_subnet_cidr = "10.20.21.16/28"
+nat_gateway_id = "nat-REPLACE"
+broker_url = "https://api.example.com"
+broker_token_ssm_parameter_arn = "arn:aws:ssm:us-east-1:123456789012:parameter/cloudsight/production/audit-worker-broker-token"
+worker_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/cloudsight-server:REPLACE"
+proxy_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/cloudsight-audit-proxy:REPLACE"
+alert_sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:cloudsight-audit-alerts"
+# Remain empty until the live verification checklist passes.
+audit_network_isolation = ""
+
+# Optional defense in depth. These IDs must be reviewed with AWS networking
+# before enabling because firewall routing must be symmetric.
+enable_network_firewall = false
+firewall_subnet_id = null
+firewall_route_table_id = null
+nat_route_table_id = null

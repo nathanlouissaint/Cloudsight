@@ -16,6 +16,17 @@ const robotsCache = new Map<string, { policy: string | null; expiresAt: number }
 const robotsCacheTtlMs = Number(process.env.WEBSITE_AUDIT_ROBOTS_CACHE_TTL_MS ?? 300_000);
 const robotsCacheMax = 500;
 
+type AuditHttpResponse = { status: number; headers: http.IncomingHttpHeaders; body: string };
+type AuditEgressProxy = { protocol: "http:" | "https:"; hostname: string; port: number };
+
+export function parseAuditEgressProxy(value = process.env.AUDIT_CRAWLER_EGRESS_PROXY_URL): AuditEgressProxy | null {
+  if (!value?.trim()) return null;
+  let url: URL;
+  try { url = new URL(value); } catch { throw new AuditFetchError("INVALID_EGRESS_PROXY"); }
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || !url.hostname || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new AuditFetchError("INVALID_EGRESS_PROXY");
+  return { protocol: url.protocol, hostname: url.hostname, port: Number(url.port || (url.protocol === "https:" ? 443 : 80)) };
+}
+
 export function isPrivateAddress(address: string) {
   const family = net.isIP(address);
   if (family === 4) {
@@ -40,18 +51,62 @@ export async function validateAuditUrl(value: string, transport: AuditNetworkTra
   return { url, addresses };
 }
 
-function getPinned(url: URL, addresses: Address[]) {
+function collectResponse(response: http.IncomingMessage, request: http.ClientRequest, resolve: (value: AuditHttpResponse) => void) {
+  const chunks: Buffer[] = []; let bytes = 0;
+  response.on("data", (chunk: Buffer) => { bytes += chunk.length; if (bytes > maxBytes) request.destroy(new AuditFetchError("RESPONSE_TOO_LARGE")); else chunks.push(chunk); });
+  response.on("end", () => resolve({ status: response.statusCode ?? 0, headers: response.headers, body: Buffer.concat(chunks).toString("utf8") }));
+}
+
+function getDirectPinned(url: URL, addresses: Address[]) {
   const address = addresses[0];
   const transport = url.protocol === "https:" ? https : http;
-  return new Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }>((resolve, reject) => {
+  return new Promise<AuditHttpResponse>((resolve, reject) => {
     const request = transport.request(url, { method: "GET", headers: { "User-Agent": "CloudSight-Audit/1.0", Accept: "text/html,application/xhtml+xml" }, servername: url.hostname, lookup: (_host, _opts, callback) => callback(null, address.address, address.family) }, (response) => {
-      const chunks: Buffer[] = []; let bytes = 0;
-      response.on("data", (chunk: Buffer) => { bytes += chunk.length; if (bytes > maxBytes) request.destroy(new AuditFetchError("RESPONSE_TOO_LARGE")); else chunks.push(chunk); });
-      response.on("end", () => resolve({ status: response.statusCode ?? 0, headers: response.headers, body: Buffer.concat(chunks).toString("utf8") }));
+      collectResponse(response, request, resolve);
     });
     request.setTimeout(timeoutMs, () => request.destroy(new AuditFetchError("TIMEOUT")));
     request.once("error", reject); request.end();
   });
+}
+
+type ProxyRequestOptions = { method?: string; headers?: Record<string, string>; body?: string };
+function getProxied(url: URL, proxy: AuditEgressProxy, options: ProxyRequestOptions = {}) {
+  const proxyTransport = proxy.protocol === "https:" ? https : http;
+  const headers = { "User-Agent": "CloudSight-Audit/1.0", Accept: "text/html,application/xhtml+xml", Host: url.host, ...(options.headers ?? {}) };
+  const method = options.method ?? "GET";
+  const proxyFailure = (error: Error) => error instanceof AuditFetchError ? error : new AuditFetchError("EGRESS_PROXY_ERROR");
+  if (url.protocol === "http:") return new Promise<AuditHttpResponse>((resolve, reject) => {
+    const request = proxyTransport.request({ hostname: proxy.hostname, port: proxy.port, path: url.toString(), method, headers }, (response) => collectResponse(response, request, resolve));
+    request.setTimeout(timeoutMs, () => request.destroy(new AuditFetchError("TIMEOUT")));
+    request.once("error", (error) => reject(proxyFailure(error))); request.end(options.body);
+  });
+  return new Promise<AuditHttpResponse>((resolve, reject) => {
+    const connect = proxyTransport.request({ hostname: proxy.hostname, port: proxy.port, method: "CONNECT", path: `${url.hostname}:${url.port || 443}`, headers: { Host: `${url.hostname}:${url.port || 443}` } });
+    connect.setTimeout(timeoutMs, () => connect.destroy(new AuditFetchError("TIMEOUT")));
+    connect.once("error", (error) => reject(proxyFailure(error)));
+    connect.once("connect", (response, socket, head) => {
+      if (response.statusCode !== 200) { socket.destroy(); reject(new AuditFetchError("EGRESS_PROXY_DENIED")); return; }
+      if (head.length) socket.unshift(head);
+      const request = https.request({ hostname: url.hostname, port: Number(url.port || 443), path: `${url.pathname}${url.search}`, method, headers, servername: url.hostname, createConnection: () => socket, agent: false }, (upstream) => collectResponse(upstream, request, resolve));
+      request.setTimeout(timeoutMs, () => request.destroy(new AuditFetchError("TIMEOUT")));
+      request.once("error", (error) => reject(proxyFailure(error))); request.end(options.body);
+    });
+    connect.end();
+  });
+}
+
+function getPinned(url: URL, addresses: Address[]) {
+  const proxy = parseAuditEgressProxy();
+  return proxy ? getProxied(url, proxy) : getDirectPinned(url, addresses);
+}
+
+/** Uses the configured egress proxy for fixed internal worker control-plane calls. */
+export async function requestThroughAuditEgressProxy(value: string, options: ProxyRequestOptions): Promise<AuditHttpResponse> {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password) throw new AuditFetchError("UNSAFE_BROKER_URL");
+  const proxy = parseAuditEgressProxy();
+  if (!proxy) throw new AuditFetchError("EGRESS_PROXY_REQUIRED");
+  return getProxied(url, proxy, options);
 }
 export const productionTransport: AuditNetworkTransport = { resolve: (hostname) => dns.lookup(hostname, { all: true, verbatim: true }), request: getPinned };
 

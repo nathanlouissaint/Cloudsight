@@ -1,0 +1,3 @@
+FROM ubuntu/squid:6.10-24.04_beta
+
+COPY squid.conf /etc/squid/squid.conf

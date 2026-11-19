@@ -1,0 +1,95 @@
+#cloud-config
+package_update: true
+packages: [squid, unbound, nftables]
+write_files:
+  - path: /etc/squid/squid.conf
+    permissions: "0644"
+    content: |
+      http_port 3128
+      visible_hostname cloudsight-audit-egress
+      cache deny all
+      access_log stdio:/var/log/squid/access.log
+      cache_log /var/log/squid/cache.log
+      forwarded_for delete
+      via off
+      dns_nameservers 127.0.0.1
+      acl worker src ${crawler_private_cidr}
+      acl SSL_ports port 443
+      acl Safe_ports port 80 443
+      http_access deny !Safe_ports
+      http_access deny CONNECT !SSL_ports
+      acl blocked_dst dst 0.0.0.0/8
+      acl blocked_dst dst 10.0.0.0/8
+      acl blocked_dst dst 100.64.0.0/10
+      acl blocked_dst dst 127.0.0.0/8
+      acl blocked_dst dst 169.254.0.0/16
+      acl blocked_dst dst 172.16.0.0/12
+      acl blocked_dst dst 192.0.0.0/24
+      acl blocked_dst dst 192.168.0.0/16
+      acl blocked_dst dst 198.18.0.0/15
+      acl blocked_dst dst 224.0.0.0/4
+      acl blocked_dst dst 240.0.0.0/4
+      acl blocked_dst dst ::/128
+      acl blocked_dst dst ::1/128
+      acl blocked_dst dst fc00::/7
+      acl blocked_dst dst fe80::/10
+      acl blocked_dst dst ff00::/8
+      acl metadata dstdomain .metadata.google.internal metadata.google.internal metadata instance-data
+      http_access deny blocked_dst
+      http_access deny metadata
+      http_access allow worker
+      http_access deny all
+  - path: /etc/unbound/unbound.conf.d/cloudsight.conf
+    permissions: "0644"
+    content: |
+      server:
+        interface: 127.0.0.1
+        interface: 0.0.0.0
+        access-control: 127.0.0.0/8 allow
+        access-control: ${crawler_private_cidr} allow
+        do-ip6: no
+        hide-identity: yes
+        hide-version: yes
+      forward-zone:
+        name: "."
+        forward-addr: 1.1.1.1
+        forward-addr: 1.0.0.1
+  - path: /etc/nftables.conf
+    permissions: "0600"
+    content: |
+      flush ruleset
+      table inet cloudsight {
+        set blocked_v4 {
+          type ipv4_addr
+          flags interval
+          elements = { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 }
+        }
+        chain input {
+          type filter hook input priority filter; policy drop;
+          ct state established,related accept
+          tcp dport 22 accept
+          ip saddr ${crawler_private_cidr} tcp dport { 3128, 53 } accept
+          ip saddr ${crawler_private_cidr} udp dport 53 accept
+          iif lo accept
+        }
+        chain output {
+          type filter hook output priority filter; policy drop;
+          ip daddr @blocked_v4 drop
+          ip6 daddr ::/0 drop
+          ct state established,related accept
+          ip daddr { 1.1.1.1, 1.0.0.1 } udp dport 53 accept
+          ip daddr { 1.1.1.1, 1.0.0.1 } tcp dport 53 accept
+          tcp dport { 80, 443 } accept
+          oif lo accept
+        }
+      }
+  - path: /etc/sysctl.d/99-cloudsight-audit.conf
+    permissions: "0644"
+    content: |
+      net.ipv6.conf.all.disable_ipv6 = 1
+      net.ipv6.conf.default.disable_ipv6 = 1
+runcmd:
+  - [sysctl, --system]
+  - [systemctl, enable, --now, unbound]
+  - [systemctl, enable, --now, nftables]
+  - [systemctl, restart, squid]

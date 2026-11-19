@@ -9,6 +9,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test:website-audit-booking": "node --import tsx --test test/website-audit-booking.test.ts",
+    "test:website-audit-report": "node --import tsx --test test/website-audit-report-data.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

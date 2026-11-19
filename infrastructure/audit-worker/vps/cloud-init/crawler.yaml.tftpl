@@ -1,0 +1,71 @@
+#cloud-config
+package_update: true
+packages: [docker.io, nftables]
+write_files:
+  - path: /etc/cloudsight/audit-worker.env
+    permissions: "0600"
+    content: |
+      NODE_ENV=production
+      AUDIT_WORKER_BROKER_URL=
+      AUDIT_WORKER_BROKER_TOKEN=
+      AUDIT_CRAWLER_NETWORK_ISOLATION=${audit_network_isolation}
+      AUDIT_CRAWLER_EGRESS_PROXY_URL=http://${proxy_private_ip}:3128
+      WEBSITE_AUDIT_GLOBAL_CONCURRENCY=2
+      WEBSITE_AUDIT_DOMAIN_CONCURRENCY=1
+      WEBSITE_AUDIT_ROBOTS_CACHE_TTL_MS=300000
+  - path: /etc/cloudsight/docker-compose.yml
+    permissions: "0644"
+    content: |
+      services:
+        audit-worker:
+          image: ${crawler_image}
+          command: ["node", "dist/audit-worker.js"]
+          network_mode: host
+          read_only: true
+          tmpfs: [/tmp]
+          cap_drop: [ALL]
+          security_opt: [no-new-privileges:true]
+          env_file: /etc/cloudsight/audit-worker.env
+          restart: unless-stopped
+  - path: /etc/systemd/system/docker.service.d/cloudsight-proxy.conf
+    permissions: "0644"
+    content: |
+      [Service]
+      Environment="HTTP_PROXY=http://${proxy_private_ip}:3128"
+      Environment="HTTPS_PROXY=http://${proxy_private_ip}:3128"
+      Environment="NO_PROXY=localhost,127.0.0.1,${proxy_private_ip}"
+  - path: /etc/nftables.conf
+    permissions: "0600"
+    content: |
+      flush ruleset
+      table inet cloudsight {
+        chain input {
+          type filter hook input priority filter; policy drop;
+          ct state established,related accept
+          tcp dport 22 accept
+        }
+        chain output {
+          type filter hook output priority filter; policy drop;
+          ip daddr 127.0.0.0/8 drop
+          ip6 daddr ::/0 drop
+          ct state established,related accept
+          ip daddr ${proxy_private_ip} tcp dport 3128 accept
+          ip daddr ${proxy_private_ip} udp dport 53 accept
+          ip daddr ${proxy_private_ip} tcp dport 53 accept
+        }
+      }
+  - path: /etc/sysctl.d/99-cloudsight-audit.conf
+    permissions: "0644"
+    content: |
+      net.ipv6.conf.all.disable_ipv6 = 1
+      net.ipv6.conf.default.disable_ipv6 = 1
+runcmd:
+  - [mkdir, -p, /etc/cloudsight]
+  - [sysctl, --system]
+  - [systemctl, disable, --now, systemd-resolved]
+  - [rm, -f, /etc/resolv.conf]
+  - [sh, -c, "echo nameserver ${proxy_private_ip} > /etc/resolv.conf"]
+  - [systemctl, enable, --now, nftables]
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, --now, docker]
+  # The worker remains stopped until an operator supplies the broker URL/token.

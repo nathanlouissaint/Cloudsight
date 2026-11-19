@@ -20,6 +20,7 @@ import healthRoutes from "./routes/health.routes";
 import spendGuardAnalysisRoutes from "./routes/spend-guard-analysis.routes";
 import websiteAuditLeadRoutes from "./routes/website-audit-lead.routes";
 import websiteAuditJobRoutes from "./routes/website-audit-job.routes";
+import websiteAuditWorkerBrokerRoutes from "./routes/website-audit-worker-broker.routes";
 
 import {
   errorHandler,
@@ -81,6 +82,7 @@ app.use("/analytics/services", serviceAnalyticsRoutes);
 app.use("/spend-guard", spendGuardAnalysisRoutes);
 app.use("/website-audit", websiteAuditLeadRoutes);
 app.use("/website-audit", websiteAuditJobRoutes);
+app.use("/internal/website-audit-worker", websiteAuditWorkerBrokerRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

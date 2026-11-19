@@ -1,0 +1,7 @@
+region = "nyc3"
+ssh_key_fingerprints = ["REPLACE_WITH_EXISTING_DO_SSH_KEY_FINGERPRINT"]
+admin_ipv4_cidrs = ["REPLACE_WITH_ADMIN_PUBLIC_IP/32"]
+crawler_image = "ghcr.io/nathanlouissaint/cloudsight-server:REPLACE"
+enable_backups = true
+# Leave empty until the live security checklist passes.
+audit_network_isolation = ""

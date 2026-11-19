@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AuditFetchError, clearRobotsPolicyCache, fetchAuditHtml, isPrivateAddress, robotsAllows, robotsPolicyAllows, type AuditNetworkTransport } from "../src/services/website-audit-url-security.service";
+import { AuditFetchError, clearRobotsPolicyCache, fetchAuditHtml, isPrivateAddress, parseAuditEgressProxy, robotsAllows, robotsPolicyAllows, type AuditNetworkTransport } from "../src/services/website-audit-url-security.service";
 import { extractHomepageEvidence } from "../src/services/website-audit-extractor.service";
 
 test("blocks private, metadata, loopback, and IPv6 internal addresses", () => {
   for (const address of ["127.0.0.1", "10.0.0.1", "172.16.0.1", "192.168.0.1", "169.254.169.254", "::1", "fc00::1", "fe80::1"]) assert.equal(isPrivateAddress(address), true);
   assert.equal(isPrivateAddress("93.184.216.34"), false);
+});
+
+test("accepts only a credential-free HTTP(S) egress proxy URL", () => {
+  assert.deepEqual(parseAuditEgressProxy("http://audit-egress.internal:3128"), { protocol: "http:", hostname: "audit-egress.internal", port: 3128 });
+  assert.throws(() => parseAuditEgressProxy("http://user:pass@proxy.internal:3128"), (error: unknown) => error instanceof AuditFetchError && error.code === "INVALID_EGRESS_PROXY");
+  assert.throws(() => parseAuditEgressProxy("socks5://proxy.internal:1080"), (error: unknown) => error instanceof AuditFetchError && error.code === "INVALID_EGRESS_PROXY");
 });
 
 test("robots parser honors longest rule, allow precedence, wildcards, and agent groups", () => {
@@ -23,10 +29,9 @@ test("rejects a redirect that resolves to a private destination through the inje
   delete process.env.AUDIT_CRAWLER_NETWORK_ISOLATION;
 });
 
-test("reports missing homepage metadata from direct HTML evidence", () => {
+test("extracts homepage metadata for later deterministic analysis", () => {
   const result = extractHomepageEvidence("<html><body><h2>Product details</h2><a href='/demo'>Book a demo</a><form><input name='email'></form></body></html>", "https://example.com/");
   assert.equal(result.metadata.title, null);
   assert.equal(result.metadata.h1.length, 0);
   assert.equal(result.metadata.ctas[0]?.text, "Book a demo");
-  assert.equal(result.findings.length, 4);
 });
