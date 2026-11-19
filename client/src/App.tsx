@@ -27,6 +27,10 @@ const WebsiteAuditPage = lazy(
   () => import("./pages/WebsiteAuditPage")
 );
 
+const WebsiteAuditReportPage = lazy(
+  () => import("./pages/WebsiteAuditReportPage")
+);
+
 // Spend Guard authentication and onboarding
 const SpendGuardSignupPage = lazy(
   () => import("./pages/spend-guard/SpendGuardSignupPage")
@@ -80,6 +84,11 @@ export default function App() {
           <Route
             path="/website-audit"
             element={<WebsiteAuditPage />}
+          />
+
+          <Route
+            path="/website-audit/report/:token"
+            element={<WebsiteAuditReportPage />}
           />
 
           {/* Public Spend Guard funnel */}
