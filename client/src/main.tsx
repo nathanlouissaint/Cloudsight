@@ -15,6 +15,8 @@ import {
 import { queryClient } from "./lib/queryClient";
 import { analytics } from "./lib/analytics";
 import { AuthProvider } from "./auth/AuthProvider";
+import { ConsentManager } from "./components/ConsentManager";
+import "./styles/consent.css";
 
 analytics.init();
 
@@ -26,6 +28,7 @@ ReactDOM.createRoot(
       <AuthProvider>
         <App />
       </AuthProvider>
+      <ConsentManager />
 
       <ReactQueryDevtools
         initialIsOpen={false}
