@@ -38,20 +38,20 @@ export interface AlertsResponseModel {
 
 export class AlertService {
 
-  async getAlerts(): Promise<AlertsResponseModel> {
+  async getAlerts(organizationId: string): Promise<AlertsResponseModel> {
 
     const alerts: AlertModel[] = [];
 
     alerts.push(
-      ...await anomalyDetectionService.detectCostSpike()
+      ...await anomalyDetectionService.detectCostSpike(organizationId)
     );
 
     alerts.push(
-      ...await forecastRiskDetectionService.detectForecastRisk()
+      ...await forecastRiskDetectionService.detectForecastRisk(organizationId)
     );
 
     alerts.push(
-      ...await budgetBreachDetectionService.detectBudgetBreach()
+      ...await budgetBreachDetectionService.detectBudgetBreach(organizationId)
     );
 
     const severityOrder = {

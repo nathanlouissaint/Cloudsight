@@ -1,59 +1,161 @@
-import { getAwsProvider }
-  from "../factory/provider.factory";
+import type {
+  CloudAccount,
+} from "@prisma/client";
 
-import { createCostSnapshot }
-  from "../../repositories/cost-snapshot.repository";
+import {
+  prisma,
+} from "../../config/prisma";
 
-import { createServiceCostSnapshot }
-  from "../../repositories/service-cost-snapshot.repository";
+import {
+  awsConnectionService,
+} from "./aws-connection.service";
 
-import { findAllCloudAccounts }
-  from "../../repositories/cloud-account.repository";
+import {
+  isMockCostCollectionEnabled,
+  spendGuardCostExplorerService,
+} from "./cost-explorer.service";
 
-export async function collectCosts() {
-  const provider =
-    getAwsProvider();
+function normalizeUtcDay(date: string) {
+  const parsed = new Date(`${date}T00:00:00.000Z`);
 
-  const data =
-    await provider.getCostSummary();
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("AWS returned an invalid cost date.");
+  }
 
-  const accounts =
-    await findAllCloudAccounts();
+  return parsed;
+}
 
-  if (accounts.length === 0) {
+function getErrorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : "AWS cost collection failed.";
+}
+
+export async function collectCosts(
+  cloudAccount: CloudAccount,
+) {
+  if (!cloudAccount.roleArn) {
     throw new Error(
-      "No cloud accounts found"
+      "The selected AWS connection has no verified role ARN.",
     );
   }
 
-  const account =
-    accounts[0];
+  const attemptedAt = new Date();
 
-  const snapshotDate =
-    new Date();
+  await prisma.cloudAccount.update({
+    where: {
+      id: cloudAccount.id,
+    },
+    data: {
+      lastCollectionAttemptAt: attemptedAt,
+    },
+  });
 
-  const snapshot =
-    await createCostSnapshot({
-      accountId: account.id,
-      snapshotDate,
-      totalCost:
-        data.summary.totalCost,
+  try {
+    const credentials =
+      isMockCostCollectionEnabled()
+        ? undefined
+        : await awsConnectionService.assumeRole(
+            cloudAccount.roleArn,
+          );
+
+    const dailyCosts =
+      await spendGuardCostExplorerService.getDailyCosts({
+        roleArn: cloudAccount.roleArn,
+        credentials,
+      });
+
+    const unsupportedCurrency = [
+      ...dailyCosts.accountDailyCosts,
+      ...dailyCosts.serviceDailyCosts,
+    ].find((cost) => cost.currency !== "USD");
+
+    if (unsupportedCurrency) {
+      throw new Error(
+        "Spend Guard collection supports USD cost data only.",
+      );
+    }
+
+    const completedAt = new Date();
+
+    await prisma.$transaction(async (tx) => {
+      for (const dailyCost of dailyCosts.accountDailyCosts) {
+        const snapshotDate = normalizeUtcDay(
+          dailyCost.date,
+        );
+
+        await tx.costSnapshot.upsert({
+          where: {
+            accountId_snapshotDate: {
+              accountId: cloudAccount.id,
+              snapshotDate,
+            },
+          },
+          update: {
+            totalCost: dailyCost.amount,
+          },
+          create: {
+            accountId: cloudAccount.id,
+            snapshotDate,
+            totalCost: dailyCost.amount,
+          },
+        });
+      }
+
+      for (const serviceCost of dailyCosts.serviceDailyCosts) {
+        const snapshotDate = normalizeUtcDay(
+          serviceCost.date,
+        );
+
+        await tx.serviceCostSnapshot.upsert({
+          where: {
+            accountId_serviceName_snapshotDate: {
+              accountId: cloudAccount.id,
+              serviceName: serviceCost.serviceName,
+              snapshotDate,
+            },
+          },
+          update: {
+            cost: serviceCost.amount,
+          },
+          create: {
+            accountId: cloudAccount.id,
+            serviceName: serviceCost.serviceName,
+            snapshotDate,
+            cost: serviceCost.amount,
+          },
+        });
+      }
+
+      await tx.cloudAccount.update({
+        where: {
+          id: cloudAccount.id,
+        },
+        data: {
+          lastSuccessfulSyncAt: completedAt,
+          collectionError: null,
+        },
+      });
     });
 
-  for (const service of data.services) {
-    await createServiceCostSnapshot({
-      accountId: account.id,
-      serviceName:
-        service.service,
-      snapshotDate,
-      cost:
-        service.amount,
+    return {
+      accountSnapshots:
+        dailyCosts.accountDailyCosts.length,
+      serviceSnapshots:
+        dailyCosts.serviceDailyCosts.length,
+      lastSuccessfulSyncAt: completedAt,
+      mocked: isMockCostCollectionEnabled(),
+    };
+  } catch (error) {
+    await prisma.cloudAccount.update({
+      where: {
+        id: cloudAccount.id,
+      },
+      data: {
+        collectionError: getErrorMessage(error),
+      },
     });
+
+    throw error;
   }
-
-  return {
-    snapshot,
-    services:
-      data.services.length,
-  };
 }

@@ -6,18 +6,18 @@ import type {
 
 export class ForecastRiskDetectionService {
 
-  async detectForecastRisk(): Promise<AlertModel[]> {
+  async detectForecastRisk(organizationId: string): Promise<AlertModel[]> {
 
     const now = new Date();
 
     const budget =
-      await prisma.budget.findFirst({
+      await prisma.budget.findUnique({
         where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
+          organizationId_year_month: {
+            organizationId,
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+          },
         },
       });
 
@@ -26,23 +26,24 @@ export class ForecastRiskDetectionService {
     }
 
  const spend =
-  await prisma.costRecord.aggregate({
+  await prisma.costSnapshot.aggregate({
     _sum: {
-      cost: true,
+      totalCost: true,
     },
     where: {
-      usageDate: {
+      snapshotDate: {
         gte: new Date(
           now.getFullYear(),
           now.getMonth(),
           1
         ),
       },
+      account: { organizationId },
     },
   });
 
 const currentSpend =
-  spend._sum.cost ?? 0;
+  spend._sum.totalCost ?? 0;
 
     const elapsedDays =
       Math.max(now.getDate(), 1);

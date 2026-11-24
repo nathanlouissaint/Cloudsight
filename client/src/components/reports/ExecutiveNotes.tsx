@@ -23,7 +23,21 @@ export default function ExecutiveNotes() {
   }
 
   useEffect(() => {
-    loadNotes();
+    let active = true;
+
+    void getReportNotes()
+      .then((data) => {
+        if (active) {
+          setNotes(data);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function handleSave() {

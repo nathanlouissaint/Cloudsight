@@ -1,9 +1,9 @@
 import {
-  findCurrentMonthServiceSnapshots,
+  findCurrentMonthServiceSnapshotsForOrganization,
 } from "../repositories/service-cost-snapshot.repository";
 
 import {
-  findCurrentMonthCostSnapshots,
+  findCurrentMonthCostSnapshotsForOrganization,
 } from "../repositories/cost-snapshot.repository";
 
 import { prisma } from "../config/prisma";
@@ -45,7 +45,7 @@ interface AccountGroup {
 }
 
 export class ForecastService {
-  async getForecast(): Promise<ForecastModel> {
+  async getForecast(organizationId: string): Promise<ForecastModel> {
     const now = new Date();
 
     const elapsedDays = now.getDate();
@@ -61,6 +61,7 @@ export class ForecastService {
 
     const historicalTrends =
       await historicalTrendService.getDailyTrend(
+        organizationId,
         new Date(
           now.getFullYear(),
           now.getMonth(),
@@ -70,21 +71,21 @@ export class ForecastService {
       );
 
     const budget =
-      await prisma.budget.findFirst({
+      await prisma.budget.findUnique({
         where: {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
-        },
-        orderBy: {
-          createdAt: "desc",
+          organizationId_year_month: {
+            organizationId,
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+          },
         },
       });
 
 const serviceSnapshots =
-  await findCurrentMonthServiceSnapshots() as ServiceSnapshot[];
+  await findCurrentMonthServiceSnapshotsForOrganization(organizationId) as ServiceSnapshot[];
 
 const accountSnapshots =
-  await findCurrentMonthCostSnapshots() as AccountSnapshot[];
+  await findCurrentMonthCostSnapshotsForOrganization(organizationId) as AccountSnapshot[];
 
 const currentMonthStart = new Date(
   now.getFullYear(),
@@ -93,19 +94,20 @@ const currentMonthStart = new Date(
 );
 
 const spend =
-  await prisma.costRecord.aggregate({
+  await prisma.costSnapshot.aggregate({
     _sum: {
-      cost: true,
+      totalCost: true,
     },
     where: {
-      usageDate: {
+      snapshotDate: {
         gte: currentMonthStart,
       },
+      account: { organizationId },
     },
   });
 
 const currentSpend =
-  spend._sum.cost ?? 0;
+  spend._sum.totalCost ?? 0;
 
     const averageDailySpend =
       currentSpend /

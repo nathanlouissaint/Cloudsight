@@ -10,18 +10,22 @@ import type {
 export class AlertHistoryService {
 
   async getRecentHistory(
+    organizationId: string,
     limit = 10
   ) {
     return findRecentAlertHistory(
+      organizationId,
       limit
     );
   }
 
   async recordAlerts(
+    organizationId: string,
     alerts: AlertModel[]
   ) {
     for (const alert of alerts) {
       await createAlertHistoryRecord(
+        organizationId,
         alert
       );
     }
