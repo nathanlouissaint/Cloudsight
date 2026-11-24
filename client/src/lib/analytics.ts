@@ -1,5 +1,3 @@
-import posthog from "posthog-js";
-
 export type AnalyticsEventName =
   | "landing_viewed"
   | "hero_cta_clicked"
@@ -18,111 +16,111 @@ export type AnalyticsEventName =
   | "website_audit_form_submitted"
   | "website_audit_qualified_lead"
   | "website_audit_booking_clicked"
-  | "website_audit_selected_work_clicked";
+  | "website_audit_selected_work_clicked"
+  | "homepage_viewed"
+  | "website_review_cta_clicked"
+  | "calendly_outbound_clicked"
+  | "homepage_faq_opened"
+  | "homepage_scroll_75";
 
-type AnalyticsPropertyValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined;
+type AnalyticsPropertyValue = string | number | boolean | null | undefined;
+export type AnalyticsProperties = Record<string, AnalyticsPropertyValue>;
 
-export type AnalyticsProperties = Record<
-  string,
-  AnalyticsPropertyValue
->;
+export type ConsentPreferences = { analytics: boolean; marketing: boolean };
+const consentStorageKey = "cloudsight-consent-v1";
+const consentEventName = "cloudsight:consent-changed";
+let gaLoaded = false;
+let metaLoaded = false;
 
-let initialized = false;
-
-function getConfiguration() {
-  const key = import.meta.env.VITE_POSTHOG_KEY?.trim();
-  const host = import.meta.env.VITE_POSTHOG_HOST?.trim();
-
-  if (!key || !host) {
-    return null;
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+    fbq?: (...args: unknown[]) => void;
+    _fbq?: (...args: unknown[]) => void;
   }
-
-  try {
-    const url = new URL(host);
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return null;
-    }
-  } catch {
-    // A malformed analytics host must not affect application startup.
-    return null;
-  }
-
-  return { key, host };
 }
 
+function getPreferences(): ConsentPreferences | null {
+  try {
+    const raw = window.localStorage.getItem(consentStorageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ConsentPreferences>;
+    if (typeof parsed.analytics !== "boolean" || typeof parsed.marketing !== "boolean") return null;
+    return { analytics: parsed.analytics, marketing: parsed.marketing };
+  } catch { return null; }
+}
+
+function loadGa4() {
+  const measurementId = import.meta.env.VITE_GA4_MEASUREMENT_ID?.trim();
+  if (gaLoaded || !measurementId) return;
+  gaLoaded = true;
+  window.dataLayer = window.dataLayer ?? [];
+  window.gtag = (...args) => { window.dataLayer?.push(args); };
+  window.gtag("js", new Date());
+  window.gtag("config", measurementId, { anonymize_ip: true, send_page_view: false });
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+  document.head.append(script);
+}
+
+function loadMetaPixel() {
+  const pixelId = import.meta.env.VITE_META_PIXEL_ID?.trim();
+  if (metaLoaded || !pixelId) return;
+  metaLoaded = true;
+  const queue = (...args: unknown[]) => { (queue as unknown as { queue: unknown[][] }).queue.push(args); };
+  (queue as unknown as { queue: unknown[][]; loaded: boolean; version: string }).queue = [];
+  (queue as unknown as { queue: unknown[][]; loaded: boolean; version: string }).loaded = true;
+  (queue as unknown as { queue: unknown[][]; loaded: boolean; version: string }).version = "2.0";
+  window.fbq = queue; window._fbq = queue;
+  window.fbq("init", pixelId); window.fbq("track", "PageView");
+  const script = document.createElement("script");
+  script.async = true; script.src = "https://connect.facebook.net/en_US/fbevents.js";
+  document.head.append(script);
+}
+
+function applyConsent(preferences: ConsentPreferences) {
+  if (preferences.analytics) loadGa4();
+  if (preferences.marketing) { loadMetaPixel(); if (metaLoaded) window.fbq?.("consent", "grant"); }
+  if (!preferences.marketing && metaLoaded) window.fbq?.("consent", "revoke");
+}
+
+function safeProperties(properties?: AnalyticsProperties) {
+  return Object.fromEntries(Object.entries(properties ?? {}).filter(([key, value]) => {
+    const sensitiveKey = /(^|_)(email|name|phone|address|user_?id|token|password|secret)(_|$)/i.test(key);
+    const looksLikePersonalValue = typeof value === "string" && (value.includes("@") || value.length > 200);
+    return !sensitiveKey && !looksLikePersonalValue;
+  }));
+}
+
+export const consent = {
+  get: getPreferences,
+  set(preferences: ConsentPreferences) {
+    window.localStorage.setItem(consentStorageKey, JSON.stringify(preferences));
+    applyConsent(preferences);
+    window.dispatchEvent(new CustomEvent<ConsentPreferences>(consentEventName, { detail: preferences }));
+  },
+  subscribe(listener: (preferences: ConsentPreferences) => void) {
+    const handler = (event: Event) => listener((event as CustomEvent<ConsentPreferences>).detail);
+    window.addEventListener(consentEventName, handler);
+    return () => window.removeEventListener(consentEventName, handler);
+  },
+};
+
 export const analytics = {
-  init() {
-    if (initialized) {
-      return;
-    }
-
-    const configuration = getConfiguration();
-
-    if (!configuration) {
-      return;
-    }
-
-    try {
-      posthog.init(configuration.key, {
-        api_host: configuration.host,
-        autocapture: false,
-        capture_pageleave: false,
-        capture_pageview: false,
-      });
-
-      initialized = true;
-    } catch {
-      // Analytics must never prevent the application from loading.
+  init() { const preferences = consent.get(); if (preferences) applyConsent(preferences); },
+  track(eventName: AnalyticsEventName, properties?: AnalyticsProperties) {
+    if (!consent.get()?.analytics) return;
+    loadGa4();
+    window.gtag?.("event", eventName, { environment: import.meta.env.PROD ? "production" : "development", ...safeProperties(properties) });
+    if (consent.get()?.marketing && (eventName === "website_review_cta_clicked" || eventName === "calendly_outbound_clicked")) {
+      window.fbq?.("trackCustom", eventName);
     }
   },
-
-  track(
-    eventName: AnalyticsEventName,
-    properties?: AnalyticsProperties,
-  ) {
-    if (!initialized) {
-      return;
-    }
-
-    try {
-      posthog.capture(eventName, {
-        environment: import.meta.env.PROD ? "production" : "development",
-        ...properties,
-      });
-    } catch {
-      // Analytics must never prevent product actions from completing.
-    }
+  identify(userId: string, properties?: AnalyticsProperties) {
+    // GA4 and Meta Pixel intentionally not identified with application user data
+    void userId; void properties;
   },
-
-  identify(
-    userId: string,
-    properties?: AnalyticsProperties,
-  ) {
-    if (!initialized) {
-      return;
-    }
-
-    try {
-      posthog.identify(userId, properties);
-    } catch {
-      // Analytics must never prevent authentication from completing.
-    }
-  },
-
-  reset() {
-    if (!initialized) {
-      return;
-    }
-
-    try {
-      posthog.reset();
-    } catch {
-      // Analytics must never prevent logout from completing.
-    }
-  },
+  reset() { /* no identity */ },
 };

@@ -1,90 +1,52 @@
-import { type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
+import { analytics, consent } from "../lib/analytics";
 import "../styles/growth-lab-homepage.css";
 
 const bookingUrl = "https://calendly.com/nathan-louissaint-work/30min";
+const pillars = [
+  ["Attract", "Get found by the right people.", ["SEO", "AI search visibility", "Paid advertising", "Acquisition campaigns"]],
+  ["Convert", "Turn more visits into signups.", ["Website design and development", "Landing pages", "Conversion rate optimization", "Messaging and positioning", "Marketing funnels", "Signup optimization"]],
+  ["Grow", "Turn interest into revenue opportunities.", ["Email marketing", "CRM automation", "Lead nurturing", "Marketing automation", "Analytics and tracking"]],
+] as const;
 
-function track(location: string) {
-  window.dispatchEvent(new CustomEvent("cloudsight:cta", { detail: {
-    eventName: "calendly_booking_clicked", page: "homepage",
-    cta_location: location, cta_type: "calendly", landing_page_variant: "conversion-gap",
-  }}));
+function trackCta(location: string) { const properties = { page: "homepage", cta_location: location, destination: "calendly" }; analytics.track("website_review_cta_clicked", properties); analytics.track("calendly_outbound_clicked", properties); }
+function BookingCta({ location, children = "Get My Free Website Review", className = "" }: { location: string; children?: string; className?: string }) {
+  return <a className={`hs-button ${className}`} href={bookingUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackCta(location)}>{children}<span aria-hidden="true">↗</span><span className="sr-only"> (opens Calendly in a new tab)</span></a>;
 }
-
-function BookingButton({ location, children = "Book a Free Website Audit", variant = "primary" }: {
-  location: string; children?: string; variant?: "primary" | "secondary";
-}) {
-  return <a className={`button button--${variant}`} href={bookingUrl} target="_blank" rel="noopener noreferrer" onClick={() => track(location)}>
-    <span>{children}</span><span aria-hidden="true" className="button__arrow">↗</span>
-  </a>;
-}
-
-function Shell({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
-  return <section className={`section shell ${className}`} id={id}>{children}</section>;
-}
-
-function Heading({ number, eyebrow, title, children }: { number: string; eyebrow: string; title: string; children?: ReactNode }) {
-  return <div className="section-heading"><p className="section-number">{number}</p><div>
-    <p className="eyebrow"><span /> {eyebrow}</p><h2>{title}</h2>{children}
-  </div></div>;
-}
-
-function LinkedInIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 3H3.55A.55.55 0 0 0 3 3.55v16.9c0 .3.25.55.55.55h16.9c.3 0 .55-.25.55-.55V3.55A.55.55 0 0 0 20.45 3ZM8.34 18.34H5.65V9.68h2.69v8.66ZM7 8.5a1.56 1.56 0 1 1 0-3.12A1.56 1.56 0 0 1 7 8.5Zm11.35 9.84h-2.68v-4.21c0-1.01-.02-2.31-1.41-2.31-1.41 0-1.63 1.1-1.63 2.24v4.28H9.95V9.68h2.57v1.18h.04c.36-.68 1.23-1.4 2.53-1.4 2.71 0 3.21 1.78 3.21 4.1v4.78Z" /></svg>;
-}
-
-function InstagramIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7.75 2h8.5A5.76 5.76 0 0 1 22 7.75v8.5A5.76 5.76 0 0 1 16.25 22h-8.5A5.76 5.76 0 0 1 2 16.25v-8.5A5.76 5.76 0 0 1 7.75 2Zm-.19 2A3.57 3.57 0 0 0 4 7.56v8.88A3.57 3.57 0 0 0 7.56 20h8.88A3.57 3.57 0 0 0 20 16.44V7.56A3.57 3.57 0 0 0 16.44 4H7.56Zm9.94 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" /></svg>;
-}
-
-const problemBlocks = [
-  ["01", "They don't get it.", "You know your product inside out. Someone visiting for the first time doesn't. If they can't quickly understand what it does and who it's for, they may move on."],
-  ["02", "They don't see why it's worth trying.", "A list of features doesn't always tell someone how your software will make their work easier. Buyers need a reason to care."],
-  ["03", "They're not ready to take the next step.", "Maybe they need to see the product, understand the pricing, or feel more confident before signing up. Your website should help them get there."],
-];
-
-const services = [
-  ["01", "Make your product easier to understand", "Website messaging, positioning, and landing pages that explain what your SaaS does and why it matters."],
-  ["02", "Give people a reason to take action", "Conversion-focused website design, product storytelling, trust-building content, and clearer signup paths."],
-  ["03", "Make the experience easier", "Better navigation, landing page experiences, signup flows, and onboarding journeys."],
-  ["04", "Understand what's working", "Analytics, conversion tracking, and funnel measurement so you can see where visitors are taking action and where they stop."],
-];
+function SectionTitle({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) { return <div className="section-title"><p className="eyebrow">{eyebrow}</p><h2>{title}</h2>{children}</div>; }
 
 export default function GrowthLabHomepage() {
-  const gridStyle = { "--columns": 10 } as CSSProperties;
-  return <>
-    <header className="site-header"><nav className="navigation shell" aria-label="Main navigation">
-      <a className="wordmark" href="/" aria-label="CloudSight home">CloudSight</a>
-      <div className="nav-links"><a href="#services">Services</a><a href="#our-work">Our Work</a><a href="#about">About</a><a href="#contact">Contact</a></div>
-      <a className="nav-scorecard" href={bookingUrl} target="_blank" rel="noopener noreferrer" onClick={() => track("navigation")}>Book a Free Website Audit <span aria-hidden="true">↗</span></a>
-    </nav></header>
-    <aside className="announcement" aria-label="Website audit booking"><a href={bookingUrl} target="_blank" rel="noopener noreferrer" onClick={() => track("announcement")}><span className="announcement__dot" aria-hidden="true" />Not sure why visitors aren't signing up? Book a free website audit.<span className="announcement__arrow" aria-hidden="true">↗</span></a></aside>
-    <main className="hero" id="top"><div className="shell hero__shell">
-      <div className="technical-grid" style={gridStyle} aria-hidden="true"><div className="technical-grid__vertical"/><div className="technical-grid__horizontal"/><div className="blocks"><div className="block block--a"/><div className="block block--c"/><div className="block block--d"/></div></div>
-      <div className="hero__content"><p className="eyebrow"><span/> Conversion intelligence for SaaS</p><h1>Getting people to your website is only half the job.</h1>
-        <p className="hero__copy">You've put in the work to get people interested in your SaaS. But once they land on your website, are you giving them a good enough reason to sign up?</p>
-        <div className="hero__actions"><BookingButton location="hero"/><a className="button button--secondary" href="#services"><span>See How We Help</span><span className="button__arrow" aria-hidden="true">↗</span></a></div>
-        <p className="hero__microcopy">Free initial review · No obligation</p></div>
-    </div></main>
-    <Shell className="barriers" id="services"><Heading number="01 — 06" eyebrow="The part most founders overlook" title="People are finding your SaaS. That doesn't mean they understand it."><p className="section-intro">Someone can land on your website, look around, and leave without ever figuring out why your product is worth trying.<br/><br/>And unless you're paying attention to what happens after the click, it's easy to miss.</p></Heading>
-      <div className="barrier-list">{problemBlocks.map(([number, title, description]) => <article className="barrier" key={number}><span>{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div>
-    </Shell>
-    <Shell className="perspective"><Heading number="02 — 06" eyebrow="More traffic isn't always the answer" title="More visitors won't fix what happens after they click."><p className="section-intro">You can spend more on ads, publish more content, and work harder to bring people in.<br/><br/>But if your website isn't explaining your product clearly or helping interested visitors take the next step, more traffic may just mean more missed opportunities.</p></Heading><p className="perspective__statement">Before you focus on getting more visitors, take a closer look at the ones you're already getting.</p></Shell>
-    <Shell className="teardown" id="our-work"><Heading number="03 — 06" eyebrow="See the difference" title="The same product. A clearer reason to try it."><p className="section-intro">An illustrative example, not a client case study.</p></Heading>
-      <div className="teardown-panels"><article className="site-panel site-panel--before"><header><span>Before</span><i>Illustrative example</i></header><div className="mock-site"><p className="mock-brand">PROJECTFLOW</p><h3>An all-in-one AI-powered platform that streamlines workflows and boosts productivity.</h3></div><p className="annotation">Sounds impressive. But what does it actually help someone do?</p></article>
-        <article className="site-panel site-panel--after"><header><span>After</span><i>Illustrative example</i></header><div className="mock-site"><p className="mock-brand">PROJECTFLOW</p><h3>Stop chasing project updates. See who's working on what, what's behind schedule, and what needs your attention.</h3></div><p className="annotation">Now the buyer can picture the problem it solves.</p></article></div>
-      <p className="teardown-insight">Good website messaging helps people recognize their problem and understand how your product fits into their work.</p>
-    </Shell>
-    <Shell className="process"><span id="about" className="section-anchor" aria-hidden="true"/><Heading number="04 — 06" eyebrow="What we do" title="We help turn website visits into opportunities."><p className="section-intro">CloudSight works with B2B SaaS companies to make their websites easier to understand, easier to use, and better at guiding interested visitors toward signing up or booking a demo.</p></Heading>
-      <ol className="process-list">{services.map(([number, name, description]) => <li key={name}><span className="stage-number">{number}</span><h3>{name}</h3><p>{description}</p></li>)}</ol>
-    </Shell>
-    <Shell className="scorecard" id="website-audit"><div className="scorecard__copy"><p className="eyebrow"><span/> Start here</p><h2>How much of this have you checked on your own website?</h2>
-      <p>It's easy to overlook things when you're busy building and growing your SaaS.<br/><br/>Our website audit starts with a conversation about your goals, messaging, buyer confidence, and the steps visitors take before signing up.</p>
-      <ul className="scorecard__list"><li>Messaging clarity</li><li>Buyer confidence</li><li>Website experience</li><li>Signup and demo paths</li><li>Analytics and growth readiness</li></ul><BookingButton location="website_audit_section"/><p className="scorecard__microcopy">Free initial review · No obligation</p></div>
-      <aside className="scorecard__note"><span>WEBSITE AUDIT</span><p>Tell us about your website and goals. We will review your request and agree on the scope before any work begins.</p></aside>
-    </Shell>
-    <><Shell className="final-cta"><p className="section-number">06 — 06</p><div><p className="eyebrow"><span/> Start with clarity</p><h2>You've worked hard to get people to your website. Make sure it's doing its part.</h2>
-      <p className="final-cta__copy">Start with a quick check of your messaging, website experience, and signup process. See what might be worth improving before you spend more time or money bringing people in.</p>
-      <div className="final-cta__actions"><BookingButton location="final_cta"/><BookingButton location="final_cta_secondary" variant="secondary">Book a Call</BookingButton></div><p className="final-cta__microcopy">Free initial review · No obligation</p></div></Shell>
-      <footer className="footer shell" id="contact"><a className="wordmark" href="#top">CloudSight</a><p>For B2B SaaS teams ready to make the next step clearer.</p><div className="footer__links"><a href="mailto:Nathanlouissaint@cloudsightmail.com">Nathanlouissaint@cloudsightmail.com ↗</a><div className="footer__social" aria-label="CloudSight social profiles"><a href="https://www.linkedin.com/company/cloudsight-co/" target="_blank" rel="noopener noreferrer" aria-label="CloudSight on LinkedIn"><LinkedInIcon/></a><a href="https://www.instagram.com/cloudsightco/" target="_blank" rel="noopener noreferrer" aria-label="CloudSight on Instagram"><InstagramIcon/></a></div></div></footer></>
-  </>;
+  const trackedFaqs = useRef(new Set<string>());
+  useEffect(() => {
+    const title = "B2B SaaS Website Conversion & Growth Partner | CloudSight";
+    const description = "CloudSight helps B2B SaaS teams improve messaging, landing pages, and signup experiences to turn more website visitors into demo requests and signups.";
+    const canonicalUrl = new URL("/", window.location.origin).href;
+    document.title = title;
+    const setMeta = (selector: string, attribute: "name" | "property", key: string, content: string) => { let meta = document.querySelector<HTMLMetaElement>(selector); if (!meta) { meta = document.createElement("meta"); meta.setAttribute(attribute, key); document.head.append(meta); } meta.content = content; };
+    setMeta('meta[name="description"]', "name", "description", description); setMeta('meta[property="og:title"]', "property", "og:title", title); setMeta('meta[property="og:description"]', "property", "og:description", description); setMeta('meta[property="og:type"]', "property", "og:type", "website"); setMeta('meta[property="og:url"]', "property", "og:url", canonicalUrl); setMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary_large_image");
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]'); if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.append(canonical); } canonical.href = canonicalUrl;
+  }, []);
+  useEffect(() => {
+    let pageViewTracked = false;
+    let scrollTracked = false;
+    const trackPageView = () => { if (!pageViewTracked && consent.get()?.analytics) { pageViewTracked = true; analytics.track("homepage_viewed", { page: "homepage", path: window.location.pathname }); } };
+    const trackScroll = () => { const maximumScroll = document.documentElement.scrollHeight - window.innerHeight; if (!scrollTracked && maximumScroll > 0 && window.scrollY / maximumScroll >= .75) { scrollTracked = true; analytics.track("homepage_scroll_75", { page: "homepage" }); } };
+    trackPageView(); trackScroll();
+    window.addEventListener("scroll", trackScroll, { passive: true });
+    const unsubscribe = consent.subscribe(() => { trackPageView(); trackScroll(); });
+    return () => { window.removeEventListener("scroll", trackScroll); unsubscribe(); };
+  }, []);
+  const trackFaq = (question: string, isOpen: boolean) => { if (isOpen && !trackedFaqs.current.has(question)) { trackedFaqs.current.add(question); analytics.track("homepage_faq_opened", { page: "homepage", faq_question: question }); } };
+  return <div className="homepage"><header className="site-header"><nav className="shell navigation" aria-label="Main navigation"><a className="wordmark" href="#top" aria-label="CloudSight home"><span aria-hidden="true">[cs]</span></a><div className="nav-links"><a href="#services">Services</a><a href="#process">Process</a><a href="#review">Free review</a></div><BookingCta location="navigation" className="nav-cta">Book a review</BookingCta></nav></header>
+    <main id="top"><section className="hero"><div className="shell hero-inner"><div className="technical-grid" aria-hidden="true"><i className="grid-line grid-line--top" /><i className="grid-line grid-line--middle" /><i className="grid-block grid-block--one" /><i className="grid-block grid-block--two" /><i className="grid-block grid-block--three" /><i className="grid-block grid-block--four" /><i className="grid-tag">01—25</i></div><div className="hero-copy-wrap"><p className="eyebrow">Website conversion for B2B SaaS</p><h1><span>Your SaaS is getting visitors.</span><span>Are they becoming customers?</span></h1><p className="hero-copy">CloudSight helps B2B SaaS companies turn more website visitors into signups and demo requests by improving their messaging, landing pages, and signup experience.</p><div className="hero-actions"><BookingCta location="hero_primary" /><a className="text-link" href="#services">See How We Help <span aria-hidden="true">↓</span></a></div><p className="fine-print">A free, founder-to-founder initial review. No automated crawl.</p></div></div></section>
+      <section className="section problem"><div className="shell two-column"><SectionTitle eyebrow="The problem" title="You worked hard to get people to your website. What happens when they get there?" /><div className="body-copy"><p>Founders invest in SEO, ads, partnerships, and content to earn attention. Then a potential buyer lands on the site, scans for a few seconds, and leaves.</p><p>Often, it is not because the product is weak. They may not understand what it does, see enough value to act, or make it through a signup flow that asks too much too soon.</p><p>That gap is expensive: traffic you already paid for never gets a real chance to become a conversation.</p></div></div></section>
+      <section className="section services" id="services"><div className="shell"><SectionTitle eyebrow="The solution" title="Better growth starts with finding what’s holding you back." /><p className="section-lede">CloudSight is a focused growth partner for SaaS teams—not a generic full-service agency.</p><div className="service-grid">{pillars.map(([name, label, items], index) => <article className={`service-card ${name === "Convert" ? "service-card--primary" : ""}`} key={name}><p className="service-index">0{index + 1}</p><h3>{name}</h3><p className="service-label">{label}</p><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></article>)}</div></div></section>
+      <section className="section education"><div className="shell"><SectionTitle eyebrow="What to look for" title="Three reasons your SaaS website might be losing customers." /><div className="education-grid"><article><span>01</span><h3>Visitors don’t understand what the product does.</h3><p>“All-in-one” and feature lists do not give a buyer a clear picture. Lead with the problem you solve, who you solve it for, and the outcome they can expect.</p></article><article><span>02</span><h3>Visitors don’t see a compelling reason to act.</h3><p>A visitor needs more than information. Specific benefits, relevant proof, and a clear next step help them decide that now is worth their attention.</p></article><article><span>03</span><h3>The signup process creates unnecessary friction.</h3><p>Every extra field, unclear commitment, or surprising handoff gives an interested buyer a reason to pause. Make the next step feel simple and safe.</p></article></div></div></section>
+      <section className="section proof"><div className="shell two-column"><SectionTitle eyebrow="Proof, without the fiction" title="See how we think about growth." /><div className="body-copy"><p>Real case studies, verified testimonials, documented conversion improvements, and before-and-after examples belong here as they become available.</p><p>Until then, CloudSight shares clearly labeled educational teardowns: practical observations about messaging, calls to action, and signup paths—not invented client outcomes.</p><a className="text-link" href="#review">Request a review of your own site <span aria-hidden="true">→</span></a></div></div></section>
+      <section className="section process" id="process"><div className="shell"><SectionTitle eyebrow="The process" title="A clearer path from website traffic to customers." /><ol className="process-grid"><li><span>01</span><h3>Review your website.</h3><p>We start with your messaging, calls to action, and signup experience.</p></li><li><span>02</span><h3>Identify the biggest gaps.</h3><p>We pinpoint the moments most likely to create confusion or friction.</p></li><li><span>03</span><h3>Prioritize improvements.</h3><p>You get practical next steps, ordered by likely impact and effort.</p></li><li><span>04</span><h3>Implement and measure results.</h3><p>Implementation is part of a separate paid engagement, with measurement built in.</p></li></ol></div></section>
+      <section className="section review" id="review"><div className="shell review-card"><div><p className="eyebrow">Free website review</p><h2>Not sure what’s stopping visitors from signing up?</h2><p>Book a free initial review of your website’s messaging, calls to action, and signup experience. You’ll receive three prioritized findings and practical next steps.</p></div><div><BookingCta location="free_review" /><p className="fine-print">We use Calendly to schedule a conversation. We do not submit your site to an automated crawler.</p></div></div></section>
+      <section className="section faq"><div className="shell"><SectionTitle eyebrow="Questions" title="Frequently asked questions" /><div className="faq-list"><details onToggle={(event) => trackFaq("review_free", event.currentTarget.open)}><summary>Is the website review really free?</summary><p>Yes. The initial review is a no-obligation conversation focused on a few practical findings.</p></details><details onToggle={(event) => trackFaq("traffic_required", event.currentTarget.open)}><summary>Do I need a lot of traffic?</summary><p>No. A clear website is useful before traffic scales, and lower-volume sites can still reveal important buyer friction.</p></details><details onToggle={(event) => trackFaq("early_stage", event.currentTarget.open)}><summary>Can you help early-stage startups?</summary><p>Yes. Early teams often benefit from getting positioning, landing pages, and the signup path clear before increasing acquisition spend.</p></details><details onToggle={(event) => trackFaq("services_scope", event.currentTarget.open)}><summary>Do you only design websites?</summary><p>No. Design is one part of the work. CloudSight also helps with messaging, acquisition, funnels, automation, and measurement.</p></details><details onToggle={(event) => trackFaq("after_review", event.currentTarget.open)}><summary>What happens after the review?</summary><p>You can use the findings yourself, or discuss a separate paid engagement to prioritize, implement, and measure improvements.</p></details></div></div></section>
+      <section className="final-cta"><div className="shell"><p className="eyebrow">Start with clarity</p><h2>Before spending more on traffic, find out what your website could be doing better.</h2><BookingCta location="final_cta" /></div></section></main>
+    <footer className="footer shell"><a className="wordmark" href="#top" aria-label="CloudSight home"><span aria-hidden="true">[cs]</span></a><p>Focused growth support for B2B SaaS.</p><a href="mailto:nathanlouissaint@cloudsightmail.com">Get in touch ↗</a></footer></div>;
 }

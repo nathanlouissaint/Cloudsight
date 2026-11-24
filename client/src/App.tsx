@@ -1,6 +1,7 @@
 
 import {
   BrowserRouter,
+  Navigate,
   Routes,
   Route,
 } from "react-router-dom";
@@ -20,11 +21,6 @@ const GrowthLabHomepage = lazy(
 // Existing Spend Guard landing page
 const LandingPage = lazy(
   () => import("./pages/LandingPage")
-);
-
-// Website Audit
-const WebsiteAuditPage = lazy(
-  () => import("./pages/WebsiteAuditPage")
 );
 
 // Spend Guard authentication and onboarding
@@ -76,10 +72,19 @@ export default function App() {
             element={<GrowthLabHomepage />}
           />
 
-          {/* Public Website Audit */}
+          {/*
+            Automated website audits remain intentionally unavailable while the
+            crawler is disabled. Keep the underlying implementation intact,
+            but never expose an audit-job submission route publicly.
+          */}
           <Route
             path="/website-audit"
-            element={<WebsiteAuditPage />}
+            element={<Navigate to="/" replace />}
+          />
+
+          <Route
+            path="/website-audit/report/:token"
+            element={<Navigate to="/" replace />}
           />
 
           {/* Public Spend Guard funnel */}
