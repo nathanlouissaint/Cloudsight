@@ -18,6 +18,14 @@ const GrowthLabHomepage = lazy(
   () => import("./pages/GrowthLabHomepage")
 );
 
+const FormaMarketing = lazy(() => import("./features/forma/Forma").then((module) => ({ default: module.FormaMarketing })));
+const FormaDashboard = lazy(() => import("./features/forma/Forma").then((module) => ({ default: module.FormaDashboard })));
+
+const FormaWorkflow = lazy(() => import("./features/forma/FormaMore").then((module) => ({ default: module.WorkflowBuilder })));
+const FormaAnalytics = lazy(() => import("./features/forma/FormaMore").then((module) => ({ default: module.GrowthAnalytics })));
+const FormaOnboarding = lazy(() => import("./features/forma/FormaMore").then((module) => ({ default: module.Onboarding })));
+const FormaCaseStudy = lazy(() => import("./features/forma/FormaMore").then((module) => ({ default: module.CaseStudy })));
+
 // Existing Spend Guard landing page
 const LandingPage = lazy(
   () => import("./pages/LandingPage")
@@ -86,6 +94,13 @@ export default function App() {
             path="/website-audit/report/:token"
             element={<Navigate to="/" replace />}
           />
+
+          <Route path="/work/saas-growth-system" element={<FormaCaseStudy />} />
+          <Route path="/work/saas-growth-system/demo/signup" element={<FormaOnboarding />} />
+          <Route path="/work/saas-growth-system/demo/dashboard/workflows" element={<FormaWorkflow />} />
+          <Route path="/work/saas-growth-system/demo/dashboard/analytics" element={<FormaAnalytics />} />
+          <Route path="/work/saas-growth-system/demo" element={<FormaMarketing />} />
+          <Route path="/work/saas-growth-system/demo/dashboard" element={<FormaDashboard />} />
 
           {/* Public Spend Guard funnel */}
           <Route

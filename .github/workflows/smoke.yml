@@ -5,11 +5,14 @@ on:
     branches:
       - main
       - develop
+      - release/frontend-homepage-only
       - feature/**
+      - feat/**
   pull_request:
     branches:
       - main
       - develop
+      - release/frontend-homepage-only
 
 permissions:
   contents: read
@@ -26,13 +29,30 @@ jobs:
 
     timeout-minutes: 30
 
+    env:
+      POSTGRES_PASSWORD: ci-test-password
+      DATABASE_URL: postgresql://cloudsight:ci-test-password@postgres:5432/cloudsight
+      JWT_SECRET: ci-only-disposable-secret-not-for-production-123456789
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: http://localhost:3000
+      AWS_REGION: us-east-1
+      SERVER_IMAGE: cloudsight-server:ci
+      SERVER_MIGRATOR_IMAGE: cloudsight-migrator:ci
+      CLIENT_IMAGE: cloudsight-client:ci
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Build Local CI Images
+        run: |
+          docker build -f server/Dockerfile --target runner -t cloudsight-server:ci .
+          docker build -f server/Dockerfile --target migrator -t cloudsight-migrator:ci .
+          docker build -f client/Dockerfile -t cloudsight-client:ci .
+
       - name: Start Production Stack
         run: |
-          docker compose -f docker-compose.prod.yml up -d --build
+          docker compose -f docker-compose.prod.yml up -d --no-build
 
       - name: Wait for Containers
         run: |

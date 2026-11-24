@@ -5,11 +5,14 @@ on:
     branches:
       - main
       - develop
+      - release/frontend-homepage-only
       - feature/**
+      - feat/**
   pull_request:
     branches:
       - main
       - develop
+      - release/frontend-homepage-only
 
 permissions:
   contents: read
@@ -26,6 +29,17 @@ jobs:
 
     timeout-minutes: 30
 
+    env:
+      POSTGRES_PASSWORD: ci-test-password
+      DATABASE_URL: postgresql://cloudsight:ci-test-password@postgres:5432/cloudsight
+      JWT_SECRET: ci-only-disposable-secret-not-for-production-123456789
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: http://localhost:3000
+      AWS_REGION: us-east-1
+      SERVER_IMAGE: cloudsight-server:ci
+      SERVER_MIGRATOR_IMAGE: cloudsight-migrator:ci
+      CLIENT_IMAGE: cloudsight-client:ci
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -39,7 +53,7 @@ jobs:
       - name: Build Server Image
         uses: docker/build-push-action@v6
         with:
-          context: ./server
+          context: .
           file: ./server/Dockerfile
           push: false
           tags: cloudsight-server:ci
@@ -49,7 +63,7 @@ jobs:
       - name: Build Client Image
         uses: docker/build-push-action@v6
         with:
-          context: ./client
+          context: .
           file: ./client/Dockerfile
           push: false
           tags: cloudsight-client:ci
