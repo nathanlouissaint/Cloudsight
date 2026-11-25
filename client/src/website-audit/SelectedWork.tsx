@@ -5,7 +5,7 @@ import vertexScreenshot from "../assets/selected-work/vertex-it.webp";
 
 const projects = [
   { name: "Vertex IT", category: "Managed IT Services", type: "Concept Website", url: "https://vertex.cloudsightmail.com", image: vertexScreenshot, imageAlt: "Vertex IT website homepage featuring a managed IT services headline", description: "A clear, conversion-led concept for a managed IT partner, built to make its services and assessment path easy to understand." },
-  { name: "AETHER", category: "Enterprise Intelligence Platform", type: "Concept Website", url: "https://aether-b1on.onrender.com", image: aetherScreenshot, imageAlt: "AETHER website homepage featuring an enterprise intelligence platform headline", description: "A focused concept for bringing business data, reporting, and decision-making into one clearer enterprise experience." },
+  { name: "Aether", category: "B2B SaaS · Business Intelligence", type: "Concept Website", url: "https://aether-b1on.onrender.com", image: aetherScreenshot, imageAlt: "AETHER website homepage featuring an enterprise intelligence platform headline", description: "Designed and developed a premium SaaS website that makes a complex software product easy to understand, builds trust with potential customers, and encourages visitors to request a demo." },
 ];
 
 function getReturnUrl() {
