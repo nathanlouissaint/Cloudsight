@@ -23,3 +23,5 @@
 @media (max-width:760px) { .work { scroll-margin-top:62px; }.work-heading { display:block; }.work-heading>p { margin-top:18px; }.work-project { grid-template-columns:1fr; }.work-preview { border-right:0; border-bottom:1px solid #303137; padding:16px; }.work-project-copy { padding:24px 20px; } }
 
 @media (prefers-reduced-motion:reduce) { .work-preview-image { transition:none; } }
+
+.work-project + .work-project { margin-top: 32px; }
