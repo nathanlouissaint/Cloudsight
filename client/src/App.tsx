@@ -11,6 +11,7 @@ import {
   lazy,
 } from "react";
 
+import { RouteMetadata } from "./seo/RouteMetadata";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 // New CloudSight Growth Lab homepage
@@ -72,6 +73,7 @@ const ReportsPage = lazy(
 export default function App() {
   return (
     <BrowserRouter>
+      <RouteMetadata />
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           {/* Public Growth Lab homepage */}
