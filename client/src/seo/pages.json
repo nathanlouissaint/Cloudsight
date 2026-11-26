@@ -9,6 +9,7 @@
   },
   "/spend-guard": {
     "title": "Spend Guard | CloudSight",
-    "description": "Explore CloudSight Spend Guard for AWS spending visibility, forecasts, and cost alerts."
+    "description": "Explore CloudSight Spend Guard for AWS spending visibility, forecasts, and cost alerts.",
+    "noindex": true
   }
 }

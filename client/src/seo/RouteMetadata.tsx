@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import pages from "./pages.json";
 
 const origin = "https://cloudsightmail.com";
-const publicPages: Record<string, { title: string; description: string }> = pages;
+const publicPages: Record<string, { title: string; description: string; noindex?: boolean }> = pages;
 
 export function RouteMetadata() {
   const { pathname } = useLocation();
@@ -20,7 +20,7 @@ export function RouteMetadata() {
       const url = origin + path;
       document.title = page.title;
       setMeta("name", "description", page.description);
-      setMeta("name", "robots", "index, follow");
+      setMeta("name", "robots", page.noindex ? "noindex, nofollow" : "index, follow");
       setMeta("property", "og:title", page.title);
       setMeta("property", "og:description", page.description);
       setMeta("property", "og:url", url);
