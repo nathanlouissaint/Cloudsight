@@ -61,15 +61,6 @@ export default function GrowthLabHomepage() {
     return () => { observer.disconnect(); unsubscribe(); };
   }, []);
   useEffect(() => {
-    const title = "B2B SaaS Website Conversion & Growth Partner | CloudSight";
-    const description = "CloudSight helps B2B SaaS teams improve messaging, landing pages, and signup experiences to turn more website visitors into demo requests and signups.";
-    const canonicalUrl = new URL("/", window.location.origin).href;
-    document.title = title;
-    const setMeta = (selector: string, attribute: "name" | "property", key: string, content: string) => { let meta = document.querySelector<HTMLMetaElement>(selector); if (!meta) { meta = document.createElement("meta"); meta.setAttribute(attribute, key); document.head.append(meta); } meta.content = content; };
-    setMeta('meta[name="description"]', "name", "description", description); setMeta('meta[property="og:title"]', "property", "og:title", title); setMeta('meta[property="og:description"]', "property", "og:description", description); setMeta('meta[property="og:type"]', "property", "og:type", "website"); setMeta('meta[property="og:url"]', "property", "og:url", canonicalUrl); setMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary_large_image");
-    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]'); if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.append(canonical); } canonical.href = canonicalUrl;
-  }, []);
-  useEffect(() => {
     let pageViewTracked = false;
     let scrollTracked = false;
     const trackPageView = () => { if (!pageViewTracked && consent.get()?.analytics) { pageViewTracked = true; analytics.track("homepage_viewed", { page: "homepage", path: window.location.pathname }); } };
